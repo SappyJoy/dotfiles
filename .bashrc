@@ -144,7 +144,7 @@ alias rmd='/bin/rm  --recursive --force --verbose '
 
 # Alias's for multiple directory listing commands
 alias la='ls -Alh' # show hidden files
-alias ls='ls -aFh --color=always' # add colors and file type extensions
+alias ls='ls -aFh --color=auto' # add colors and file type extensions
 alias lx='ls -lXBh' # sort by extension
 alias lk='ls -lSrh' # sort by size
 alias lc='ls -lcrh' # sort by change time
@@ -703,5 +703,10 @@ function __setprompt
 	# PS4 is used for tracing a script in debug mode
 	PS4='\[${DARKGRAY}\]+\[${NOCOLOR}\] '
 }
-PROMPT_COMMAND='__setprompt' 
+PROMPT_COMMAND='__setprompt'
 . "$HOME/.cargo/env"
+
+# Claude Code runs its commands through this file: give it plain commands, no aliases
+if [ -n "$CLAUDECODE" ]; then
+	unalias -a
+fi
