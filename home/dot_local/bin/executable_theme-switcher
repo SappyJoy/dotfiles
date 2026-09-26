@@ -14,6 +14,7 @@ I3_COLORS="$HOME/.config/i3/colors"
 POLYBAR_COLORS="$HOME/.config/polybar/colors.ini"
 KITTY_THEME="$HOME/.config/kitty/theme.conf"
 TMUX_CONF="$HOME/.config/tmux/tmux.conf"
+TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.conf
 
 # Save state
 echo "$MODE" > "$STATE_FILE"
@@ -51,7 +52,7 @@ EOF
     echo "include themes/ayu_light.conf" > "$KITTY_THEME"
 
     # Tmux
-    sed -i 's/set -g @minimal-tmux-bg .*/set -g @minimal-tmux-bg "#FF9940"/' "$TMUX_CONF"
+    echo 'set -g @minimal-tmux-bg "#FF9940"' > "$TMUX_THEME"
 
 else
     # === DARK MODE (Ayu Mirage) ===
@@ -86,7 +87,7 @@ EOF
     echo "include themes/ayu_mirage.conf" > "$KITTY_THEME"
 
     # Tmux
-    sed -i 's/set -g @minimal-tmux-bg .*/set -g @minimal-tmux-bg "#FFCC66"/' "$TMUX_CONF"
+    echo 'set -g @minimal-tmux-bg "#FFCC66"' > "$TMUX_THEME"
 fi
 
 # === RELOAD APPS ===
