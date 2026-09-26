@@ -1,95 +1,108 @@
-# All configs in one place
+# dotfiles
 
-Все конфигурационные файлы находятся в репозитории [dotfiles](https://github.com/SappyJoy/.dotfiles).
+Configs and scripts for my Linux machines (an Arch desktop, Ubuntu boxes, WSL, and
+borrowed machines over SSH), managed with [chezmoi](https://www.chezmoi.io). Secrets
+are encrypted with [age](https://age-encryption.org).
 
-Используется git bare repository. Почитать [раз](https://marcel.is/managing-dotfiles-with-git-bare-repo/), [два](https://www.ackama.com/what-we-think/the-best-way-to-store-your-dotfiles-a-bare-git-repository-explained/)
-
-Установить при помощи
-
-```sh
-curl -fsSL https://gist.github.com/SappyJoy/eec1274b275af7336aafdaf217dfff16/raw/setup_dotfiles.sh | bash
-```
-
-Если не работает, то скачать и попробовать запустить вручную
+## Install
 
 ```sh
-wget https://gist.githubusercontent.com/SappyJoy/eec1274b275af7336aafdaf217dfff16/raw/setup_dotfiles.sh
-chmod +x setup_dotfiles.sh
-bash setup_dotfiles.sh
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply SappyJoy
 ```
+
+chezmoi asks two questions, once per machine:
+
+- **Desktop (X11 + i3)**: also install the i3 / polybar / picom / kitty / rofi configs
+  and their scripts.
+- **Own machine (secrets)**: decrypt `private.fish` (API keys) and `~/.ssh/config`.
+  Say no on borrowed machines.
+
+To change an answer later, run `chezmoi init --prompt`.
+
+Then `tools-check` lists the tools that are missing or older than on arch, with an
+install hint for each.
+
+### The age key (own machines only)
+
+The secrets are encrypted to one age key. It is never in this repo. Copy it before
+`init`:
 
 ```sh
-cd ~
-set -Ux DOTFILES $HOME/.dotfiles
-set -Ux SECRETS $HOME/.secrets
-git clone --bare git@github.com:SappyJoy/.dotfiles.git $DOTFILES
-git clone --bare git@github.com:SappyJoy/.secrets.git $SECRETS
-alias gitdf='git --git-dir=$DOTFILES --work-tree=$HOME'
-gitdf checkout
-gitdf config --local status.showUntrackedFiles no
-
-fish # update fish config
-sg checkout
-sg config --local status.showUntrackedFiles no
-
-tide configure --auto --style=Lean --prompt_colors='True color' --show_time='24-hour format' --lean_prompt_height='Two lines' --prompt_connection=Dotted --prompt_connection_andor_frame_color=Light --prompt_spacing=Compact --icons='Few icons' --transient=No
+mkdir -p ~/.config/chezmoi
+scp arch:.config/chezmoi/key.txt ~/.config/chezmoi/key.txt
+chmod 600 ~/.config/chezmoi/key.txt
 ```
 
-Все ключи у меня хранятся в `pass`. Ссылки на них хранятся в `secrets` .config/fish/private.fish
+Keep an offline copy. Without the key the encrypted files can't be read. Everything in
+them can be regenerated (API keys, ssh hosts), but it's tedious.
 
-## Какие программы я использую
+## Daily use
 
-- X11
-- i3 - менеджер окон
-- i3status - статус бар
-- picom - композитор
-- rofi - меню
-- kitty - терминал
-- [fish](https://fishshell.com/) - shell
-- nvim - текстовый редактор
-- tmux - терминал
-- [lsd](http://styopa.xyz/lsd) - ls с иконками
-- ranger - файловый менеджер
-- thunar - GUI файловый менеджер
-- zoxide - быстрый cd
-- fzf - fuzzy finder
-- ripgrep - поиск по файлам
-- fd - поиск файлов
-- bat - cat с подсветкой
-- lazygit - git интерфейс
-- lazydocker - docker интерфейс
-- uv - python manager
-- pipxu - установщик python пакетов
-- pidcat - логгер для android
-- greenclip - буфер обмена
-- btop - мониторинг системы
-- btrfs - файловая система
-- firefox - браузер
-- flameshot - скриншотер
-- dunst - уведомления
-- obsidian - заметки (пишу в nvim)
-- plocate - поиск по файлам
-- wg-quick - VPN
-- ly - login manager
-- aider - AI помощник
-- direnv - управление переменными окружения
-- sdkman - менеджер версий для java/gradle
+| Task | Command |
+|---|---|
+| Commit edits made to live files | `dots`: re-add the edited files, then lazygit on this repo |
+| Get changes from other machines | `chezmoi update` (pull + apply) |
+| What differs on this machine | `chezmoi status`, `chezmoi diff` |
+| Track a new file | `chezmoi add <file>`; add `--encrypt` for secrets |
+| Edit a template or secret | `vd <file>` (`chezmoi edit --apply`) |
+| Tools missing or outdated | `tools-check` (`--missing`: only what needs action) |
+| After upgrading tools on arch | `tools-check --record`, then `dots` |
 
+Pull with `chezmoi update`, not in lazygit. If you do pull in lazygit, run
+`chezmoi apply` right after. `dots` leaves pulled changes alone, but a file that
+changed on both sides needs `chezmoi merge <file>`.
 
-Установим плагины для tmux
+## Per-machine differences
 
-```sh
-tmux # запустим tmux
-# <C-b>I - чтобы установить плагины
-```
+In order of preference:
 
-Установим плагины для fish
-[fisher](https://github.com/jorgebucaran/fisher) - менеджер плагинов
+1. **Existence check in the config itself**, e.g. `if [ -d … ]` in `.profile`,
+   `isdirectory()` in nvim. It works everywhere and needs no chezmoi logic.
+2. **Machine data** in a template (`*.tmpl`) or in `.chezmoiignore`: the prompt answers
+   (`.desktop`, `.personal`) or detected facts (`.chezmoi.osRelease.id`, hostname).
+   Example: the i3 config renders the Throne key and the polkit agent on Arch only.
+3. **Files an app rewrites** (`btop.conf`, kitty `theme.conf`) get the `create_`
+   prefix: written once, then owned by the app.
+4. **State a script writes** stays untracked and is included by a tracked config:
+   `theme-switcher` writes `tmux/theme.conf`, `i3/colors` and `polybar/colors.ini`.
+5. **Secrets**: `chezmoi add --encrypt`.
 
-```sh
-fisher update
-```
+`re-add` (and so `dots`) skips templates. Edit those with `vd`, or bring a live edit
+over with `chezmoi merge`.
 
----
+## Layout
 
-My notes: [styopa.xyz](http://styopa.xyz)
+- `home/` is the source state (see `.chezmoiroot`). The names encode attributes:
+  - `dot_` → `.`
+  - `executable_`
+  - `private_` (0600 / 0700)
+  - `encrypted_*.age`
+  - `create_`
+  - `*.tmpl`
+- `home/.chezmoi.toml.tmpl`: the prompts and the age settings
+- `home/.chezmoiignore`: what each kind of machine skips
+- `home/.chezmoiexternal.toml`: tmux plugin manager (tpm)
+- `home/dot_config/tools/tools.tsv`: the tool list behind `tools-check`
+- `tests/`: `sh tests/tools-check.sh`
+
+## Moving a machine off the old bare repo
+
+Until 2026-09 these files lived in the bare repos `~/.dotfiles` and `~/.secrets`, with
+`$HOME` as the work tree. To switch a machine over:
+
+1. Save its local changes:
+   ```sh
+   git --git-dir=$HOME/.dotfiles --work-tree=$HOME diff > ~/dotfiles-local.patch
+   git --git-dir=$HOME/.secrets --work-tree=$HOME diff > ~/secrets-local.patch
+   ```
+2. Own machine: copy the age key (above).
+3. If `~/.tmux/plugins/tpm/.git` is a file, the checkout points into `~/.dotfiles`.
+   Move `~/.tmux/plugins/tpm` aside so chezmoi clones it fresh.
+4. Run `chezmoi init SappyJoy` (no `--apply`), then `chezmoi diff`: this is what apply
+   would change. Carry wanted local bits into the source (rules above) and commit.
+5. `chezmoi apply`.
+6. Move the old repos aside:
+   ```sh
+   mv ~/.dotfiles ~/.dotfiles.bak-$(date +%Y%m%d-%H%M%S)
+   mv ~/.secrets ~/.secrets.bak-$(date +%Y%m%d-%H%M%S)
+   ```
