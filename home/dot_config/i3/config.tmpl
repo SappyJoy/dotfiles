@@ -81,6 +81,10 @@ bindsym $mod+Next exec --no-startup-id brightness-down   # PgDown
 # bindsym $mod+Shift+Ctrl+v exec --no-startup-id "sudo wg-quick down /etc/wireguard/vpnconfig.conf && notify-send 'VPN Off'"
 # Toggle VPN with Win+Shift+V
 bindsym $mod+Shift+v exec --no-startup-id toggle-vpn
+{{- if eq .chezmoi.osRelease.id "arch" }}{{/* arch only: Throne toggle, polkit agent */}}
+bindsym $mod+Shift+t exec --no-startup-id toggle-throne
+exec_always --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+{{- end }}
 
 # Do not let the screen go black
 exec_always --no-startup-id xset s off -dpms
