@@ -54,14 +54,17 @@ exec --no-startup-id nitrogen --restore; sleep 1; compton -b
 # exec --no-startup-id picom -b
 exec --no-startup-id flameshot &
 
-# Monitors: the layout comes from X (autorandr, if installed). Log in to FILM,
-# one virtual output over the whole desk, focused on workspace 1.
-exec --no-startup-id "command -v autorandr >/dev/null && autorandr --change; i3-msg 'workspace number 1'; film_mode.sh on"
-# One polybar per monitor; also rerun on every restart (e.g. FILM on/off)
+# Monitors: the layout comes from X (autorandr, if installed). FILM spans all of
+# them as one output; log in to it, focused on workspace 1.
+exec --no-startup-id "command -v autorandr >/dev/null && autorandr --change; i3-msg 'workspace number 1'; film_mode.sh"
+# Workspaces get created on the portrait monitors before FILM exists: keep them
+# horizontal, so windows form columns across the desk.
+default_orientation horizontal
+# The bar, again on every restart (re-spanning FILM restarts i3)
 exec_always --no-startup-id ~/.config/polybar/launch.sh
 
-bindsym $mod+Shift+f exec --no-startup-id film_mode.sh on
-bindsym $mod+Shift+w exec --no-startup-id film_mode.sh off
+# Re-span FILM, e.g. after plugging in a monitor
+bindsym $mod+Shift+f exec --no-startup-id film_mode.sh
 
 # Night light: runs for the whole session, schedule in ~/.config/redshift/redshift.conf
 exec --no-startup-id redshift
@@ -170,11 +173,7 @@ bindsym $mod+a focus parent
 # focus the child container
 #bindsym $mod+d focus child
 
-# Workspace k lives on monitor (k-1) mod N, see ~/.config/i3/groups.sh.
-# dynamic_workspaces.sh writes those assignments for the current monitors.
-exec_always --no-startup-id ~/.config/i3/dynamic_workspaces.sh
-include ~/.config/i3/dynamic_workspaces.conf
-
+# FILM is a single output, so every workspace spans the whole desk.
 bindsym $mod+1 workspace number 1
 bindsym $mod+2 workspace number 2
 bindsym $mod+3 workspace number 3
@@ -202,11 +201,6 @@ bindsym $mod+Shift+0 move container to workspace number 10
 
 bindsym Control+$mod+Up workspace next_on_output
 bindsym Control+$mod+Down workspace prev_on_output
-
-# bindsym Mod1+Mod4+j exec --no-startup-id /home/$USER/.config/i3/cycle_group.sh prev
-# bindsym Mod1+Mod4+k exec --no-startup-id /home/$USER/.config/i3/cycle_group.sh next
-bindsym Mod1+Mod4+Down exec --no-startup-id /home/$USER/.config/i3/cycle_group.sh prev
-bindsym Mod1+Mod4+Up exec --no-startup-id /home/$USER/.config/i3/cycle_group.sh next
 
 
 # reload the configuration file
