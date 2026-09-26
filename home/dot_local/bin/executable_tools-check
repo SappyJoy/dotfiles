@@ -1,0 +1,135 @@
+#!/bin/sh
+# tools-check: compare the tools on this machine with the tool list.
+#
+# The list (~/.config/tools/tools.tsv) has one tab-separated row per tool:
+#   name  group  version  check  install
+# group is core, dev or desktop. version is the one in use on arch ("-": any).
+# check prints the version ("-": presence only). install is a hint.
+#
+# Usage: tools-check [--missing] [--all] [--record] [--list FILE]
+#   --missing  only the tools that need action (missing or older)
+#   --all      include desktop tools even without a display
+#   --record   write the installed versions into the list (on the reference machine)
+# Exit: 0 when nothing needs action, 1 when something does, 2 on usage errors.
+
+set -u
+
+list=${TOOLS_LIST:-$HOME/.config/tools/tools.tsv}
+only_action=0 all=0 record=0
+
+usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --missing) only_action=1 ;;
+        --all) all=1 ;;
+        --record) record=1 ;;
+        --list) [ $# -gt 1 ] || { usage >&2; exit 2; }; shift; list=$1 ;;
+        -h|--help) usage; exit 0 ;;
+        *) usage >&2; exit 2 ;;
+    esac
+    shift
+done
+
+[ -r "$list" ] || { echo "tools-check: no tool list at $list" >&2; exit 2; }
+
+tab=$(printf '\t')
+esc=$(printf '\033')
+timeout=
+command -v timeout >/dev/null 2>&1 && timeout='timeout 10'
+
+# installed_version CHECK: the first version number CHECK prints, colors stripped.
+# Prefers a dotted number (1.2.3) and falls back to a plain one (picom: v13).
+installed_version() {
+    out=$($timeout sh -c "$1" </dev/null 2>&1 | head -n 5 | sed "s/$esc\[[0-9;]*m//g")
+    v=$(printf '%s\n' "$out" | grep -oE '[0-9]+(\.[0-9]+)+' | head -n 1)
+    [ -n "$v" ] || v=$(printf '%s\n' "$out" | grep -oE '[0-9]+' | head -n 1)
+    printf '%s\n' "$v"
+}
+
+# compare HAVE WANT: ok, older or newer.
+compare() {
+    if [ "$2" = - ] || [ "$1" = "$2" ]; then echo ok
+    elif [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n 1)" = "$1" ]; then echo older
+    else echo newer
+    fi
+}
+
+if [ -t 1 ]; then
+    c_ok="$esc[32m" c_warn="$esc[33m" c_bad="$esc[31m" c_dim="$esc[2m" c_off="$esc[0m"
+else
+    c_ok= c_warn= c_bad= c_dim= c_off=
+fi
+
+display=0
+[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && display=1
+
+need=0 skipped=0 changed=0 shown=0
+out_rows=
+[ $record = 1 ] && out_rows=$(mktemp)
+
+while IFS= read -r line || [ -n "$line" ]; do
+    case $line in
+        ''|'#'*)
+            [ $record = 1 ] && printf '%s\n' "$line" >>"$out_rows"
+            continue ;;
+    esac
+    IFS=$tab read -r name group want check hint <<EOF
+$line
+EOF
+
+    if [ $record = 0 ] && [ "$group" = desktop ] && [ $display = 0 ] && [ $all = 0 ]; then
+        skipped=$((skipped + 1))
+        continue
+    fi
+
+    if command -v "$name" >/dev/null 2>&1; then
+        if [ "$check" = - ]; then have=-; else have=$(installed_version "$check"); fi
+        if [ -z "$have" ]; then have='?' status=unknown
+        elif [ "$have" = - ]; then status=ok
+        else status=$(compare "$have" "$want")
+        fi
+    else
+        have=- status=missing
+    fi
+
+    if [ $record = 1 ]; then
+        new=$want
+        case $status in ok|older|newer)
+            [ "$want" != - ] && [ "$have" != - ] && new=$have ;;
+        esac
+        if [ "$new" != "$want" ]; then
+            printf '%s: %s -> %s\n' "$name" "$want" "$new"
+            changed=$((changed + 1))
+        fi
+        printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$group" "$new" "$check" "$hint" >>"$out_rows"
+        continue
+    fi
+
+    case $status in
+        missing) need=$((need + 1)) color=$c_bad ;;
+        older) need=$((need + 1)) color=$c_warn ;;
+        *) [ $only_action = 1 ] && continue
+           color=$c_ok hint= ;;
+    esac
+    [ $shown = 0 ] && printf '%-8s %-12s %-12s %-12s %s\n' STATUS TOOL HAVE WANT INSTALL
+    shown=$((shown + 1))
+    printf '%s%-8s%s %-12s %-12s %-12s %s\n' "$color" "$status" "$c_off" "$name" "$have" "$want" "$hint"
+done <"$list"
+
+if [ $record = 1 ]; then
+    # Rewrite in place (not mv) so the list keeps its mode and inode.
+    [ $changed -gt 0 ] && cat "$out_rows" >"$list"
+    rm -f "$out_rows"
+    echo "tools-check: $changed version(s) recorded in $list"
+    exit 0
+fi
+
+[ $skipped -gt 0 ] &&
+    printf '%s(%d desktop tools skipped: no display; --all shows them)%s\n' "$c_dim" "$skipped" "$c_off"
+if [ $need -eq 0 ]; then
+    [ $only_action = 1 ] && echo "tools-check: nothing to do"
+    exit 0
+fi
+echo "tools-check: $need tool(s) missing or older"
+exit 1
