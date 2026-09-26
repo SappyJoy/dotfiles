@@ -1,0 +1,7 @@
+#!/bin/sh
+# autorandr runs this after it switched the monitor layout (hotplug, resume,
+# `autorandr --change` at login). Re-span FILM over the new monitors. That restarts
+# i3, and i3's exec_always lines relaunch the bar and film-snap inside i3's session.
+# Starting them here would not work: from autorandr.service, which is a oneshot
+# unit, they would die with the service.
+exec "$HOME/.local/bin/film_mode.sh"
