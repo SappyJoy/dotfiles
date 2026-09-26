@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# The exact executable name (usually 'throne' or 'nekoray')
+APP_NAME="throne"
+
+# Check if the process is running
+if pgrep -x "$APP_NAME" > /dev/null
+then
+    # Turn OFF VPN by gracefully killing the app
+    echo "Stopping Throne..."
+    killall -TERM "$APP_NAME"
+    notify-send "Throne VPN" "Disconnected 🔴" -u normal -t 2000
+else
+    # Turn ON VPN by launching the app in the background
+    echo "Starting Throne..."
+    # We use nohup and send output to /dev/null so it detaches from the script
+    nohup "$APP_NAME" > /dev/null 2>&1 &
+    notify-send "Throne VPN" "Connecting... 🟢" -u normal -t 2000
+fi

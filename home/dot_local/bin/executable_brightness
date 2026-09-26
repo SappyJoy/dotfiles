@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Usage: brightness <value (0-100)>
+if [ $# -eq 0 ]; then
+    echo "Usage: brightness <value (0-100)>"
+    exit 1
+fi
+
+brightness=$1
+
+# Validate brightness value
+if ! [[ "$brightness" =~ ^[0-9]+$ ]] || [ "$brightness" -lt 0 ] || [ "$brightness" -gt 100 ]; then
+    echo "Error: Brightness value must be an integer between 0 and 100."
+    exit 1
+fi
+
+# Adjust brightness for Dell monitors using ddccontrol
+for device in /dev/i2c-5 /dev/i2c-7 /dev/i2c-9; do
+    echo "Setting brightness to $brightness on $device..."
+    if sudo ddccontrol dev:"$device" -r 0x10 -w "$brightness"; then
+        echo "Successfully set brightness on $device."
+    else
+        echo "Failed to set brightness on $device."
+    fi
+done
+
+# Adjust brightness for Samsung monitor using xrandr
+# samsung_display=$(xrandr -display :0 --query | grep ' connected' | grep 'HDMI-0' | awk '{ print $1 }')
+#
+# if [ -n "$samsung_display" ]; then
+#     # Convert 0-100 to 0.0-1.0 scale (adjust formula if needed)
+#     brightness_scaled=$(echo "scale=1.6; $brightness / 160 + 0.2" | bc)
+#     echo "Setting software brightness to $brightness_scaled on $samsung_display..."
+#     if xrandr --output "$samsung_display" --brightness "$brightness_scaled"; then
+#         echo "Successfully set software brightness on $samsung_display."
+#     else
+#         echo "Failed to set software brightness on $samsung_display."
+#     fi
+# else
+#     echo "Samsung monitor not found or not connected via HDMI-0."
+# fi
