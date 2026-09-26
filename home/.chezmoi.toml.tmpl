@@ -1,0 +1,7 @@
+{{- /* Asked once per machine at `chezmoi init`; answers live in ~/.config/chezmoi/chezmoi.toml. */ -}}
+{{- $desktop := promptBoolOnce . "desktop" "Desktop (X11 + i3)" (ne (lookPath "i3") "") -}}
+{{- $personal := promptBoolOnce . "personal" "Own machine (secrets)" false -}}
+
+[data]
+    desktop = {{ $desktop }}
+    personal = {{ $personal }}
