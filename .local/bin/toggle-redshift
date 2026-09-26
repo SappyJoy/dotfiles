@@ -1,0 +1,9 @@
+#!/bin/sh
+# Toggle the night light. redshift runs for the whole X session (i3 starts it)
+# and keeps its own schedule; SIGUSR1 switches it between enabled and disabled.
+if pkill -USR1 -x -u "$(id -u)" redshift; then
+    notify-send "Redshift" "Night light toggled"
+else
+    redshift >/dev/null 2>&1 &
+    notify-send "Redshift" "Night light started"
+fi
