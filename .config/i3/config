@@ -40,9 +40,6 @@ exec --no-startup-id dex --autostart --environment i3
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
 
-# exec --no-startup-id xrandr --output DP-4 --auto --right-of DP-0 &
-# exec_always --no-startup-id ~/.screenlayout/rotated_right_auto.sh
-
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
 # exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
@@ -57,10 +54,14 @@ exec --no-startup-id nitrogen --restore; sleep 1; compton -b
 # exec --no-startup-id picom -b
 exec --no-startup-id flameshot &
 
-exec --no-startup-id film_mode.sh
+# Monitors: the layout comes from X (autorandr, if installed). Log in to FILM,
+# one virtual output over the whole desk, focused on workspace 1.
+exec --no-startup-id "command -v autorandr >/dev/null && autorandr --change; i3-msg 'workspace number 1'; film_mode.sh on"
+# One polybar per monitor; also rerun on every restart (e.g. FILM on/off)
+exec_always --no-startup-id ~/.config/polybar/launch.sh
 
-bindsym $mod+Shift+f exec --no-startup-id film_mode.sh
-bindsym $mod+Shift+w exec --no-startup-id work_mode.sh
+bindsym $mod+Shift+f exec --no-startup-id film_mode.sh on
+bindsym $mod+Shift+w exec --no-startup-id film_mode.sh off
 
 # Night light: runs for the whole session, schedule in ~/.config/redshift/redshift.conf
 exec --no-startup-id redshift

@@ -1,25 +1,13 @@
 #!/usr/bin/env bash
+# One bar per active monitor (i3-outputs); the primary monitor's bar gets the tray.
+# i3 runs this on start and restart; run it by hand after other monitor changes.
 
-# Terminate already running bar instances
 killall -q polybar
+while pgrep -u "$UID" -x polybar >/dev/null; do sleep 0.2; done
 
-# Wait until the processes have been shut down
-while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
-
-# Check if the virtual "FILM" monitor exists
-if xrandr --listmonitors | grep -q " FILM"; then
-  # --- FILM MODE ---
-  # Launch the bar defined as [bar/film]
-  polybar --reload film &
-else
-  # Otherwise, launch a bar on each detected monitor
-  if type "xrandr"; then
-    for m in $(xrandr --query | grep " connected" | cut -d" " -f1); do
-      MONITOR=$m polybar --reload main &
-    done
-  else
-    polybar --reload main &
-  fi
-fi
-
-echo "Polybar launched..."
+primary=$("$HOME/.local/bin/i3-outputs" --primary) || exit 1
+for monitor in $("$HOME/.local/bin/i3-outputs"); do
+    bar=main
+    [[ $monitor == "$primary" ]] && bar=main-primary
+    MONITOR=$monitor polybar --reload "$bar" &
+done
