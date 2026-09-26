@@ -10,7 +10,7 @@ return {
   -- },
   {
     'epwalsh/obsidian.nvim',
-    enabled = false,
+    enabled = vim.fn.isdirectory(vim.fn.expand('~/notes')) == 1, -- only where the vaults are
     lazy = false,
     ft = 'markdown',
     event = {
