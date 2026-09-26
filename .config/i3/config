@@ -62,6 +62,8 @@ exec --no-startup-id film_mode.sh
 bindsym $mod+Shift+f exec --no-startup-id film_mode.sh
 bindsym $mod+Shift+w exec --no-startup-id work_mode.sh
 
+# Night light: runs for the whole session, schedule in ~/.config/redshift/redshift.conf
+exec --no-startup-id redshift
 bindsym $mod+Shift+y exec --no-startup-id toggle-redshift
 
 # Brightness control
