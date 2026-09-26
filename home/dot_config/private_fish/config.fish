@@ -80,6 +80,15 @@ function fish_title
   end
 end
 
+# Claude Code: individual account (default)
+function claude --description 'Claude Code (individual account)'
+    CLAUDE_CONFIG_DIR=$HOME/.claude-personal command claude $argv
+end
+
+# Claude Code: team account (default ~/.claude + ~/.claude.json)
+function claude-team --description 'Claude Code (team account)'
+    env -u CLAUDE_CONFIG_DIR claude $argv
+end
 
 ## LS
 alias ls='lsd'
