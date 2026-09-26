@@ -1,44 +1,32 @@
 #!/bin/bash
-CONFIG_FILE="$HOME/.config/i3/dynamic_workspaces.conf"
-TMP_FILE="$(mktemp)"
+# Assign workspaces to the active monitors (contract: groups.sh), write the
+# assignments to dynamic_workspaces.conf and reload i3 if they changed.
+#
+#   dynamic_workspaces.sh              write + reload i3 on change (i3 exec_always)
+#   dynamic_workspaces.sh --no-reload  write only: run it before an i3 restart that
+#                                      follows a monitor change, and the restarted
+#                                      i3 moves existing workspaces to their monitors
+#   dynamic_workspaces.sh --dry-run    print the assignments, change nothing
+#
+# I3_OUTPUTS="A B" (see i3-outputs) fakes the monitors for a dry run.
+here=$(dirname "$(readlink -f "$0")")
+. "$here/groups.sh"
+conf=$here/dynamic_workspaces.conf
 
-# Get sorted outputs by X position
-mapfile -t outputs < <(xrandr --query | grep ' connected' | while read -r line; do
-    output=$(awk '{print $1}' <<< "$line")
-    x=$(grep -oP '\d+x\d+\+\K\d+' <<< "$line")
-    printf "%d %s\n" "$x" "$output"
-done | sort -n | awk '{print $2}')
+mapfile -t outputs < <("$HOME/.local/bin/i3-outputs") || exit 1
+n=${#outputs[@]}
+((n > 0)) || exit 1
 
-group_size=${#outputs[@]}
-total_workspaces=$((5 * group_size))  # 5 groups × monitor count
+new=$(for ((k = 1; k <= GROUP_COUNT * n; k++)); do
+    echo "workspace $k output ${outputs[(k - 1) % n]}"
+done)
 
-{
-    # Generate workspace variables
-    echo "# Workspace variables"
-    for ((ws=1; ws<=15; ws++)); do
-        echo "set \$ws$ws \"$ws\""
-    done
+case $1 in
+    --dry-run) printf '%s\n' "$new"; exit 0 ;;
+    --no-reload | "") ;;
+    *) echo "usage: dynamic_workspaces.sh [--no-reload|--dry-run]" >&2; exit 2 ;;
+esac
 
-    # Generate workspace assignments
-    echo -e "\n# Workspace output assignments"
-    for ((ws=1; ws<=total_workspaces; ws++)); do
-        monitor_index=$(( (ws - 1) % group_size ))
-        echo "workspace \$ws$ws output ${outputs[$monitor_index]}"
-    done
-
-    echo -e "\n# Workspace switches"
-    for ((ws=1; ws<=total_workspaces && ws<=10; ws++)); do
-        echo "bindsym \$mod+$(($ws % 10)) workspace number \$ws$ws"
-    done
-
-    echo -e "\n# Move focused container to workspace"
-    for ((ws=1; ws<=total_workspaces && ws <= 10; ws++)); do
-        echo "bindsym \$mod+Shift+$(($ws % 10)) move container to workspace number \$ws$ws"
-    done
-
-} > "$TMP_FILE"
-
-if ! cmp --silent "$TMP_FILE" "$CONFIG_FILE"; then
-    mv "$TMP_FILE" "$CONFIG_FILE"
-    i3-msg reload
-fi
+[[ -f $conf && $(<"$conf") == "$new" ]] && exit 0
+printf '%s\n' "$new" > "$conf"
+[[ $1 == --no-reload ]] || i3-msg -q reload
