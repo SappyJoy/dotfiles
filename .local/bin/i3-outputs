@@ -1,0 +1,35 @@
+#!/bin/sh
+# Print the active monitors left to right (then top to bottom), one name per line.
+#
+# Reads the RandR monitors: these are the names i3 and polybar use for outputs
+# (FILM included), and the list is current even before i3 has caught up with a
+# change, e.g. right after FILM was toggled.
+#
+#   i3-outputs            all active monitors
+#   i3-outputs --primary  the primary monitor, or the leftmost if none is primary
+#
+# I3_OUTPUTS="A B C" replaces the monitor list (left to right), for tests.
+
+# One "x y primary name" line per active monitor.
+monitors() {
+    if [ -n "$I3_OUTPUTS" ]; then
+        printf '%s\n' $I3_OUTPUTS | awk '{ print NR - 1, 0, 0, $1 }'
+        return
+    fi
+    # Lines look like " 0: +*DP-0 1200/324x1920/518+1200+0  DP-0"
+    xrandr --listactivemonitors | awk 'NR > 1 {
+        name = $2; primary = (name ~ /\*/); gsub(/^[+*]+/, "", name)
+        split($3, g, /[\/x+]/)          # width mm height mm x y
+        print g[5], g[6], primary, name
+    }'
+}
+
+sorted=$(monitors | sort -k1,1n -k2,2n)
+[ -n "$sorted" ] || { echo "i3-outputs: no active monitors" >&2; exit 1; }
+
+case $1 in
+    --primary) printf '%s\n' "$sorted" | awk 'NR == 1 { first = $4 } $3 == 1 && p == "" { p = $4 }
+                                               END { print (p != "" ? p : first) }' ;;
+    "") printf '%s\n' "$sorted" | awk '{ print $4 }' ;;
+    *) echo "usage: i3-outputs [--primary]" >&2; exit 2 ;;
+esac
