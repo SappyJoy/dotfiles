@@ -62,6 +62,8 @@ exec --no-startup-id "command -v autorandr >/dev/null && autorandr --change; i3-
 default_orientation horizontal
 # The bar, again on every restart (re-spanning FILM restarts i3)
 exec_always --no-startup-id ~/.config/polybar/launch.sh
+# Keep column edges on the monitor borders (a restart replaces the old watcher)
+exec_always --no-startup-id ~/.local/bin/film-snap i3-watch
 
 # Re-span FILM, e.g. after plugging in a monitor
 bindsym $mod+Shift+f exec --no-startup-id film_mode.sh

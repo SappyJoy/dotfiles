@@ -1,0 +1,4 @@
+#!/bin/sh
+# Launcher for ~/.local/lib/film_snap: keeps i3 and tmux column edges on the
+# physical monitor borders. `film-snap --help` lists the commands.
+PYTHONPATH="$HOME/.local/lib${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m film_snap "$@"
