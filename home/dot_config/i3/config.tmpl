@@ -258,7 +258,8 @@ bindsym $mod+r mode "resize"
 # keymap
 # exec --no-startup-id setxkbmap -layout "us,ru,us" -variant ",,colemak" -option "grp:alt_shift_toggle,caps:backspace"
 # exec --no-startup-id setxkbmap us,ru -option 'grp:alt_shift_toggle,caps:super'
-exec --no-startup-id setxkbmap -layout "us,ru" -variant "colemak_dh_ortho," -option "grp:alt_shift_toggle"
+# only where the system config doesn't already set it (arch sets it in xorg.conf.d)
+exec --no-startup-id sh -c 'setxkbmap -query | grep -q colemak_dh_ortho || setxkbmap -layout "us,ru" -variant "colemak_dh_ortho," -option "grp:alt_shift_toggle"'
 # exec --no-startup-id setxkbmap -layout us,ru -variant colemak_dh, -option 'grp:alt_shift_toggle,caps:backspace'
 exec --no-startup-id xset r 66
 
