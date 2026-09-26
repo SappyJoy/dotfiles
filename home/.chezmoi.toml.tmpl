@@ -2,6 +2,12 @@
 {{- $desktop := promptBoolOnce . "desktop" "Desktop (X11 + i3)" (ne (lookPath "i3") "") -}}
 {{- $personal := promptBoolOnce . "personal" "Own machine (secrets)" false -}}
 
+# Secrets: age. The private key is copied to each own machine by hand, never committed.
+encryption = "age"
+[age]
+    identity = "~/.config/chezmoi/key.txt"
+    recipient = "age14tj92lytp4vlfnrx0qzkcnyjaqgxer4nxxg0dzywfqwazzdzr5gshv2jyj"
+
 [data]
     desktop = {{ $desktop }}
     personal = {{ $personal }}

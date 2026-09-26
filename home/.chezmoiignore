@@ -36,3 +36,9 @@
 # arch only (see the i3 config template)
 .local/bin/toggle-throne
 {{- end }}
+
+{{ if not .personal -}}
+# secrets: only on own machines, which hold the age key
+.config/fish/private.fish
+.ssh/config
+{{- end }}
