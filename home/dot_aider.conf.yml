@@ -18,7 +18,7 @@
 # Main model:
 
 ## Specify the model to use for the main chat
-model: openrouter/google/gemini-2.5-pro-exp-03-25:free
+model: gemini/gemini-3-flash-preview
 
 ########################
 # API Keys and settings:
@@ -219,16 +219,16 @@ code-theme: default
 #subtree-only: false
 
 ## Enable/disable auto commit of LLM changes (default: True)
-#auto-commits: true
+auto-commits: false
 
 ## Enable/disable commits when repo is found dirty (default: True)
 #dirty-commits: true
 
 ## Attribute aider code changes in the git author name (default: True)
-#attribute-author: true
+attribute-author: false
 
 ## Attribute aider commits in the git committer name (default: True)
-#attribute-committer: true
+attribute-committer: false
 
 ## Prefix commit messages with 'aider: ' if aider authored the changes (default: False)
 #attribute-commit-message-author: false
@@ -237,7 +237,7 @@ code-theme: default
 #attribute-commit-message-committer: false
 
 ## Enable/disable git pre-commit hooks with --no-verify (default: False)
-#git-commit-verify: false
+git-commit-verify: true
 
 ## Commit all pending changes with a suitable commit message, then exit
 #commit: false
@@ -252,7 +252,7 @@ code-theme: default
 #skip-sanity-check-repo: false
 
 ## Enable/disable watching files for ai coding comments (default: False)
-watch-files: true
+watch-files: false
 
 ########################
 # Fixing and committing:
@@ -402,7 +402,7 @@ watch-files: true
 #env-file: .env
 
 ## Enable/disable suggesting shell commands (default: True)
-#suggest-shell-commands: true
+suggest-shell-commands: false
 
 ## Enable/disable fancy input with history and completion (default: True)
 #fancy-input: true
