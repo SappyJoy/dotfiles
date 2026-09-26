@@ -2,3 +2,8 @@
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
+# JetBrains Toolbox scripts, only where Toolbox is installed
+if [ -d "$HOME/.local/share/JetBrains/Toolbox/scripts" ]; then
+    export PATH="$PATH:$HOME/.local/share/JetBrains/Toolbox/scripts"
+fi
