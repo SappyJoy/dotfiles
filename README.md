@@ -83,7 +83,10 @@ over with `chezmoi merge`.
 - `home/.chezmoiignore`: what each kind of machine skips
 - `home/.chezmoiexternal.toml`: tmux plugin manager (tpm)
 - `home/dot_config/tools/tools.tsv`: the tool list behind `tools-check`
-- `tests/`: `sh tests/tools-check.sh`
+- `tests/`:
+  - `sh tests/tools-check.sh`
+  - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a non-root user in
+    clean Ubuntu containers (docker; default `ubuntu:20.04` and `ubuntu:24.04`)
 
 ## Moving a machine off the old bare repo
 

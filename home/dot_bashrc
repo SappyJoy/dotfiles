@@ -704,9 +704,16 @@ function __setprompt
 	PS4='\[${DARKGRAY}\]+\[${NOCOLOR}\] '
 }
 PROMPT_COMMAND='__setprompt'
-. "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 # Claude Code runs its commands through this file: give it plain commands, no aliases
 if [ -n "$CLAUDECODE" ]; then
 	unalias -a
+fi
+
+# Where fish isn't the login shell (a fish from mise lives in ~, so no chsh), an
+# interactive bash hands over to fish. Typing `bash` in fish still gives bash.
+if [[ $- == *i* ]] && [ -z "$CLAUDECODE" ] && [ "${SHELL##*/}" != fish ] &&
+	[ "$(cat /proc/$PPID/comm 2>/dev/null)" != fish ] && command -v fish >/dev/null; then
+	exec fish
 fi
