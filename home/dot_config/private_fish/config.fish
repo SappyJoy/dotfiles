@@ -17,5 +17,8 @@ set -g fish_key_bindings fish_default_key_bindings
 if status is-interactive
     set -g fish_greeting
     fish_config theme choose sap
-    command -q zoxide; and zoxide init fish | source
+    # zoxide as cd: a path works as before, `cd foo` jumps to the most used dir
+    # matching foo, `cdi` picks one with fzf. fish's cd (dir history, cd -) stays
+    # underneath. Abbreviations in abbr.fish turn z/zi into cd/cdi.
+    command -q zoxide; and zoxide init fish --cmd cd | source
 end

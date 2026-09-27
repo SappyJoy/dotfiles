@@ -20,6 +20,10 @@ abbr -a gd chezmoi git --
 abbr -a lgd lazygit -p ~/.local/share/chezmoi
 abbr -a vd chezmoi edit --apply
 
+# directories: zoxide is cd (config.fish); z and zi from the old habit
+abbr -a z cd
+abbr -a zi cdi
+
 # files
 abbr -a r ranger
 abbr -a d dir2md
