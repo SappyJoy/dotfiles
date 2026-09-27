@@ -2,7 +2,6 @@
 
 {{ if not .desktop -}}
 # X11 + i3 stack
-.config/alacritty/**
 .config/autorandr/**
 .config/bspwm/**
 .config/greenclip.toml
