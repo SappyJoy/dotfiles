@@ -22,7 +22,6 @@ btop	core	1.4.7	btop --version	mise aqua:aristocratos/btop
 ranger	core	1.9.4	ranger --version	mise pipx:ranger-fm
 jq	core	1.8.2	jq --version	mise aqua:jqlang/jq
 tldr	core	1.9.0	tldr --version	mise aqua:tealdeer-rs/tealdeer
-direnv	core	2.37.1	direnv version	mise aqua:direnv/direnv
 chezmoi	core	2.72.2	chezmoi --version	sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
 age	core	1.3.2	age --version	mise aqua:FiloSottile/age
 bob	dev	4.1.7	bob --version	mise aqua:MordechaiHadad/bob
