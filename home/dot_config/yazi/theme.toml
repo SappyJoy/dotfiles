@@ -1,21 +1,30 @@
 # yazi colors: only what differs from yazi's theme. Every color is one of the
-# terminal's 16, so kitty's theme (theme-switcher: Ayu light or mirage) decides.
+# terminal's 16 or its text color, so kitty's theme (theme-switcher: Ayu light or
+# mirage) decides. Ayu light's ANSI black (#000000) and dark gray (#323232) look wrong
+# on its light background, so neither serves as a background or a line color.
 
 [mgr]
-# yazi's "gray" is ANSI 7, which is white in Ayu light: the borders vanished there.
-border_style = { fg = "darkgray" }
+# Lines in the text color, dimmed: kitty fades dim text toward the background.
+border_style = { dim = true }
 
-# The status bar and tabs put blue text on ANSI 7, which is unreadable in Ayu mirage
-# (light blue on light gray). Here: black on the mode color, and the mode color on
-# black, readable in both themes.
+# A flat status bar: only the mode tag and the position are colored blocks. Size and
+# percentage are plain colored text, so the rounded caps go (a cap takes its color
+# from the block next to it).
+[status]
+sep_left  = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+perm_sep  = { dim = true }
+
 [mode]
 normal_main = { fg = "black", bg = "blue", bold = true }
-normal_alt  = { fg = "blue", bg = "black" }
+normal_alt  = { fg = "blue" }
 select_main = { fg = "black", bg = "red", bold = true }
-select_alt  = { fg = "red", bg = "black" }
+select_alt  = { fg = "red" }
 unset_main  = { fg = "black", bg = "red", bold = true }
-unset_alt   = { fg = "red", bg = "black" }
+unset_alt   = { fg = "red" }
 
 [tabs]
-active   = { fg = "black", bg = "blue", bold = true }
-inactive = { fg = "blue", bg = "black" }
+active    = { fg = "black", bg = "blue", bold = true }
+inactive  = { fg = "blue" }
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
