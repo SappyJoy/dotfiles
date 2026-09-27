@@ -1,5 +1,5 @@
 # lazygit: only the settings that differ from its defaults (`lazygit --config` prints
-# them all). The dotfiles repo adds a key of its own in its .lazygit.yml.
+# them all).
 gui:
   mainPanelSplitMode: horizontal   # staged and unstaged diffs stacked, not side by side
   nerdFontsVersion: "3"            # file and branch icons (JetBrainsMono NF)
@@ -18,3 +18,26 @@ keybinding:
   commits:
     moveDownCommit: [J, <alt-down>]
     moveUpCommit: [K, <alt-up>]
+
+customCommands:
+  # U in the dotfiles repo: apply the chezmoi source to ~ (after a pull or a merge
+  # there), only from master and only after showing the diff. It refuses in other
+  # repos. (Global because lazygit reads repo config only from .git/lazygit.yml,
+  # which can't be tracked.)
+  - key: U
+    context: global
+    description: "chezmoi: show the diff, then apply to ~ (dotfiles repo only)"
+    output: terminal
+    command: |
+      if [ "$(git rev-parse --show-toplevel)" != "$(chezmoi git -- rev-parse --show-toplevel)" ]; then
+        echo "Not the chezmoi source repo."
+        exit 1
+      fi
+      if [ "$(git branch --show-current)" != master ]; then
+        echo "chezmoi apply runs only from master."
+        exit 1
+      fi
+      chezmoi diff
+      printf '\nApply this to ~? [y/N] '
+      read answer
+      [ "$answer" = y ] && chezmoi apply && echo Applied.
