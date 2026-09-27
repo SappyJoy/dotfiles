@@ -5,6 +5,13 @@
     url = "https://github.com/niksingh710/minimal-tmux-status"
     refreshPeriod = "168h"
 
+# yazi's piper previewer (yazi.toml: notebook previews). Pinned: a plugin states the
+# oldest yazi it runs on (`@since` in main.lua), so bump it together with yazi.
+[".config/yazi/plugins/piper.yazi/main.lua"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/yazi-rs/plugins/f703392df78b5fba5e8f9f1ad0b1cb6d3def9736/piper.yazi/main.lua"
+    checksum.sha256 = "4bb1a91a4a9aa0019e7a9bf05aa7ea7070add9d6f42590e1ec7875de978077fc"
+
 {{- /* mise, which installs the tools.tsv rows "mise <tool>". Not on arch (pacman).
        To upgrade: new version and checksums from the release's SHASUMS256.txt. */}}
 {{- if ne .chezmoi.osRelease.id "arch" }}

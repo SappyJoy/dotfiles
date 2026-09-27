@@ -1,0 +1,13 @@
+# yazi: only the settings that differ from yazi's defaults. The rest, with docs:
+# https://yazi-rs.github.io/docs/configuration/yazi (keys: `~` or F1 inside yazi).
+# Files open through xdg-open, so the system defaults (xdg-mime) decide the app.
+
+[mgr]
+# Each file's size on its row, as ranger shows it.
+linemode = "size"
+
+# Notebooks as Markdown, as ranger's scope.sh showed them. piper (a chezmoi external)
+# runs the command; without jupyter (e.g. on a work PC) the raw JSON shows instead.
+[[plugin.prepend_previewers]]
+url = "*.ipynb"
+run = 'piper -- if command -v jupyter >/dev/null; then jupyter nbconvert --to markdown --stdout "$1" 2>/dev/null | bat -p -l md --color=always; else bat -p -l json --color=always "$1"; fi'
