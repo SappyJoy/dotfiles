@@ -4,6 +4,8 @@ set -gx EDITOR nvim
 # light/dark switch (theme-switcher) carries over, fzf previews included.
 set -gx BAT_THEME ansi
 set -gx FZF_DEFAULT_OPTS --color=16
+# Colored man pages: col strips man's overstrike formatting, bat highlights it
+command -q bat; and command -q col; and set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 set -gx GTEST_COLOR 1
 set -gx CRYPTOGRAPHY_OPENSSL_NO_LEGACY 1
 test -d ~/Android/Sdk; and set -gx ANDROID_HOME ~/Android/Sdk
