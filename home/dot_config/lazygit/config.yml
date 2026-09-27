@@ -1,8 +1,20 @@
+# lazygit: only the settings that differ from its defaults (`lazygit --config` prints
+# them all). The dotfiles repo adds a key of its own in its .lazygit.yml.
 gui:
-  mainPanelSplitMode: horizontal
+  mainPanelSplitMode: horizontal   # staged and unstaged diffs stacked, not side by side
+  nerdFontsVersion: "3"            # file and branch icons (JetBrainsMono NF)
+git:
+  # The diff panel: delta (also git's pager, see .gitconfig) or plain git; | switches.
+  # Plain text where delta isn't installed.
+  diffRenderers:
+    - name: delta
+      command: command -v delta >/dev/null && exec delta --paging=never || exec cat
+      colorArg: always
+    - name: git
+      type: rawGit
 os:
-  edit: "nvim {{filename}}"
+  editPreset: nvim                 # e opens the file in nvim, at the line from a diff
 keybinding:
   commits:
-    moveDownCommit: J
-    moveUpCommit: K
+    moveDownCommit: [J, <alt-down>]
+    moveUpCommit: [K, <alt-up>]
