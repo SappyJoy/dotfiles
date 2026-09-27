@@ -53,6 +53,9 @@ scp arch:.config/chezmoi/key.txt ~/.config/chezmoi/key.txt
 chmod 600 ~/.config/chezmoi/key.txt
 ```
 
+Where arch isn't reachable, copy it from the offline copy instead, e.g.
+`cp /media/$USER/STICK/chezmoi-age-key.txt ~/.config/chezmoi/key.txt`.
+
 Keep an offline copy. Without the key the encrypted files can't be read. Everything in
 them can be regenerated (API keys, ssh hosts), but it's tedious.
 
@@ -142,21 +145,59 @@ over with `chezmoi merge`.
 ## Moving a machine off the old bare repo
 
 Until 2026-09 these files lived in the bare repos `~/.dotfiles` and `~/.secrets`, with
-`$HOME` as the work tree. To switch a machine over:
+`$HOME` as the work tree. To switch a machine over (every block works in fish and in
+bash; keep the output):
 
-1. Save its local changes:
+1. What the machine is (read-only):
    ```sh
-   git --git-dir=$HOME/.dotfiles --work-tree=$HOME diff > ~/dotfiles-local.patch
-   git --git-dir=$HOME/.secrets --work-tree=$HOME diff > ~/secrets-local.patch
+   sh -c '
+   v() { command -v "$1" >/dev/null && "$@" 2>&1 | head -n 1 || echo -; }
+   . /etc/os-release
+   echo "host:    $(hostname)"
+   echo "os:      $PRETTY_NAME ($(uname -m))"
+   echo "glibc:   $(ldd --version 2>&1 | head -n 1 | grep -oE "[0-9]+[.][0-9]+$")"
+   grep -qi microsoft /proc/version && echo "wsl:     yes" || echo "wsl:     no"
+   echo "shell:   $SHELL"
+   echo "groups:  $(id -Gn)"
+   echo "i3:      $(v i3 --version)"
+   echo "fish:    $(v fish --version)"
+   echo "tmux:    $(v tmux -V)"
+   echo "git:     $(v git --version)"
+   echo "nvim:    $(v nvim --version)"
+   curl -fsSI https://github.com >/dev/null 2>&1 && echo "github:  ok" || echo "github:  blocked"
+   for r in .dotfiles .secrets; do
+       [ -d "$HOME/$r" ] && echo "$r: $(git --git-dir="$HOME/$r" --work-tree="$HOME" status --porcelain -uno | wc -l) changed"
+   done
+   true
+   '
    ```
-2. Own machine: copy the age key (above).
-3. If `~/.tmux/plugins/tpm/.git` is a file, the checkout points into `~/.dotfiles`.
-   Move `~/.tmux/plugins/tpm` aside so chezmoi clones it fresh.
-4. Run `chezmoi init SappyJoy` (no `--apply`), then `chezmoi diff`: this is what apply
-   would change. Carry wanted local bits into the source (rules above) and commit.
-5. `chezmoi apply`.
-6. Move the old repos aside:
+2. If `shell:` is a fish older than 4 (Ubuntu 20.04's apt has 3.1), make bash the
+   login shell. Its `.bashrc` then hands over to mise's fish:
    ```sh
-   mv ~/.dotfiles ~/.dotfiles.bak-$(date +%Y%m%d-%H%M%S)
-   mv ~/.secrets ~/.secrets.bak-$(date +%Y%m%d-%H%M%S)
+   chsh -s /bin/bash
+   ```
+3. Save the old repos' local changes, and move a tpm checkout that points into them
+   aside:
+   ```sh
+   sh -c 'cd ~ && for r in .dotfiles .secrets; do [ -d $r ] && git --git-dir=$HOME/$r --work-tree=$HOME diff > ~/$r-local.patch; done; [ -f ~/.tmux/plugins/tpm/.git ] && mv ~/.tmux/plugins/tpm ~/.tmux/plugins/tpm.old; true'
+   ```
+4. Own machine with secrets only: copy the age key (see [The age key](#the-age-key-own-machines-only)).
+5. Install chezmoi and fetch the source without applying. Answer "Own machine
+   (secrets)" yes only with the key from step 4:
+   ```sh
+   sh -c 'sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init SappyJoy'
+   ~/.local/bin/chezmoi diff
+   ```
+   Compare with `~/.dotfiles-local.patch` and carry wanted local bits into the source
+   ([rules above](#per-machine-differences)).
+6. Apply. mise installs the tools (a minute or two); on a desktop, sudo asks for the
+   apt packages:
+   ```sh
+   ~/.local/bin/chezmoi apply
+   ```
+7. Move the old repos aside, open a new terminal or SSH session (it lands in fish 4)
+   and check:
+   ```sh
+   sh -c 'ts=$(date +%Y%m%d-%H%M%S); for r in .dotfiles .secrets; do [ -d ~/$r ] && mv ~/$r ~/$r.bak-$ts; done; true'
+   fish --version; tools-check --missing
    ```
