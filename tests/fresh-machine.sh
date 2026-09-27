@@ -15,6 +15,7 @@ if [ "${1:-}" = --inside ]; then
         if "$@"; then echo "ok   $name"; else echo "FAIL $name"; fails=$((fails + 1)); fi
     }
     has() { printf '%s\n' "$out" | grep -qE "$1"; }
+    hasnt() { ! has "$1"; }
 
     mkdir -p ~/.local/share ~/.local/bin
     cp -r /src ~/.local/share/chezmoi
@@ -65,6 +66,10 @@ if [ "${1:-}" = --inside ]; then
     check "tmux is the pinned 3.7c" has '^tmux 3\.7c$'
     check "tmux takes allow-passthrough (>= 3.3)" bash -lc \
         'tmux -L t -f /dev/null new-session -d \; set -g allow-passthrough on \; kill-server'
+    # The real config, with its status bar plugin from the chezmoi external
+    out=$(bash -lc 'tmux -L c new-session -d && tmux -L c show-messages; tmux -L c show -gv status-left; tmux -L c kill-server' 2>&1)
+    check "tmux loads its config and status bar" has 'client_prefix'
+    check "tmux config loads without errors" hasnt 'error|unknown|invalid'
     check "nvim runs on this glibc" bash -lc 'nvim --clean --headless +q'
     # Without the user config, so lazy.nvim doesn't install plugins and rewrite lazy-lock.json
     out=$(bash -lc "nvim --clean --headless --cmd \"lua vim.g.python3_host_prog = vim.fn.stdpath('data') .. '/venv/bin/python'\" +'py3 import pynvim, jupyter_client' +qa" 2>&1)
