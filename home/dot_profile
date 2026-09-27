@@ -1,8 +1,20 @@
 # Login environment for sh-compatible shells: bash (via ~/.bash_profile) and ly's
 # session script. Keep every line guarded: a failing command here breaks the ly login.
 
+# Tool dirs outside the system paths, where present: npm's global prefix (~/.npmrc),
+# and adb from the Android SDK, in front of pacman's android-tools so its version
+# matches Android Studio's adb server.
+for dir in "$HOME/.npm-global/bin" "$HOME/Android/Sdk/platform-tools"; do
+    if [ -d "$dir" ]; then
+        case ":$PATH:" in
+            *":$dir:"*) ;;
+            *) PATH="$dir:$PATH" ;;
+        esac
+    fi
+done
+
 # ~/.local/bin (chezmoi, tools-check, tracked scripts), then the mise shims (tools
-# pinned in tools.tsv, non-arch machines), both in front of the system paths.
+# pinned in tools.tsv, non-arch machines), both in front of the rest.
 if [ -d "$HOME/.local/share/mise/shims" ]; then
     case ":$PATH:" in
         *":$HOME/.local/share/mise/shims:"*) ;;
@@ -19,5 +31,8 @@ export PATH
 
 # JetBrains Toolbox scripts, only where Toolbox is installed
 if [ -d "$HOME/.local/share/JetBrains/Toolbox/scripts" ]; then
-    export PATH="$PATH:$HOME/.local/share/JetBrains/Toolbox/scripts"
+    case ":$PATH:" in
+        *":$HOME/.local/share/JetBrains/Toolbox/scripts:"*) ;;
+        *) export PATH="$PATH:$HOME/.local/share/JetBrains/Toolbox/scripts" ;;
+    esac
 fi
