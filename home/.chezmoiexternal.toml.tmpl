@@ -1,0 +1,23 @@
+# tmux plugin manager; `chezmoi apply -R` (or update) pulls new commits weekly.
+[".tmux/plugins/tpm"]
+    type = "git-repo"
+    url = "https://github.com/tmux-plugins/tpm"
+    refreshPeriod = "168h"
+
+{{- /* mise, which installs the tools.tsv rows "mise <tool>". Not on arch (pacman).
+       To upgrade: new version and checksums from the release's SHASUMS256.txt. */}}
+{{- if ne .chezmoi.osRelease.id "arch" }}
+{{-   $version := "2026.9.14" }}
+{{-   $sha256 := dict
+        "x64" "c79d39e059598b6d16a0987d0e11cb8cdde9a40aab30f2cf39cf9f9390e20f22"
+        "arm64" "c2f0ebe89cccc12ac4977b2e491d07c000dd09615dbc6a47f47084a8e8c1f9e9" }}
+{{-   $arch := get (dict "amd64" "x64" "arm64" "arm64") .chezmoi.arch }}
+
+# mise {{ $version }}, the static (musl) build
+[".local/bin/mise"]
+    type = "archive-file"
+    url = "https://github.com/jdx/mise/releases/download/v{{ $version }}/mise-v{{ $version }}-linux-{{ $arch }}-musl.tar.gz"
+    path = "mise/bin/mise"
+    executable = true
+    checksum.sha256 = "{{ get $sha256 $arch }}"
+{{- end }}

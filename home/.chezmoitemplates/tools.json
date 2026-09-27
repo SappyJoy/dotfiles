@@ -1,0 +1,26 @@
+{{- /*
+  tools.tsv as a JSON list, for the templates that install tools. One object per row:
+  {"name", "group", "version", "method", "package"}. method is the first word of the
+  install column when it's "mise" or "apt" (package: the rest), else "".
+  Rows of group "desktop" are left out unless .desktop.
+  Use: {{ range includeTemplate "tools.json" . | fromJson }}…{{ end }}
+*/ -}}
+{{- $rows := list -}}
+{{- range $line := include "dot_config/tools/tools.tsv" | splitList "\n" -}}
+{{-   if and $line (not (hasPrefix "#" $line)) -}}
+{{-     $f := splitList "\t" $line -}}
+{{-     $install := index $f 4 -}}
+{{-     $method := "" -}}
+{{-     $package := "" -}}
+{{-     range $m := list "mise" "apt" -}}
+{{-       if hasPrefix (printf "%s " $m) $install -}}
+{{-         $method = $m -}}
+{{-         $package = trimPrefix (printf "%s " $m) $install -}}
+{{-       end -}}
+{{-     end -}}
+{{-     if or (ne (index $f 1) "desktop") $.desktop -}}
+{{-       $rows = append $rows (dict "name" (index $f 0) "group" (index $f 1) "version" (index $f 2) "method" $method "package" $package) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- toJson $rows -}}

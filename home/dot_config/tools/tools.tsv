@@ -3,45 +3,49 @@
 # group: core (any machine), dev, desktop (skipped without a display).
 # version: the one in use on arch; `tools-check --record` updates it. "-": any.
 # check: prints the version. "-": presence only.
-fish	core	4.9.3	fish --version	github.com/fish-shell/fish-shell/releases (static Linux build)
-tmux	core	3.7c	tmux -V	apt/pacman: tmux
-nvim	core	0.11.5	nvim --version	bob install stable, or github.com/neovim/neovim/releases
-git	core	2.55.0	git --version	apt/pacman: git
-fzf	core	0.74.4	fzf --version	github.com/junegunn/fzf/releases
-rg	core	15.2.0	rg --version	github.com/BurntSushi/ripgrep/releases
-fd	core	10.5.0	fd --version	github.com/sharkdp/fd/releases (apt: fd-find, binary fdfind)
-bat	core	0.26.1	bat --version	github.com/sharkdp/bat/releases (apt: bat, binary batcat)
-lsd	core	1.2.0	lsd --version	github.com/lsd-rs/lsd/releases
-zoxide	core	0.10.0	zoxide --version	github.com/ajeetdsouza/zoxide/releases
-lazygit	core	0.65.1	lazygit --version	github.com/jesseduffield/lazygit/releases
-btop	core	1.4.7	btop --version	github.com/aristocratos/btop/releases
-ranger	core	1.9.4	ranger --version	uv tool install ranger-fm
-jq	core	1.8.2	jq --version	github.com/jqlang/jq/releases
-direnv	core	2.37.1	direnv version	github.com/direnv/direnv/releases
+# install: how a machine other than arch gets it (arch uses pacman). The first word:
+#   mise <tool>: installed by chezmoi apply through mise, pinned to `version`
+#   apt <package>: installed by chezmoi apply with sudo, where there is sudo
+#   anything else: a hint for installing by hand
+fish	core	4.9.3	fish --version	mise github:fish-shell/fish-shell
+tmux	core	3.7c	tmux -V	mise aqua:tmux/tmux-builds
+nvim	core	0.11.5	nvim --version	mise github:neovim/neovim-releases
+git	core	2.55.0	git --version	apt git
+fzf	core	0.74.4	fzf --version	mise aqua:junegunn/fzf
+rg	core	15.2.0	rg --version	mise aqua:BurntSushi/ripgrep
+fd	core	10.5.0	fd --version	mise aqua:sharkdp/fd
+bat	core	0.26.1	bat --version	mise aqua:sharkdp/bat
+lsd	core	1.2.0	lsd --version	mise aqua:lsd-rs/lsd
+zoxide	core	0.10.0	zoxide --version	mise aqua:ajeetdsouza/zoxide
+lazygit	core	0.65.1	lazygit --version	mise aqua:jesseduffield/lazygit
+btop	core	1.4.7	btop --version	mise aqua:aristocratos/btop
+ranger	core	1.9.4	ranger --version	mise pipx:ranger-fm
+jq	core	1.8.2	jq --version	mise aqua:jqlang/jq
+direnv	core	2.37.1	direnv version	mise aqua:direnv/direnv
 chezmoi	core	2.72.2	chezmoi --version	sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
-age	core	1.3.2	age --version	github.com/FiloSottile/age/releases
-bob	dev	4.1.7	bob --version	github.com/MordechaiHadad/bob/releases
-uv	dev	0.12.18	uv --version	curl -LsSf https://astral.sh/uv/install.sh | sh
+age	core	1.3.2	age --version	mise aqua:FiloSottile/age
+bob	dev	4.1.7	bob --version	mise aqua:MordechaiHadad/bob
+uv	dev	0.12.18	uv --version	mise aqua:astral-sh/uv
 python3	dev	3.14.7	python3 --version	uv python install
 node	dev	26.10.0	node --version	fish: nvm install lts (nvm.fish)
 go	dev	1.27.1	go version	go.dev/dl
 rustc	dev	1.91.1	rustc --version	curl https://sh.rustup.rs -sSf | sh
 java	dev	17.0.10	java -version	sdk install java (sdkman.io)
 docker	dev	29.8.1	docker --version	docs.docker.com/engine/install
-lazydocker	dev	0.25.2	lazydocker --version	github.com/jesseduffield/lazydocker/releases
-gh	dev	2.101.0	gh --version	github.com/cli/cli/releases
-aider	dev	0.86.2	aider --version	uv tool install aider-chat
+lazydocker	dev	0.25.2	lazydocker --version	mise aqua:jesseduffield/lazydocker
+gh	dev	2.101.0	gh --version	mise aqua:cli/cli
+aider	dev	0.86.2	aider --version	mise pipx:aider-chat[uvx_args=--python 3.12]
 claude	dev	2.1.282	claude --version	curl -fsSL https://claude.ai/install.sh | bash
-i3	desktop	4.25.1	i3 --version	apt/pacman: i3-wm
-polybar	desktop	3.7.2	polybar --version	apt/pacman: polybar
-picom	desktop	13	picom --version	apt/pacman: picom
-rofi	desktop	2.0.0	rofi -version	apt/pacman: rofi
-dunst	desktop	1.13.2	dunst --version	apt/pacman: dunst
+i3	desktop	4.25.1	i3 --version	apt i3-wm
+polybar	desktop	3.7.2	polybar --version	apt polybar
+picom	desktop	13	picom --version	apt picom
+rofi	desktop	2.0.0	rofi -version	apt rofi
+dunst	desktop	1.13.2	dunst --version	apt dunst
 kitty	desktop	0.49.1	kitty --version	sw.kovidgoyal.net/kitty/binary
-redshift	desktop	1.12	redshift -V	apt/pacman: redshift
-flameshot	desktop	14.0.0	flameshot --version	apt/pacman: flameshot
-greenclip	desktop	4.2	greenclip --version	github.com/erebe/greenclip/releases
-autorandr	desktop	1.15	autorandr --version	apt/pacman: autorandr
-xclip	desktop	0.13	xclip -version	apt/pacman: xclip
-i3lock	desktop	2.13	i3lock --version	apt/pacman: i3lock
-nitrogen	desktop	-	-	apt/pacman: nitrogen
+redshift	desktop	1.12	redshift -V	apt redshift
+flameshot	desktop	14.0.0	flameshot --version	apt flameshot
+greenclip	desktop	4.2	greenclip --version	mise github:erebe/greenclip
+autorandr	desktop	1.15	autorandr --version	apt autorandr
+xclip	desktop	0.13	xclip -version	apt xclip
+i3lock	desktop	2.13	i3lock --version	apt i3lock
+nitrogen	desktop	-	-	apt nitrogen

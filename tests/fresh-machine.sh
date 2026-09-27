@@ -26,10 +26,11 @@ if [ "${1:-}" = --inside ]; then
     check "init succeeds" [ $? = 0 ]
     out=$($cz apply 2>&1)
     code=$?
-    [ -n "$out" ] && printf '%s\n' "$out" | sed 's/^/     apply: /'
+    # Show all but mise's progress lines; its errors and warnings stay.
+    [ -n "$out" ] && printf '%s\n' "$out" | grep -viE '^(mise|  )' | sed 's/^/     apply: /'
+    printf '%s\n' "$out" | grep -iE 'error|warn' | sed 's/^/     apply: /'
     check "apply succeeds" [ "$code" = 0 ]
-    # git's clone progress for the tpm external is the only expected output
-    check "apply prints nothing else" [ -z "$(printf '%s\n' "$out" | grep -v '^Cloning into ')" ]
+    check "apply prints no errors or warnings" [ -z "$(printf '%s\n' "$out" | grep -iE 'error|warn')" ]
     check "verify: the home matches the source" $cz verify
 
     out=$(bash -lc 'echo "$PATH"' 2>&1)
@@ -38,12 +39,25 @@ if [ "${1:-}" = --inside ]; then
     check "bash login: tools-check found" has "^$HOME/.local/bin/tools-check$"
     out=$(bash -lc 'true' 2>&1)
     check "bash login prints nothing" [ -z "$out" ]
-    out=$(printf 'echo "shell=${FISH_VERSION:+fish}${BASH_VERSION:+bash}"\n' | bash -li 2>/dev/null)
-    if command -v fish >/dev/null 2>&1 || [ -x ~/.local/share/mise/shims/fish ]; then
-        check "interactive bash hands over to fish" has '^shell=fish$'
-    else
-        check "interactive bash stays bash without fish" has '^shell=bash$'
-    fi
+    # The same line is valid in bash (prints "v=") and fish (prints its version).
+    out=$(printf 'echo "v=$FISH_VERSION"\n' | bash -li 2>/dev/null)
+    check "interactive bash hands over to fish" has '^v=4\.'
+
+    # Tools: every "mise" row of tools.tsv is installed at its pinned version.
+    out=$(bash -lc 'tools-check --missing' 2>&1)
+    printf '%s\n' "$out" | sed 's/^/     tools-check: /'
+    check "tools-check: no mise row missing or older" [ -z "$(printf '%s\n' "$out" | grep -E ' mise ')" ]
+    out=$(bash -lc 'tmux -V' 2>&1)
+    check "tmux is the pinned 3.7c" has '^tmux 3\.7c$'
+    check "tmux takes allow-passthrough (>= 3.3)" bash -lc \
+        'tmux -L t -f /dev/null new-session -d \; set -g allow-passthrough on \; kill-server'
+    check "nvim runs on this glibc" bash -lc 'nvim --clean --headless +q'
+    out=$(bash -lc 'command -v fish' 2>&1)
+    check "fish comes from mise" has "^$HOME/.local/share/mise/shims/fish$"
+
+    out=$($cz apply 2>&1)
+    [ -n "$out" ] && printf '%s\n' "$out" | sed 's/^/     apply again: /'
+    check "second apply prints nothing" [ -z "$out" ]
 
     [ $fails = 0 ] || exit 1
     exit 0
@@ -57,14 +71,14 @@ failed=
 
 for image in "$@"; do
     echo "== $image"
-    # Base image: what any work PC has (curl, git, certificates) and a plain user.
+    # Base image: what any work PC has (curl, git, certificates, apt lists) and a
+    # plain user.
     tag="dotfiles-test:$(printf '%s' "$image" | tr ':/' '--')"
     docker build -q -t "$tag" - >/dev/null <<EOF || { failed="$failed $image"; continue; }
 FROM $image
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates curl git \
- && rm -rf /var/lib/apt/lists/* \
  && useradd -m -s /bin/bash tester
 EOF
     docker run --rm -v "$src:/src:ro" -e GITHUB_TOKEN -u tester -w /home/tester \

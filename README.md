@@ -19,8 +19,12 @@ chezmoi asks two questions, once per machine:
 
 To change an answer later, run `chezmoi init --prompt`.
 
-Then `tools-check` lists the tools that are missing or older than on arch, with an
-install hint for each.
+On machines other than arch, the same `apply` also installs the tools (see
+[Tools](#tools)), so a fresh machine is ready when it finishes. There, an interactive
+bash hands over to fish: a fish in `~` can't be the login shell without root.
+
+`tools-check` lists what's still missing or older than on arch, with an install hint
+for each.
 
 ### The age key (own machines only)
 
@@ -52,6 +56,27 @@ Pull with `chezmoi update`, not in lazygit. If you do pull in lazygit, run
 `chezmoi apply` right after. `dots` leaves pulled changes alone, but a file that
 changed on both sides needs `chezmoi merge <file>`.
 
+## Tools
+
+`home/dot_config/tools/tools.tsv` lists the tools and the version arch runs. Its
+`install` column says how the other machines get each one, by the first word:
+
+| First word | Installed by | Where |
+|---|---|---|
+| `mise <tool>` | `chezmoi apply`, through mise, pinned to the list's version | every machine but arch; no root needed |
+| anything else | you, by hand: `tools-check` shows it as the hint | |
+
+- Keep the fleet in step: after upgrades on arch, `tools-check --record` and `dots`.
+  Then `chezmoi update` on another machine installs the new versions.
+- mise itself is a chezmoi external in `~/.local/bin/mise`, pinned in
+  `home/.chezmoiexternal.toml.tmpl`. To upgrade it, change the version and the two
+  checksums (from the release's `SHASUMS256.txt`).
+- `~/.config/mise/config.toml` is rendered from the list: edit the list, not the
+  config.
+- The tools run through mise's shims (`~/.local/share/mise/shims`); `.profile` and
+  fish's `conf.d/path.fish` put them on PATH.
+- arch installs its tools with pacman, so none of this runs there.
+
 ## Per-machine differences
 
 In order of preference:
@@ -81,10 +106,15 @@ over with `chezmoi merge`.
   - `*.tmpl`
 - `home/.chezmoi.toml.tmpl`: the prompts and the age settings
 - `home/.chezmoiignore`: what each kind of machine skips
-- `home/.chezmoiexternal.toml`: tmux plugin manager (tpm)
-- `home/dot_config/tools/tools.tsv`: the tool list behind `tools-check`
+- `home/.chezmoiexternal.toml.tmpl`: tmux plugin manager (tpm), and mise off arch
+- `home/dot_config/tools/tools.tsv`: the tool list behind `tools-check` and the
+  installs
+- `home/.chezmoitemplates/tools.json`: the list parsed, for the templates that install
+- `home/run_onchange_after_*`: install scripts; chezmoi runs one again when its input
+  changes
 - `tests/`:
   - `sh tests/tools-check.sh`
+  - `sh tests/render.sh`: the templates that read the tool list
   - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a non-root user in
     clean Ubuntu containers (docker; default `ubuntu:20.04` and `ubuntu:24.04`)
 

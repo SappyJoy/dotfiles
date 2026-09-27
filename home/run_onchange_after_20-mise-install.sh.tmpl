@@ -1,0 +1,11 @@
+{{- if ne .chezmoi.osRelease.id "arch" -}}
+#!/bin/sh
+# Install the tools pinned in ~/.config/mise/config.toml (the tools.tsv rows
+# "mise <tool>"), then drop versions nothing pins any more.
+# chezmoi runs this again whenever the pins change: {{ includeTemplate "dot_config/mise/config.toml.tmpl" . | sha256sum }}
+set -eu
+export MISE_YES=1
+mise=$HOME/.local/bin/mise
+"$mise" install
+"$mise" prune
+{{ end -}}
