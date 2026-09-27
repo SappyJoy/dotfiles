@@ -21,6 +21,7 @@ lazygit	core	0.65.1	lazygit --version	mise aqua:jesseduffield/lazygit
 delta	core	0.19.2	delta --version	mise github:dandavison/delta[asset_pattern=*linux-musl*]
 btop	core	1.4.7	btop --version	mise aqua:aristocratos/btop
 ranger	core	1.9.4	ranger --version	mise pipx:ranger-fm
+yazi	core	26.9.1	yazi --version	mise github:sxyazi/yazi[asset_pattern=*linux-musl.zip]
 jq	core	1.8.2	jq --version	mise aqua:jqlang/jq
 tldr	core	1.9.0	tldr --version	mise aqua:tealdeer-rs/tealdeer
 chezmoi	core	2.72.2	chezmoi --version	sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
