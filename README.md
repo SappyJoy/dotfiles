@@ -26,6 +26,22 @@ bash hands over to fish: a fish in `~` can't be the login shell without root.
 `tools-check` lists what's still missing or older than on arch, with an install hint
 for each.
 
+### Guest machines
+
+On someone else's machine (over SSH, no root), `guest.sh` installs the same setup
+without secrets or the desktop stack, and undoes it when you leave:
+
+```sh
+curl -fsLS https://raw.githubusercontent.com/SappyJoy/dotfiles/master/guest.sh | sh -s install
+sh ~/.local/share/chezmoi/guest.sh remove
+```
+
+- `install` backs up the files chezmoi would overwrite into `~/.guest-dotfiles`. Run
+  it again to update.
+- `remove` puts them back and deletes what chezmoi, mise, fisher and the tools
+  created, chezmoi included. Files you made yourself stay, and so do directories that
+  aren't empty.
+
 ### The age key (own machines only)
 
 The secrets are encrypted to one age key. It is never in this repo. Copy it before
@@ -118,6 +134,8 @@ over with `chezmoi merge`.
 - `tests/`:
   - `sh tests/tools-check.sh`
   - `sh tests/render.sh`: the templates that read the tool list
+  - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match
+    the one before
   - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a non-root user in
     clean Ubuntu containers (docker; default `ubuntu:20.04` and `ubuntu:24.04`)
 
