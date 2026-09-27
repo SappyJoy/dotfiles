@@ -1,6 +1,6 @@
 #
-# ~/.bash_profile
+# ~/.bash_profile: bash login shells read this file instead of ~/.profile
 #
 
+[[ -f ~/.profile ]] && . ~/.profile
 [[ -f ~/.bashrc ]] && . ~/.bashrc
-. "$HOME/.cargo/env"

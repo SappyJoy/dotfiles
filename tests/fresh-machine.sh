@@ -1,0 +1,78 @@
+#!/bin/sh
+# Fresh-machine test: apply this source (with uncommitted changes) in clean Ubuntu
+# containers, as a non-root user, the way a new machine gets it.
+# Run: sh tests/fresh-machine.sh [IMAGE...]   (default: ubuntu:20.04 ubuntu:24.04)
+# Needs docker and the network. GITHUB_TOKEN is passed through when set (GitHub API
+# rate limit), e.g. GITHUB_TOKEN=$(gh auth token) sh tests/fresh-machine.sh
+
+set -u
+
+# --- Inside the container, as the user "tester" -------------------------------------
+if [ "${1:-}" = --inside ]; then
+    fails=0
+    check() { # check NAME CONDITION...
+        name=$1; shift
+        if "$@"; then echo "ok   $name"; else echo "FAIL $name"; fails=$((fails + 1)); fi
+    }
+    has() { printf '%s\n' "$out" | grep -qE "$1"; }
+
+    mkdir -p ~/.local/share ~/.local/bin
+    cp -r /src ~/.local/share/chezmoi
+    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin >/dev/null 2>&1
+    cz=~/.local/bin/chezmoi
+
+    # --promptBool matches the prompt texts in home/.chezmoi.toml.tmpl
+    out=$($cz init --promptBool 'Desktop (X11 + i3)=false,Own machine (secrets)=false' 2>&1)
+    check "init succeeds" [ $? = 0 ]
+    out=$($cz apply 2>&1)
+    code=$?
+    [ -n "$out" ] && printf '%s\n' "$out" | sed 's/^/     apply: /'
+    check "apply succeeds" [ "$code" = 0 ]
+    # git's clone progress for the tpm external is the only expected output
+    check "apply prints nothing else" [ -z "$(printf '%s\n' "$out" | grep -v '^Cloning into ')" ]
+    check "verify: the home matches the source" $cz verify
+
+    out=$(bash -lc 'echo "$PATH"' 2>&1)
+    check "bash login: ~/.local/bin on PATH" has "(^|:)$HOME/.local/bin(:|$)"
+    out=$(bash -lc 'command -v tools-check' 2>&1)
+    check "bash login: tools-check found" has "^$HOME/.local/bin/tools-check$"
+    out=$(bash -lc 'true' 2>&1)
+    check "bash login prints nothing" [ -z "$out" ]
+    out=$(printf 'echo "shell=${FISH_VERSION:+fish}${BASH_VERSION:+bash}"\n' | bash -li 2>/dev/null)
+    if command -v fish >/dev/null 2>&1 || [ -x ~/.local/share/mise/shims/fish ]; then
+        check "interactive bash hands over to fish" has '^shell=fish$'
+    else
+        check "interactive bash stays bash without fish" has '^shell=bash$'
+    fi
+
+    [ $fails = 0 ] || exit 1
+    exit 0
+fi
+
+# --- On the host --------------------------------------------------------------------
+here=$(cd "$(dirname "$0")" && pwd)
+src=$(cd "$here/.." && pwd)
+[ $# -gt 0 ] || set -- ubuntu:20.04 ubuntu:24.04
+failed=
+
+for image in "$@"; do
+    echo "== $image"
+    # Base image: what any work PC has (curl, git, certificates) and a plain user.
+    tag="dotfiles-test:$(printf '%s' "$image" | tr ':/' '--')"
+    docker build -q -t "$tag" - >/dev/null <<EOF || { failed="$failed $image"; continue; }
+FROM $image
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates curl git \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd -m -s /bin/bash tester
+EOF
+    docker run --rm -v "$src:/src:ro" -e GITHUB_TOKEN -u tester -w /home/tester \
+        "$tag" sh /src/tests/fresh-machine.sh --inside || failed="$failed $image"
+done
+
+if [ -n "$failed" ]; then
+    echo "FAILED:$failed"
+    exit 1
+fi
+echo "all images passed"
