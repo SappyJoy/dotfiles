@@ -55,7 +55,9 @@ if [ "${1:-}" = --inside ]; then
     # Tools: every "mise" row of tools.tsv is installed at its pinned version.
     out=$(bash -lc 'tools-check --missing' 2>&1)
     printf '%s\n' "$out" | sed 's/^/     tools-check: /'
-    check "tools-check: no mise row missing or older" [ -z "$(printf '%s\n' "$out" | grep -E ' mise ')" ]
+    # A mise row: its install column (after status, tool, have, want) starts with "mise "
+    check "tools-check: no mise row missing or older" \
+        [ -z "$(printf '%s\n' "$out" | grep -E '^(missing|older) +[^ ]+ +[^ ]+ +[^ ]+ +mise ')" ]
     out=$(bash -lc 'tmux -V' 2>&1)
     check "tmux is the pinned 3.7c" has '^tmux 3\.7c$'
     check "tmux takes allow-passthrough (>= 3.3)" bash -lc \
