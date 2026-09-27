@@ -10,3 +10,8 @@ set preview_images_method ueberzug
 {{- else if .desktop }}
 set preview_images true
 {{- end }}
+
+# Jumps, as in yazi: Z picks a directory from zoxide's history in fzf, Ctrl+F picks a
+# file or directory below this one in fzf (both in commands.py).
+map Z zi
+map <C-f> fzf_select
