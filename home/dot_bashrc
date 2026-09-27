@@ -710,3 +710,10 @@ PROMPT_COMMAND='__setprompt'
 if [ -n "$CLAUDECODE" ]; then
 	unalias -a
 fi
+
+# Where fish isn't the login shell (a fish from mise lives in ~, so no chsh), an
+# interactive bash hands over to fish. Typing `bash` in fish still gives bash.
+if [[ $- == *i* ]] && [ -z "$CLAUDECODE" ] && [ "${SHELL##*/}" != fish ] &&
+	[ "$(cat /proc/$PPID/comm 2>/dev/null)" != fish ] && command -v fish >/dev/null; then
+	exec fish
+fi
