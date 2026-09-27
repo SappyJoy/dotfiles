@@ -10,6 +10,11 @@ command -q bat; and command -q col; and set -gx MANPAGER "sh -c 'col -bx | bat -
 set -gx GTEST_COLOR 1
 set -gx CRYPTOGRAPHY_OPENSSL_NO_LEGACY 1
 test -d ~/Android/Sdk; and set -gx ANDROID_HOME ~/Android/Sdk
+# ssh-agent from openssh's user unit ssh-agent.socket, as in .profile (for fish
+# login shells, which don't read it). An agent set up earlier wins.
+if not set -q SSH_AUTH_SOCK; and test -S "$XDG_RUNTIME_DIR/ssh-agent.socket"
+    set -gx SSH_AUTH_SOCK "$XDG_RUNTIME_DIR/ssh-agent.socket"
+end
 
 # API keys (age-encrypted in the dotfiles; only on machines with personal=true)
 test -f ~/.config/fish/private.fish; and source ~/.config/fish/private.fish
