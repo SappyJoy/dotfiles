@@ -83,16 +83,7 @@ failed=
 
 for image in "$@"; do
     echo "== $image"
-    # Base image: what any work PC has (curl, git, certificates, apt lists) and a
-    # plain user.
-    tag="dotfiles-test:$(printf '%s' "$image" | tr ':/' '--')"
-    docker build -q -t "$tag" - >/dev/null <<EOF || { failed="$failed $image"; continue; }
-FROM $image
-RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates curl git \
- && useradd -m -s /bin/bash tester
-EOF
+    tag=$(sh "$here/base-image.sh" "$image") || { failed="$failed $image"; continue; }
     docker run --rm -v "$src:/src:ro" -e GITHUB_TOKEN -u tester -w /home/tester \
         "$tag" sh /src/tests/fresh-machine.sh --inside || failed="$failed $image"
 done
