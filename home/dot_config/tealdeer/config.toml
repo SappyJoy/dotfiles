@@ -1,0 +1,6 @@
+# tealdeer (`tldr <command>`): example-first help pages.
+# Fetch the pages on first use and refresh them monthly, so a new machine needs no
+# `tldr --update`.
+[updates]
+auto_update = true
+auto_update_interval_hours = 720
