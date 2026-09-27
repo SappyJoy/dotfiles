@@ -1,5 +1,5 @@
 # Shortcuts that expand on the command line (type `g` + Space → `git`), so history
-# and copy-paste show the real command. Wrappers that change behavior (ls, ranger,
+# and copy-paste show the real command. Wrappers that change behavior (ls, ranger, yazi,
 # claude) are functions in functions/.
 status is-interactive; or return
 
@@ -26,6 +26,7 @@ abbr -a zi cdi
 
 # files
 abbr -a r ranger
+abbr -a y yazi
 abbr -a d dir2md
 abbr -a ll ls -l
 abbr -a lr 'ls -lt --color=always | head'
