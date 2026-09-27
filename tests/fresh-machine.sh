@@ -46,6 +46,9 @@ if [ "${1:-}" = --inside ]; then
     check "fisher plugins installed (tide, fzf.fish)" has '^plugins$'
     out=$(bash -lc "fish -c 'echo \$tide_time_format \$tide_prompt_transient_enabled \$tide_left_prompt_items'" 2>&1)
     check "tide style set (24-hour time, transient, two lines)" has '^%T true pwd git newline character$'
+    # tide renders the ❯ line in a background, non-interactive fish
+    out=$(bash -lc "fish -c 'set _tide_status 0; set fish_bind_mode default; _tide_item_character'" 2>&1)
+    check "tide prompt character is ❯, not vi mode's ❮" has '❯'
     out=$(bash -lc 'fish -ic true' 2>&1)
     check "interactive fish starts without output" [ -z "$out" ]
 
