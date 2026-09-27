@@ -61,7 +61,8 @@ if [ "${1:-}" = --inside ]; then
     check "tmux takes allow-passthrough (>= 3.3)" bash -lc \
         'tmux -L t -f /dev/null new-session -d \; set -g allow-passthrough on \; kill-server'
     check "nvim runs on this glibc" bash -lc 'nvim --clean --headless +q'
-    out=$(bash -lc "nvim --headless +'py3 import pynvim, jupyter_client' +qa" 2>&1)
+    # Without the user config, so lazy.nvim doesn't install plugins and rewrite lazy-lock.json
+    out=$(bash -lc "nvim --clean --headless --cmd \"lua vim.g.python3_host_prog = vim.fn.stdpath('data') .. '/venv/bin/python'\" +'py3 import pynvim, jupyter_client' +qa" 2>&1)
     check "nvim's Python host works (the uv venv)" [ -z "$out" ]
     out=$(bash -lc 'command -v fish' 2>&1)
     check "fish comes from mise" has "^$HOME/.local/share/mise/shims/fish$"
