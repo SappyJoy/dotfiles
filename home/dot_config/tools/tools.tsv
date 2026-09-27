@@ -27,7 +27,7 @@ age	core	1.3.2	age --version	mise aqua:FiloSottile/age
 bob	dev	4.1.7	bob --version	mise aqua:MordechaiHadad/bob
 uv	dev	0.12.18	uv --version	mise aqua:astral-sh/uv
 python3	dev	3.14.7	python3 --version	uv python install
-node	dev	26.10.0	node --version	mise node
+node	dev	26.10.0	node --version	global: mise use -g node@26 (needs libatomic1)
 go	dev	1.27.1	go version	go.dev/dl
 rustc	dev	1.91.1	rustc --version	curl https://sh.rustup.rs -sSf | sh
 java	dev	17.0.10	java -version	global: mise use -g java@temurin-17
