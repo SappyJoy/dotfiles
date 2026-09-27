@@ -32,22 +32,27 @@ check "tools.json: every row on a desktop" [ "$out" = "$(rows 1)" ]
 out=$(render .chezmoitemplates/tools.json false | json_len)
 check "tools.json: no desktop rows elsewhere" [ "$out" = "$(rows '$2 != "desktop"')" ]
 
-# mise config: exactly the "mise" rows, each pinned to its version
-out=$(render dot_config/mise/config.toml.tmpl true)
+# mise [tools]: exactly the "mise" rows, each pinned to its version
+out=$(render .chezmoitemplates/mise-tools.toml true)
 missing=$(awk -F '\t' '!/^#/ && $5 ~ /^mise / { sub(/^mise /, "", $5); print "\"" $5 "\" = \"" $3 "\"" }' "$tsv" |
     while IFS= read -r pin; do has "$pin" || echo "$pin"; done)
 check "mise config: every mise row pinned" [ -z "$missing" ]
 [ -z "$missing" ] || printf '     not found: %s\n' "$missing"
 check "mise config: nothing but mise rows" [ "$(printf '%s\n' "$out" | grep -c '^"')" = "$(rows '$5 ~ /^mise /')" ]
 check "mise config: tool options kept" has '"pipx:aider-chat[uvx_args=--python 3.12]"'
-out=$(render dot_config/mise/config.toml.tmpl false)
+out=$(render .chezmoitemplates/mise-tools.toml false)
 check "mise config: desktop rows only on a desktop" hasnt 'greenclip'
+out=$(render dot_config/mise/config.toml.tmpl)
+check "mise config: per-project node and java versions" has 'idiomatic_version_file_enable_tools = ["node", "java"]'
 
-# Per machine: arch uses pacman, so it gets no mise, no scripts and no apt list.
+# Per machine: arch uses pacman, so its mise config has only the settings (per-project
+# versions), and it gets no mise external, no scripts and no apt list.
 os=$(chezmoi execute-template --source "$src" '{{ .chezmoi.osRelease.id }}')
 out=$(chezmoi execute-template --source "$src" <"$src/home/.chezmoiignore")
+check "$os: mise config not ignored" hasnt '.config/mise/**'
 if [ "$os" = arch ]; then
-    check "arch: mise config ignored" has '.config/mise/**'
+    out=$(render dot_config/mise/config.toml.tmpl)
+    check "arch: mise config has no [tools]" hasnt '[tools]'
     for script in run_onchange_after_20-mise-install.sh.tmpl run_onchange_after_25-fisher.sh.tmpl \
         run_onchange_after_30-packages.sh.tmpl; do
         out=$(render "$script")
@@ -56,7 +61,8 @@ if [ "$os" = arch ]; then
     out=$(render .chezmoiexternal.toml.tmpl)
     check "arch: no mise external" hasnt '.local/bin/mise'
 else
-    check "$os: mise config not ignored" hasnt '.config/mise/**'
+    out=$(render dot_config/mise/config.toml.tmpl)
+    check "$os: mise config pins the tools" has '[tools]'
     out=$(render run_onchange_after_20-mise-install.sh.tmpl)
     check "$os: mise install script" has 'mise" install'
     out=$(render .chezmoiexternal.toml.tmpl)

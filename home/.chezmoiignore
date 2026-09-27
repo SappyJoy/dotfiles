@@ -35,9 +35,6 @@
 {{ if ne .chezmoi.osRelease.id "arch" -}}
 # arch only (see the i3 config template)
 .local/bin/toggle-throne
-{{- else -}}
-# arch installs its tools with pacman; mise is for the other machines
-.config/mise/**
 {{- end }}
 
 {{ if not .personal -}}

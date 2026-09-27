@@ -1,0 +1,7 @@
+{{- /* The [tools] of the mise config: the tools.tsv rows "mise <tool>", each pinned to
+       its arch version. Included by dot_config/mise/config.toml.tmpl. */ -}}
+{{- range includeTemplate "tools.json" . | fromJson }}
+{{-   if eq .method "mise" }}
+"{{ .package }}" = "{{ if eq .version "-" }}latest{{ else }}{{ .version }}{{ end }}"
+{{-   end }}
+{{- end }}
