@@ -1,0 +1,39 @@
+{{- $packages := list }}
+{{- range includeTemplate "tools.json" . | fromJson }}
+{{-   if eq .method "apt" }}{{ $packages = append $packages .package }}{{ end }}
+{{- end }}
+{{- if and $packages (has .chezmoi.osRelease.id (list "ubuntu" "debian")) -}}
+#!/bin/sh
+# Install the missing tools.tsv rows "apt <package>" (the desktop ones only on desktop
+# machines) that this release has. Needs root or sudo; without them, it says what's
+# missing and goes on.
+# chezmoi runs this again whenever the list changes.
+set -eu
+missing=
+for p in {{ $packages | join " " }}; do
+    dpkg-query -W -f '${Status}' "$p" 2>/dev/null | grep -q ' installed$' || missing="$missing $p"
+done
+[ -n "$missing" ] || exit 0
+
+if [ "$(id -u)" = 0 ]; then
+    sudo=
+elif command -v sudo >/dev/null 2>&1 && id -Gn | grep -qwE 'sudo|admin'; then
+    sudo=sudo
+else
+    echo "apt packages missing, no sudo here:$missing" >&2
+    exit 0
+fi
+$sudo apt-get update -qq
+available= unavailable=
+for p in $missing; do
+    if apt-cache policy "$p" | grep -q 'Candidate: [^(]'; then
+        available="$available $p"
+    else
+        unavailable="$unavailable $p"
+    fi
+done
+[ -z "$unavailable" ] || echo "not in apt on this release:$unavailable" >&2
+[ -n "$available" ] || exit 0
+echo "Installing apt packages:$available"
+$sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $available
+{{ end -}}

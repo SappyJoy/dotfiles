@@ -64,6 +64,7 @@ changed on both sides needs `chezmoi merge <file>`.
 | First word | Installed by | Where |
 |---|---|---|
 | `mise <tool>` | `chezmoi apply`, through mise, pinned to the list's version | every machine but arch; no root needed |
+| `apt <package>` | `chezmoi apply`, with sudo; packages the release lacks are skipped | Debian/Ubuntu with sudo; desktop rows only on desktops |
 | anything else | you, by hand: `tools-check` shows it as the hint | |
 
 - Keep the fleet in step: after upgrades on arch, `tools-check --record` and `dots`.

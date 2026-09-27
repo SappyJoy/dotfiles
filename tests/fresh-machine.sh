@@ -57,6 +57,16 @@ if [ "${1:-}" = --inside ]; then
     out=$(bash -lc 'command -v fish' 2>&1)
     check "fish comes from mise" has "^$HOME/.local/share/mise/shims/fish$"
 
+    # apt rows: core and dev ones must exist on this release; desktop ones may not.
+    lacking=
+    awk -F '\t' '$5 ~ /^apt / { sub(/^apt /, "", $5); print $2, $5 }' ~/.config/tools/tools.tsv >apt.rows
+    while read -r group p; do
+        apt-cache policy "$p" | grep -q 'Candidate: [^(]' && continue
+        if [ "$group" = desktop ]; then lacking="$lacking $p"; else check "apt has $p" false; fi
+    done <apt.rows
+    rm -f apt.rows
+    [ -z "$lacking" ] || echo "     info: not in apt on this release:$lacking"
+
     out=$($cz apply 2>&1)
     [ -n "$out" ] && printf '%s\n' "$out" | sed 's/^/     apply again: /'
     check "second apply prints nothing" [ -z "$out" ]
