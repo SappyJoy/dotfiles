@@ -6,7 +6,6 @@ set -gx GTEST_COLOR 1
 set -gx ANDROID_HOME $HOME/Android/Sdk
 set -gx CRYPTOGRAPHY_OPENSSL_NO_LEGACY 1
 # set -gx CM_DEBUG 1
-set -l config_files $XDG_CONFIG_HOME/fish/colors.fish
 
 # Private environment variables
 if test -f ~/.config/fish/private.fish; source ~/.config/fish/private.fish; end
@@ -96,6 +95,12 @@ alias clip="xclip -selection clipboard"
 alias c='xclip -selection clipboard'
 
 set fish_greeting ""
+# Default (emacs-style) keys. Set here because fish >= 4.3 dropped the universal
+# variable: while it's empty, tide draws its vi-mode ❮ and puffer-fish binds its keys
+# for vi insert mode.
+set -g fish_key_bindings fish_default_key_bindings
+# Colors: themes/sap.theme
+status is-interactive; and fish_config theme choose sap
 # print_jumoreski
 
 zoxide init fish | source
