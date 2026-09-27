@@ -13,6 +13,10 @@
 [core]
 	excludesFile = ~/.gitignore_global
 	autocrlf = input
+	# Diffs through delta (config below), or plain less where delta is missing
+	pager = command -v delta >/dev/null && exec delta || exec less
+[interactive]
+	diffFilter = command -v delta >/dev/null && exec delta --color-only || exec cat
 [init]
 	defaultBranch = main
 [fetch]
@@ -43,6 +47,10 @@
 	algorithm = histogram           # patience's faster successor, git's best
 	colorMoved = default            # moved blocks show as moved, not as -/+
 	tool = nvimdiff
+[delta]
+	navigate = true                 # n / N jump between files
+	line-numbers = true
+	syntax-theme = ansi             # the terminal's palette, like bat
 
 [alias]
 	st = status
