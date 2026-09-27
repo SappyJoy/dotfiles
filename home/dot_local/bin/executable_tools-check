@@ -39,10 +39,11 @@ timeout=
 command -v timeout >/dev/null 2>&1 && timeout='timeout 10'
 
 # installed_version CHECK: the first version number CHECK prints, colors stripped.
-# Prefers a dotted number (1.2.3) and falls back to a plain one (picom: v13).
+# Prefers a dotted number (1.2.3, or 3.7c as tmux has it) and falls back to a plain
+# one (picom: v13).
 installed_version() {
     out=$($timeout sh -c "$1" </dev/null 2>&1 | head -n 5 | sed "s/$esc\[[0-9;]*m//g")
-    v=$(printf '%s\n' "$out" | grep -oE '[0-9]+(\.[0-9]+)+' | head -n 1)
+    v=$(printf '%s\n' "$out" | grep -oE '[0-9]+(\.[0-9]+)+[a-z]?' | head -n 1)
     [ -n "$v" ] || v=$(printf '%s\n' "$out" | grep -oE '[0-9]+' | head -n 1)
     printf '%s\n' "$v"
 }

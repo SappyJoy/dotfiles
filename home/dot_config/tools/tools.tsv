@@ -4,7 +4,7 @@
 # version: the one in use on arch; `tools-check --record` updates it. "-": any.
 # check: prints the version. "-": presence only.
 fish	core	4.9.3	fish --version	github.com/fish-shell/fish-shell/releases (static Linux build)
-tmux	core	3.7	tmux -V	apt/pacman: tmux
+tmux	core	3.7c	tmux -V	apt/pacman: tmux
 nvim	core	0.11.5	nvim --version	bob install stable, or github.com/neovim/neovim/releases
 git	core	2.55.0	git --version	apt/pacman: git
 fzf	core	0.74.4	fzf --version	github.com/junegunn/fzf/releases

@@ -28,6 +28,7 @@ fake old 'old version 1.2.0'
 fake new 'v2.0.1 (build 7)'
 fake color '\033[1m4.5.6\033[0m'
 fake plain 'plain v13 (rev d87a5ba)'
+fake letter 'letter 3.7c'
 fake gui 'gui 3.1'
 fake bare 'no version here'
 
@@ -39,6 +40,7 @@ old${T}core${T}1.2.3${T}old --version${T}get-old
 new${T}dev${T}1.2.3${T}new --version${T}get-new
 color${T}dev${T}4.5.6${T}color --version${T}get-color
 plain${T}dev${T}13${T}plain --version${T}get-plain
+letter${T}core${T}3.7b${T}letter --version${T}get-letter
 gone${T}core${T}1.0${T}gone --version${T}get-gone
 gui${T}desktop${T}3.1${T}gui --version${T}get-gui
 bare${T}core${T}-${T}-${T}get-bare
@@ -56,6 +58,7 @@ check "older version is older, with hint" has '^older +old +1\.2\.0 +1\.2\.3 +ge
 check "newer version is newer" has '^newer +new +2\.0\.1 +1\.2\.3 *$'
 check "color codes are stripped" has '^ok +color +4\.5\.6 '
 check "plain number is parsed" has '^ok +plain +13 +13 '
+check "letter suffix is kept and compared" has '^newer +letter +3\.7c +3\.7b '
 check "missing tool is missing, with hint" has '^missing +gone +- +1\.0 +get-gone$'
 check "presence-only tool is ok" has '^ok +bare +- +- '
 check "desktop tool skipped without display" hasnt ' gui '
