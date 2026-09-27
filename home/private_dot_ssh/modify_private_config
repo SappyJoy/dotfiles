@@ -1,0 +1,30 @@
+#!/bin/sh
+# ~/.ssh/config is each machine's own file: hosts added there by hand stay. chezmoi
+# only keeps the block below at its end. The block includes personal.conf (own
+# machines only) and defaults.conf (every machine); ssh skips a missing file. It
+# must come last: ssh takes the first value it finds for each setting, so a host
+# block above it can override the shared defaults.
+#
+# chezmoi runs this with the current file on stdin (empty if there is none) and
+# writes what it prints: the file without the old block and trailing blank lines,
+# then the block.
+
+awk '
+    !held && /^# >>> dotfiles/ { held = 1; n_held = 0; next }
+    held && /^# <<< dotfiles/ { held = 0; next }
+    held { hold[++n_held] = $0; next }
+    { line[++n] = $0 }
+    END {
+        # A start line without its end line: keep everything after it.
+        for (i = 1; held && i <= n_held; i++) line[++n] = hold[i]
+        while (n > 0 && line[n] ~ /^[ \t]*$/) n--
+        for (i = 1; i <= n; i++) print line[i]
+        if (n > 0) print ""
+    }
+'
+cat <<'EOF'
+# >>> dotfiles: kept last by chezmoi. Add your own hosts above this block.
+Match all
+	Include personal.conf defaults.conf
+# <<< dotfiles
+EOF

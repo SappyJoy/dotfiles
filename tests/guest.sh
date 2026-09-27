@@ -1,7 +1,7 @@
 #!/bin/sh
-# Guest mode test: on a home with its own .bashrc and .gitconfig, guest.sh install,
-# use the tools, make some files of your own, guest.sh remove. The home must then
-# match the snapshot taken before, apart from your own files.
+# Guest mode test: on a home with its own .bashrc, .gitconfig and ssh config,
+# guest.sh install, use the tools, make some files of your own, guest.sh remove. The
+# home must then match the snapshot taken before, apart from your own files.
 # Run: sh tests/guest.sh [IMAGE]   (default: ubuntu:24.04)
 # Needs docker and the network. GITHUB_TOKEN is passed through when set.
 
@@ -21,9 +21,10 @@ if [ "${1:-}" = --inside ]; then
             (cd ~ && xargs -r -d '\n' sha256sum); } | sort >"$1"
     }
 
-    # A home that isn't ours: its own .bashrc and .gitconfig.
+    # A home that isn't ours: its own .bashrc, .gitconfig and ssh config.
     echo '# the host owner line' >>~/.bashrc
     printf '[user]\n\tname = Host Owner\n' >~/.gitconfig
+    mkdir -m 700 ~/.ssh && printf 'Host owner\n\tHostName 10.0.0.2\n' >~/.ssh/config
     snapshot /tmp/before
 
     cp -r /src /tmp/src
@@ -33,6 +34,8 @@ if [ "${1:-}" = --inside ]; then
     check "install succeeds" [ "$code" = 0 ]
     check "our .bashrc is in place" grep -q 'exec fish' ~/.bashrc
     check "our .gitconfig is in place" sh -c '! grep -q "Host Owner" ~/.gitconfig'
+    check "ssh config: the owner's host stays, our block is added" \
+        sh -c 'grep -q "^Host owner" ~/.ssh/config && grep -q "^# >>> dotfiles" ~/.ssh/config'
     out=$(printf 'echo "v=$FISH_VERSION"\n' | bash -li 2>/dev/null)
     check "interactive bash hands over to fish" has '^v=4\.'
     out=$(DOTFILES_REPO=/tmp/src sh ~/.local/share/chezmoi/guest.sh install 2>&1)

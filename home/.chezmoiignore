@@ -39,5 +39,5 @@
 {{ if not .personal -}}
 # secrets: only on own machines, which hold the age key
 .config/fish/private.fish
-.ssh/config
+.ssh/personal.conf
 {{- end }}

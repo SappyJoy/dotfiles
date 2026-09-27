@@ -14,7 +14,8 @@ chezmoi asks two questions, once per machine:
 
 - **Desktop (X11 + i3)**: also install the i3 / polybar / picom / kitty / rofi configs
   and their scripts.
-- **Own machine (secrets)**: decrypt `private.fish` (API keys) and `~/.ssh/config`.
+- **Own machine (secrets)**: decrypt `private.fish` (API keys) and the personal ssh
+  hosts (`~/.ssh/personal.conf`).
   Say no on borrowed machines.
 
 To change an answer later, run `chezmoi init --prompt`.
@@ -71,6 +72,14 @@ them can be regenerated (API keys, ssh hosts), but it's tedious.
 | Tools missing or outdated | `tools-check` (`--missing`: only what needs action) |
 | After upgrading tools on arch | `tools-check --record`, then `dots` |
 
+### ssh
+
+- `~/.ssh/config` is each machine's own file: add that machine's hosts there. chezmoi
+  only keeps a block at its end, which includes `personal.conf` (own machines: the
+  personal hosts, encrypted; `vd ~/.ssh/personal.conf`) and `defaults.conf` (every
+  machine). ssh takes the first value it finds, so a host in `config` overrides a
+  default.
+
 Pull with `chezmoi update`, not in lazygit. If you do pull in lazygit, run
 `chezmoi apply` right after. `dots` leaves pulled changes alone, but a file that
 changed on both sides needs `chezmoi merge <file>`.
@@ -110,9 +119,12 @@ In order of preference:
    Example: the i3 config renders the Throne key and the polkit agent on Arch only.
 3. **Files an app rewrites** (`btop.conf`, kitty `theme.conf`) get the `create_`
    prefix: written once, then owned by the app.
-4. **State a script writes** stays untracked and is included by a tracked config:
+4. **A file the machine owns, with one managed part**: a `modify_` script gets the
+   live file on stdin and prints the new one. `~/.ssh/config` keeps its own hosts;
+   the script keeps the dotfiles' Include block at its end.
+5. **State a script writes** stays untracked and is included by a tracked config:
    `theme-switcher` writes `tmux/theme.conf`, `i3/colors` and `polybar/colors.ini`.
-5. **Secrets**: `chezmoi add --encrypt`.
+6. **Secrets**: `chezmoi add --encrypt`.
 
 `re-add` (and so `dots`) skips templates. Edit those with `vd`, or bring a live edit
 over with `chezmoi merge`.
@@ -125,6 +137,7 @@ over with `chezmoi merge`.
   - `private_` (0600 / 0700)
   - `encrypted_*.age`
   - `create_`
+  - `modify_`
   - `*.tmpl`
 - `home/.chezmoi.toml.tmpl`: the prompts and the age settings
 - `home/.chezmoiignore`: what each kind of machine skips
@@ -137,6 +150,7 @@ over with `chezmoi merge`.
 - `tests/`:
   - `sh tests/tools-check.sh`
   - `sh tests/render.sh`: the templates that read the tool list
+  - `sh tests/ssh-config.sh`: the `~/.ssh/config` block and the override order
   - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match
     the one before
   - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a non-root user in
@@ -189,7 +203,9 @@ bash; keep the output):
    ~/.local/bin/chezmoi diff
    ```
    Compare with `~/.dotfiles-local.patch` and carry wanted local bits into the source
-   ([rules above](#per-machine-differences)).
+   ([rules above](#per-machine-differences)). `~/.ssh/config` only gets a block at
+   its end; its hosts stay (on an own machine, the personal hosts can go from it:
+   `personal.conf` has them).
 6. Apply. mise installs the tools (a minute or two); on a desktop, sudo asks for the
    apt packages:
    ```sh
