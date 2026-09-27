@@ -44,6 +44,10 @@ if [ "${1:-}" = --inside ]; then
     check "interactive bash hands over to fish" has '^v=4\.'
     out=$(bash -lc "fish -ic 'functions -q tide; and functions -q _fzf_search_directory; and echo plugins'" 2>&1)
     check "fisher plugins installed (tide, fzf.fish)" has '^plugins$'
+    out=$(bash -lc "fish -c 'echo \$tide_time_format \$tide_prompt_transient_enabled \$tide_left_prompt_items'" 2>&1)
+    check "tide style set (24-hour time, transient, two lines)" has '^%T true pwd git newline character$'
+    out=$(bash -lc 'fish -ic true' 2>&1)
+    check "interactive fish starts without output" [ -z "$out" ]
 
     # Tools: every "mise" row of tools.tsv is installed at its pinned version.
     out=$(bash -lc 'tools-check --missing' 2>&1)
