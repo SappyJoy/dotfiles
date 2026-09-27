@@ -97,5 +97,16 @@ check "second --record changes nothing" has '0 version\(s\) recorded'
 run --bogus
 check "unknown option exits 2" [ "$code" = 2 ]
 
+# A tool whose version follows the working directory, like a mise shim in a project
+# with a .node-version: tools-check reports the machine's version, not the project's.
+printf '#!/bin/sh\nif [ -f .ver ]; then echo "pinned $(cat .ver)"; else echo "pinned 1.0.0"; fi\n' \
+    >"$tmp/bin/pinned"
+chmod +x "$tmp/bin/pinned"
+mkdir "$tmp/project" && echo 9.9.9 >"$tmp/project/.ver"
+printf 'pinned\tcore\t1.0.0\tpinned --version\tget-pinned\n' >"$tmp/project/pin.tsv"
+out=$(cd "$tmp/project" && PATH="$tmp/bin:/usr/bin:/bin" ${TC_SHELL:-sh} "$tc" --list pin.tsv 2>&1)
+check "checks outside the project's pins" has '^ok +pinned +1\.0\.0 '
+check "a relative --list still works" hasnt 'no tool list'
+
 [ $fails = 0 ] && echo "all passed" || echo "$fails failed"
 [ $fails = 0 ]

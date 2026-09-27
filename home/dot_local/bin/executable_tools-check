@@ -33,6 +33,11 @@ done
 
 [ -r "$list" ] || { echo "tools-check: no tool list at $list" >&2; exit 2; }
 
+# Check from /, so the version pins of the current project (a .node-version that a
+# mise shim reads) don't change what this machine reports or records.
+case $list in /*) ;; *) list=$PWD/$list ;; esac
+cd /
+
 tab=$(printf '\t')
 esc=$(printf '\033')
 timeout=
