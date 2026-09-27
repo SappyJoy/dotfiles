@@ -15,9 +15,8 @@ vim.g.maplocalleader = '\\'
 -- Set to true if you have a Nerd Font installed
 vim.g.have_nerd_font = true
 
--- Python Provider configuration (using dedicated conda env)
-vim.g.python_host_prog = vim.fn.expand '$HOME' .. '/.conda/envs/nvim/bin/python'
-vim.g.python3_host_prog = vim.fn.expand '$HOME' .. '/.conda/envs/nvim/bin/python3'
+-- Python provider: a uv venv, built by chezmoi (run_onchange_after_27-nvim-python.sh)
+vim.g.python3_host_prog = vim.fn.stdpath 'data' .. '/venv/bin/python'
 
 package.path = package.path .. ';' .. vim.fn.expand '$HOME' .. '/.luarocks/share/lua/5.1/?/init.lua;'
 package.path = package.path .. ';' .. vim.fn.expand '$HOME' .. '/.luarocks/share/lua/5.1/?.lua;'
