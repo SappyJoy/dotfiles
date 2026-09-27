@@ -30,7 +30,10 @@ if [ "${1:-}" = --inside ]; then
     [ -n "$out" ] && printf '%s\n' "$out" | grep -viE '^(mise|  )' | sed 's/^/     apply: /'
     printf '%s\n' "$out" | grep -iE 'error|warn' | sed 's/^/     apply: /'
     check "apply succeeds" [ "$code" = 0 ]
-    check "apply prints no errors or warnings" [ -z "$(printf '%s\n' "$out" | grep -iE 'error|warn')" ]
+    # Shown above but not counted: mise's network warnings that end in a working
+    # fallback, e.g. a GitHub 502 on its release list.
+    problems=$(printf '%s\n' "$out" | grep -iE 'error|warn' | grep -vE '^mise WARN .*fallback=true')
+    check "apply prints no errors or warnings" [ -z "$problems" ]
     check "verify: the home matches the source" $cz verify
 
     out=$(bash -lc 'echo "$PATH"' 2>&1)
