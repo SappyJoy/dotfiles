@@ -1,0 +1,5 @@
+# ripgrep defaults (read through RIPGREP_CONFIG_PATH, set in fish's env.fish): one
+# flag per line. Also applies to rg started from nvim's pickers.
+#
+# Case-insensitive unless the pattern has a capital letter.
+--smart-case
