@@ -35,7 +35,7 @@ docker	dev	29.8.1	docker --version	docs.docker.com/engine/install
 lazydocker	dev	0.25.2	lazydocker --version	mise aqua:jesseduffield/lazydocker
 gh	dev	2.101.0	gh --version	mise aqua:cli/cli
 aider	dev	0.86.2	aider --version	mise pipx:aider-chat[uvx_args=--python 3.12]
-dir2md	dev	0.3.1	-	mise pipx:dir2md
+dir2md	dev	0.3.1	-	mise pipx:dir2md[uvx_args=--python 3.12]
 dvc	dev	3.67.1	dvc --version	mise pipx:dvc[extras=all]
 jupytext	dev	1.19.5	jupytext --version	mise pipx:jupytext
 claude	dev	2.1.282	claude --version	curl -fsSL https://claude.ai/install.sh | bash
