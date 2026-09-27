@@ -1,6 +1,9 @@
 # Environment for every fish, login or not. PATH is in path.fish.
 set -gx EDITOR nvim
-set -gx BAT_THEME OneHalfLight
+# bat, fzf (and LS_COLORS, fish's theme) use the terminal's 16 colors, so kitty's
+# light/dark switch (theme-switcher) carries over, fzf previews included.
+set -gx BAT_THEME ansi
+set -gx FZF_DEFAULT_OPTS --color=16
 set -gx GTEST_COLOR 1
 set -gx CRYPTOGRAPHY_OPENSSL_NO_LEGACY 1
 test -d ~/Android/Sdk; and set -gx ANDROID_HOME ~/Android/Sdk
