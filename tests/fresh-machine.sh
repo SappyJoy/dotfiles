@@ -42,6 +42,8 @@ if [ "${1:-}" = --inside ]; then
     # The same line is valid in bash (prints "v=") and fish (prints its version).
     out=$(printf 'echo "v=$FISH_VERSION"\n' | bash -li 2>/dev/null)
     check "interactive bash hands over to fish" has '^v=4\.'
+    out=$(bash -lc "fish -ic 'functions -q tide; and functions -q _fzf_search_directory; and echo plugins'" 2>&1)
+    check "fisher plugins installed (tide, fzf.fish)" has '^plugins$'
 
     # Tools: every "mise" row of tools.tsv is installed at its pinned version.
     out=$(bash -lc 'tools-check --missing' 2>&1)

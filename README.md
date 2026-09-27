@@ -75,6 +75,8 @@ changed on both sides needs `chezmoi merge <file>`.
   config.
 - The tools run through mise's shims (`~/.local/share/mise/shims`); `.profile` and
   fish's `conf.d/path.fish` put them on PATH.
+- fish plugins: `~/.config/fish/fish_plugins` is installed with fisher, and again
+  whenever the list changes.
 - arch installs its tools with pacman, so none of this runs there.
 
 ## Per-machine differences

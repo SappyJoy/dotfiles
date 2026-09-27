@@ -48,7 +48,7 @@ os=$(chezmoi execute-template --source "$src" '{{ .chezmoi.osRelease.id }}')
 out=$(chezmoi execute-template --source "$src" <"$src/home/.chezmoiignore")
 if [ "$os" = arch ]; then
     check "arch: mise config ignored" has '.config/mise/**'
-    for script in run_onchange_after_20-mise-install.sh.tmpl; do
+    for script in run_onchange_after_20-mise-install.sh.tmpl run_onchange_after_25-fisher.sh.tmpl; do
         out=$(render "$script")
         check "arch: $script renders empty" [ -z "$out" ]
     done

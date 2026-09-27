@@ -1,0 +1,14 @@
+{{- if ne .chezmoi.osRelease.id "arch" -}}
+#!/bin/sh
+# Install fisher if it's missing, then the fish plugins in ~/.config/fish/fish_plugins.
+# chezmoi runs this again whenever that list changes: {{ include "dot_config/private_fish/fish_plugins" | sha256sum }}
+set -eu
+PATH=$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH
+if ! command -v fish >/dev/null 2>&1; then
+    echo "fish plugins: no fish yet, skipped" >&2
+    exit 0
+fi
+fish -c 'functions -q fisher
+    or curl -fsSL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source
+    and fisher update' >/dev/null
+{{ end -}}
