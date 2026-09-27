@@ -1,0 +1,12 @@
+# ranger: only what differs from ranger's defaults, which it loads first. They are,
+# with docs: /usr/lib/python3*/site-packages/ranger/config/rc.conf (or `?` then `s`).
+
+# Image previews. ueberzug (ueberzugpp) shows them in its own X window over the
+# terminal: it works inside tmux, and kitty's repaints can't make it flicker as they
+# do with w3m, which paints on kitty's window. Desktops without it keep w3m.
+{{- if lookPath "ueberzug" }}
+set preview_images true
+set preview_images_method ueberzug
+{{- else if .desktop }}
+set preview_images true
+{{- end }}
