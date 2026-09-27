@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# scope.sh: ranger's stock file (ranger 1.9.4) with these previews turned on (mine):
+# Jupyter notebooks (as Markdown), djvu, video thumbnails, PDF pages, epub covers.
+# ranger doesn't merge this file with its own; after a ranger update, compare with
+# /usr/lib/python3*/site-packages/ranger/data/scope.sh.
 
 set -o noclobber -o noglob -o nounset -o pipefail
 IFS=$'\n'
@@ -284,7 +288,7 @@ handle_mime() {
         ## DOCX, ePub, FB2 (using markdown)
         ## You might want to remove "|epub" and/or "|fb2" below if you have
         ## uncommented other methods to preview those formats
-        *wordprocessingml.document)
+        *wordprocessingml.document|*/epub+zip|*/x-fictionbook+xml)
             ## Preview as markdown conversion
             pandoc -s -t markdown -- "${FILE_PATH}" && exit 5
             exit 1;;
