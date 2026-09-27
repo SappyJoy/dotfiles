@@ -13,6 +13,12 @@
 [core]
 	excludesFile = ~/.gitignore_global
 	autocrlf = input
+[init]
+	defaultBranch = main
+[fetch]
+	prune = true                    # forget remote branches deleted upstream
+[push]
+	autoSetupRemote = true          # the first push of a branch sets its upstream
 [help]
 	autocorrect = 1                 # run a mistyped command's single guess
 [gc]
@@ -34,7 +40,8 @@
 [format]
 	pretty = format:%C(green)%ad%C(reset) %C(yellow)%h%C(auto)%d%C(reset) %s %C(blue)<%an>%C(reset)
 [diff]
-	algorithm = patience
+	algorithm = histogram           # patience's faster successor, git's best
+	colorMoved = default            # moved blocks show as moved, not as -/+
 	tool = nvimdiff
 
 [alias]
