@@ -79,6 +79,11 @@ them can be regenerated (API keys, ssh hosts), but it's tedious.
   personal hosts, encrypted; `vd ~/.ssh/personal.conf`) and `defaults.conf` (every
   machine). ssh takes the first value it finds, so a host in `config` overrides a
   default.
+- `defaults.conf` shares one connection per host (a second shell, scp or git starts
+  at once) and gives up on an unreachable host after 10 s. `ssh -O exit HOST` closes
+  a shared connection, e.g. one that hangs after a VPN switch.
+- sshfs: its own connection, and a reconnect after a dead link:
+  `sshfs -o reconnect,ServerAliveInterval=15,ControlPath=none HOST:DIR MOUNTPOINT`
 
 Pull with `chezmoi update`, not in lazygit. If you do pull in lazygit, run
 `chezmoi apply` right after. `dots` leaves pulled changes alone, but a file that

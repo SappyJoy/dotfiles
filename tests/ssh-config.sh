@@ -54,13 +54,15 @@ check "no final newline: the last line is kept" [ "$(printf '%s\n' "$out" | head
 
 # The order the block relies on: a host above it overrides defaults.conf. The Include
 # gets an absolute path here: relative ones resolve in the real ~/.ssh.
-printf 'Host work\n\tAddKeysToAgent no\n' | sh "$modify" |
+printf 'Host work\n\tControlMaster no\n' | sh "$modify" |
     sed "s|Include personal.conf defaults.conf|Include $src/home/private_dot_ssh/defaults.conf|" \
         >"$tmp/config"
 out=$(ssh -F "$tmp/config" -G other.example 2>&1)
-check "ssh reads defaults.conf" has 'addkeystoagent true'
+check "ssh reads defaults.conf" has 'controlmaster auto'
+check "defaults.conf: connect timeout" has 'connecttimeout 10'
+check "defaults.conf: control path" has "controlpath $HOME/.ssh/cm-"
 out=$(ssh -F "$tmp/config" -G work 2>&1)
-check "a host above the block overrides it" has 'addkeystoagent false'
+check "a host above the block overrides it" has 'controlmaster false'
 
 # Which machines get what: personal.conf only on own machines, config everywhere
 out=$(chezmoi execute-template --source "$src" --override-data '{"personal": false}' \

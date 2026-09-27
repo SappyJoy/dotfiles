@@ -20,7 +20,7 @@ if [ "${1:-}" = --inside ]; then
     mkdir -p ~/.local/share ~/.local/bin
     # A work PC's own ssh config, with a host that overrides a shared default
     mkdir -m 700 ~/.ssh
-    printf 'Host work\n\tHostName 10.0.0.1\n\tAddKeysToAgent no\n' >~/.ssh/config
+    printf 'Host work\n\tHostName 10.0.0.1\n\tControlMaster no\n' >~/.ssh/config
     cp -r /src ~/.local/share/chezmoi
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin >/dev/null 2>&1
     cz=~/.local/bin/chezmoi
@@ -46,9 +46,9 @@ if [ "${1:-}" = --inside ]; then
     check "ssh config: the dotfiles block is last" [ "$(tail -n 1 ~/.ssh/config)" = '# <<< dotfiles' ]
     check "ssh config: no personal hosts without secrets" test ! -e ~/.ssh/personal.conf
     out=$(ssh -G other.example 2>&1)
-    check "ssh reads defaults.conf" has '^addkeystoagent true$'
+    check "ssh reads defaults.conf" has '^controlmaster auto$'
     out=$(ssh -G work 2>&1)
-    check "ssh: a host in config overrides defaults.conf" has '^addkeystoagent false$'
+    check "ssh: a host in config overrides defaults.conf" has '^controlmaster false$'
 
     out=$(bash -lc 'echo "$PATH"' 2>&1)
     check "bash login: ~/.local/bin on PATH" has "(^|:)$HOME/.local/bin(:|$)"
