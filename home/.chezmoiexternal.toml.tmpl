@@ -1,7 +1,8 @@
-# tmux plugin manager; `chezmoi apply -R` (or update) pulls new commits weekly.
-[".tmux/plugins/tpm"]
+# tmux's status bar (its only plugin, run by tmux.conf; no plugin manager).
+# `chezmoi apply -R` (or update) pulls new commits weekly.
+[".tmux/plugins/minimal-tmux-status"]
     type = "git-repo"
-    url = "https://github.com/tmux-plugins/tpm"
+    url = "https://github.com/niksingh710/minimal-tmux-status"
     refreshPeriod = "168h"
 
 {{- /* mise, which installs the tools.tsv rows "mise <tool>". Not on arch (pacman).
