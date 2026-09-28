@@ -15,6 +15,11 @@ vim.g.maplocalleader = '\\'
 -- Set to true if you have a Nerd Font installed
 vim.g.have_nerd_font = true
 
+-- The terminal shows images (kitty's graphics protocol): kitty sets KITTY_WINDOW_ID,
+-- and tmux passes it on when its server started in kitty. Not over ssh, not in
+-- Windows Terminal. image.nvim and molten's image output depend on it.
+vim.g.kitty_graphics = vim.env.KITTY_WINDOW_ID ~= nil
+
 -- Python provider: a uv venv, built by chezmoi (run_onchange_after_27-nvim-python.sh)
 vim.g.python3_host_prog = vim.fn.stdpath 'data' .. '/venv/bin/python'
 
