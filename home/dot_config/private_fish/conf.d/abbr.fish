@@ -20,8 +20,9 @@ abbr -a gd chezmoi git --
 abbr -a lgd lazygit -p ~/.local/share/chezmoi
 abbr -a vd chezmoi edit --apply
 
-# directories: zoxide is cd (config.fish); z and zi from the old habit
-abbr -a z cd
+# directories: zoxide is cd (config.fish). z and zi open its fzf picker: `z` + Enter
+# lists every dir, `z foo` only those matching foo
+abbr -a z cdi
 abbr -a zi cdi
 
 # files
