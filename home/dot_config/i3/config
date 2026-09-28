@@ -1,0 +1,14 @@
+# i3 config (v4): one file per role, included in this order.
+# Reference: https://i3wm.org/docs/userguide.html
+set $mod Mod4
+
+# Window colors, written by theme-switcher (light/dark); untracked
+include colors
+# Font, borders, gaps, layout
+include look
+# What the session starts
+include autostart
+# Key and mouse bindings
+include keys
+# Modes (resize)
+include modes

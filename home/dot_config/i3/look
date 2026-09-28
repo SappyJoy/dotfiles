@@ -1,0 +1,15 @@
+# Look and layout. The colors come from `colors` (theme-switcher).
+
+# Window titles
+font pango:Hack Nerd Font 9
+default_border pixel 2
+default_floating_border pixel 2
+
+# Gaps between windows; the top one leaves room for polybar
+gaps inner 5
+gaps outer 3
+gaps top 36
+
+# Workspaces get created on the portrait monitors before FILM exists: keep them
+# horizontal, so windows form columns across the desk.
+default_orientation horizontal

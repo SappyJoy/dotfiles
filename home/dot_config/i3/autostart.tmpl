@@ -1,0 +1,33 @@
+# What the session starts. `exec` runs at login; `exec_always` also on every i3
+# restart (re-spanning FILM restarts i3).
+
+# Keyboard: Colemak-DH + Russian (Alt+Shift), where the system config doesn't set it
+# already (arch does, in xorg.conf.d). Key repeat after 200 ms, 30 per second.
+exec --no-startup-id sh -c 'setxkbmap -query | grep -q colemak_dh_ortho || setxkbmap -layout "us,ru" -variant "colemak_dh_ortho," -option "grp:alt_shift_toggle"'
+exec_always --no-startup-id xset r rate 200 30
+
+# Screen: no screensaver, no DPMS blanking
+exec_always --no-startup-id xset s off -dpms
+
+# Monitors: the layout comes from X (autorandr, if installed). FILM spans all of
+# them as one output; log in to it, focused on workspace 1.
+exec --no-startup-id "command -v autorandr >/dev/null && autorandr --change; i3-msg 'workspace number 1'; film_mode.sh"
+# Keep column edges on the monitor borders (a restart replaces the old watcher)
+exec_always --no-startup-id ~/.local/bin/film-snap i3-watch
+
+# The bar (again on every restart) and the network applet in its tray
+exec_always --no-startup-id ~/.config/polybar/launch.sh
+exec_always --no-startup-id ~/.config/polybar/scripts/launch_nm-applet.sh
+
+# Wallpaper, then the compositor
+exec --no-startup-id nitrogen --restore; sleep 1; picom -b
+
+# Screenshots, clipboard history, night light (schedule in redshift.conf)
+exec --no-startup-id flameshot
+exec --no-startup-id greenclip daemon>/dev/null
+exec --no-startup-id redshift
+{{- if eq .chezmoi.osRelease.id "arch" }}
+
+# The polkit agent: password prompts for GUI apps (arch only)
+exec_always --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+{{- end }}
