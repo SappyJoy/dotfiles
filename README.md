@@ -155,7 +155,8 @@ over with `chezmoi merge`.
   - `*.tmpl`
 - `home/.chezmoi.toml.tmpl`: the prompts and the age settings
 - `home/.chezmoiignore`: what each kind of machine skips
-- `home/.chezmoiexternal.toml.tmpl`: tmux plugin manager (tpm), and mise off arch
+- `home/.chezmoiexternal.toml.tmpl`: tmux's status bar plugin, yazi's piper
+  previewer, and off arch btop's theme and mise
 - `home/dot_config/tools/tools.tsv`: the tool list behind `tools-check` and the
   installs
 - `home/.chezmoitemplates/tools.json`: the list parsed, for the templates that install
