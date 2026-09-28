@@ -5,7 +5,15 @@ require 'sap.globals'
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not vim.loop.fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
-  vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
+  vim.fn.system { 'git', 'clone', '--filter=blob:none', lazyrepo, lazypath }
+  -- At its commit in lazy-lock.json: lazy writes the lock after installing the other
+  -- plugins, and would record whatever was cloned here.
+  local ok, lock = pcall(function()
+    return vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath 'config' .. '/lazy-lock.json'), '\n'))
+  end)
+  if ok and lock['lazy.nvim'] then
+    vim.fn.system { 'git', '-C', lazypath, 'checkout', '--quiet', lock['lazy.nvim'].commit }
+  end
 end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
@@ -51,6 +59,10 @@ require('lazy').setup({
     -- Use 'ayu-light' colorscheme after installation (should be a string)
     colorscheme = { 'ayu-light' },
   },
+  -- No luarocks. The only rock is image.nvim's `magick`, and image.nvim uses the
+  -- ImageMagick CLI instead; without luarocks on the machine, lazy would build
+  -- Lua 5.1 (hererocks) and fail at every start.
+  rocks = { enabled = false },
   -- Configure change detection (automatically check for plugin updates)
   change_detection = {
     -- Disabling this can speed up startup time slightly,
