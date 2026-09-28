@@ -86,6 +86,12 @@ if [ "${1:-}" = --inside ]; then
     out=$(bash -lc 'tmux -L c new-session -d && tmux -L c show-messages; tmux -L c show -gv status-left; tmux -L c kill-server' 2>&1)
     check "tmux loads its config and status bar" has 'client_prefix'
     check "tmux config loads without errors" hasnt 'error|unknown|invalid'
+    # btop: mise's btop can't find its own themes, so Ayu comes as an external; without
+    # it, btop falls back to its default colors (a black background)
+    out=$(bash -lc 'tmux -L b -f /dev/null new-session -d -x 120 -y 40 \
+        "env TERM=xterm-256color COLORTERM=truecolor LANG=C.UTF-8 btop" && sleep 3 &&
+        tmux -L b capture-pane -p -e; tmux -L b send-keys q; sleep 1; tmux -L b kill-server' 2>&1)
+    check "btop draws its Ayu theme (background #0B0E14)" has '48;2;11;14;20m'
     check "nvim runs on this glibc" bash -lc 'nvim --clean --headless +q'
     # Without the user config, so lazy.nvim doesn't install plugins and rewrite lazy-lock.json
     out=$(bash -lc "nvim --clean --headless --cmd \"lua vim.g.python3_host_prog = vim.fn.stdpath('data') .. '/venv/bin/python'\" +'py3 import pynvim, jupyter_client' +qa" 2>&1)
