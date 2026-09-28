@@ -221,10 +221,12 @@ return {
         -- 'ltex_ls_plus' was an option, stick to 'ltex' (ltex-ls) for now unless you have a specific reason
       }
 
-      -- mason installs some tools with npm or into a Python venv. Where those are
-      -- missing (no node; Ubuntu's python3 without python3-venv), skip the tools
-      -- instead of failing at every start. `:checkhealth mason` shows what's missing.
+      -- mason installs some tools with npm, into a Python venv or from a zip. Where
+      -- those are missing (no node; Ubuntu's python3 without python3-venv; no unzip
+      -- without sudo), skip the tools instead of failing at every start.
+      -- `:checkhealth mason` shows what's missing.
       local has_npm = vim.fn.executable 'npm' == 1
+      local has_unzip = vim.fn.executable 'unzip' == 1
       local python = vim.fn.resolve(vim.fn.exepath 'python3') -- e.g. /usr/bin/python3.14
       local has_venv = python ~= ''
         and vim.uv.fs_stat(vim.fs.dirname(vim.fs.dirname(python)) .. '/lib/' .. vim.fs.basename(python) .. '/ensurepip') ~= nil
@@ -234,6 +236,9 @@ return {
       local function pip(name)
         return { name, condition = function() return has_venv end }
       end
+      local function zip(name)
+        return { name, condition = function() return has_unzip end }
+      end
 
       -- Define ALL tools to be *ENSURED INSTALLED* by mason-tool-installer
       local tools_to_ensure_installed = {
@@ -241,10 +246,10 @@ return {
         'lua-language-server',
         'jdtls',
         npm 'pyright',
-        'clangd',
+        zip 'clangd',
         'rust-analyzer',
         npm 'eslint-lsp',
-        'kotlin-language-server',
+        zip 'kotlin-language-server',
         'texlab',
         'ltex-ls',
         'taplo', -- TOML LSP
@@ -280,8 +285,8 @@ return {
 
         -- === Debug Adapters (Must match lsp/dap-core.lua) ===
         pip 'debugpy',
-        'codelldb',
-        'bash-debug-adapter',
+        zip 'codelldb',
+        zip 'bash-debug-adapter',
       }
             --
       -- Setup Mason. A fresh pip in each Python tool's venv: Ubuntu 20.04's pip 20.0
