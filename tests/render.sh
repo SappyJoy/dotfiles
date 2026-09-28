@@ -54,7 +54,7 @@ if [ "$os" = arch ]; then
     out=$(render dot_config/mise/config.toml.tmpl)
     check "arch: mise config has no [tools]" hasnt '[tools]'
     for script in run_onchange_after_20-mise-install.sh.tmpl run_onchange_after_25-fisher.sh.tmpl \
-        run_onchange_after_30-packages.sh.tmpl; do
+        run_onchange_after_30-packages.sh.tmpl run_onchange_after_40-nvim-plugins.sh.tmpl; do
         out=$(render "$script")
         check "arch: $script renders empty" [ -z "$out" ]
     done
@@ -65,6 +65,8 @@ else
     check "$os: mise config pins the tools" has '[tools]'
     out=$(render run_onchange_after_20-mise-install.sh.tmpl)
     check "$os: mise install script" has 'mise" install'
+    out=$(render run_onchange_after_40-nvim-plugins.sh.tmpl)
+    check "$os: nvim install script" has 'nvim --headless'
     out=$(render .chezmoiexternal.toml.tmpl)
     check "$os: mise external" has '.local/bin/mise'
 fi
