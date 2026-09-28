@@ -16,6 +16,14 @@ KITTY_THEME="$HOME/.config/kitty/theme.conf"
 TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.conf
 GIT_THEME="$HOME/.config/git/theme.gitconfig"  # delta's light/dark, included by .gitconfig
+GTK3_SETTINGS="$HOME/.config/gtk-3.0/settings.ini"  # a create_ seed; GTK3 apps read it on start
+
+# gtk3_dark true|false: GTK3 apps (no settings daemon on i3, so gsettings doesn't
+# reach them) pick the dark variant of their theme on their next start.
+gtk3_dark() {
+    [ -f "$GTK3_SETTINGS" ] &&
+        sed -i "s/^gtk-application-prefer-dark-theme=.*/gtk-application-prefer-dark-theme=$1/" "$GTK3_SETTINGS"
+}
 
 # Save state
 echo "$MODE" > "$STATE_FILE"
@@ -48,6 +56,7 @@ EOF
     # GTK
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
     gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita'
+    gtk3_dark false
 
     # Kitty: Point to the light config file
     echo "include themes/ayu_light.conf" > "$KITTY_THEME"
@@ -86,6 +95,7 @@ EOF
     # GTK
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
     gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+    gtk3_dark true
 
     # Kitty: Point to the dark config file
     echo "include themes/ayu_mirage.conf" > "$KITTY_THEME"
