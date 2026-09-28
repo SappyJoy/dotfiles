@@ -90,8 +90,9 @@ if [ "${1:-}" = --inside ]; then
     out=$(bash -lc 'command -v fish' 2>&1)
     check "fish comes from mise" has "^$HOME/.local/share/mise/shims/fish$"
     # delta (git's pager, lazygit's diffs): the tracked styles, and light from the seeded
-    # theme file, since no theme-switcher runs here
-    out=$(bash -lc 'delta --show-config' 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+    # theme file, since no theme-switcher runs here. --true-color: without COLORTERM,
+    # delta prints its hex colors as 256-color numbers.
+    out=$(bash -lc 'delta --true-color always --show-config' 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
     check "delta reads .gitconfig" has '^ +file-style += bold blue$'
     check "delta: light, from the seeded theme file" has '^ +minus-style += normal "#ffe0e0"$'
     printf 'a\nb\n' >d1; printf 'a\nc\n' >d2
