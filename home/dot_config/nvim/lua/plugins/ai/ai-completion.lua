@@ -4,6 +4,10 @@ return {
     cmd = 'Copilot',
     event = 'InsertEnter',
     config = function()
+      -- copilot runs on node; without it, it errors at every start (avante loads it)
+      if vim.fn.executable 'node' == 0 then
+        return
+      end
       require('copilot').setup {
         suggestion = { enabled = false },
         panel = { enabled = false },

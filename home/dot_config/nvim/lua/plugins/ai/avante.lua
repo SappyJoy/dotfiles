@@ -81,6 +81,7 @@ return {
         provider_opts = {}, -- You can add Telescope-specific options here if needed
       },
     },
-    build = 'make BUILD_FROM_SOURCE=true',
+    -- From source where cargo is (rustup), else the prebuilt release binaries.
+    build = vim.fn.executable 'cargo' == 1 and 'make BUILD_FROM_SOURCE=true' or 'make',
   },
 }
