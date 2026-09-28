@@ -19,6 +19,6 @@ if status is-interactive
     fish_config theme choose sap
     # zoxide as cd: a path works as before, `cd foo` jumps to the most used dir
     # matching foo, `cdi` picks one with fzf. fish's cd (dir history, cd -) stays
-    # underneath. Abbreviations in abbr.fish turn z/zi into cd/cdi.
+    # underneath. Abbreviations in abbr.fish turn z and zi into cdi.
     command -q zoxide; and zoxide init fish --cmd cd | source
 end
