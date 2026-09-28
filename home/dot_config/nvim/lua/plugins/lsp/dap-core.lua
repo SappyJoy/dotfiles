@@ -50,7 +50,9 @@ return {
     dependencies = { 'williamboman/mason.nvim', 'mfussenegger/nvim-dap' },
     cmd = { 'DapContinue', 'DapToggleBreakpoint', 'DapStepInto', 'DapStepOver', 'DapStepOut', 'DapTerminate', 'DapInstall', 'DapUninstall' },
     opts = {
-      ensure_installed = { 'bash-debug-adapter', 'codelldb', 'debugpy' },
+      -- The adapters are installed by mason-tool-installer (lsp.lua), which skips
+      -- debugpy where Python can't make venvs.
+      ensure_installed = {},
       handlers = {},
     },
   },

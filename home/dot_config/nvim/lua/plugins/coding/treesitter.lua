@@ -1,12 +1,15 @@
 return {
   { -- Highlight, edit, and navigate code using static analysis
     'nvim-treesitter/nvim-treesitter',
+    -- The default branch is now `main`, a rewrite without `nvim-treesitter.configs`.
+    -- Without the pin, a fresh clone records `main` in lazy-lock.json.
+    branch = 'master',
     build = ':TSUpdate', -- Command to update parsers
     -- Load Treesitter early for highlighting/indentation as soon as a buffer opens
     event = { 'BufReadPost', 'BufNewFile' },
     dependencies = {
       -- Text Objects dependency
-      'nvim-treesitter/nvim-treesitter-textobjects',
+      { 'nvim-treesitter/nvim-treesitter-textobjects', branch = 'master' }, -- as above
       -- Optional: Context display
       -- 'nvim-treesitter/nvim-treesitter-context',
       -- Optional: Rainbow delimiters
@@ -15,10 +18,16 @@ return {
       -- 'HiPhish/rainbow-delimiters.nvim' -- More modern rainbow plugin
     },
     config = function()
+      -- Parsers are compiled here, so they need a C compiler (tools.tsv: cc).
+      local has_cc = vim.fn.executable 'cc' == 1
+      -- jsonc's queries only inherit json's, and its parser comes from gitlab.com,
+      -- which some networks block: json's parser (it reads comments) does jsonc.
+      vim.treesitter.language.register('json', 'jsonc')
+
       -- Main Treesitter configuration
       require('nvim-treesitter.configs').setup {
         -- A list of parser names, or "all" (may be slow)
-        ensure_installed = {
+        ensure_installed = not has_cc and {} or {
           'bash',
           'c',
           'comment', -- Basic comments, useful for textobjects
@@ -34,9 +43,7 @@ return {
           'javascript',
           'jsdoc',
           'json',
-          'jsonc',
           'kotlin',
-          'latex',
           'bibtex',
           'lua',
           'make',
@@ -60,12 +67,17 @@ return {
         },
 
         -- Install parsers synchronously (only applied to `ensure_installed`)
-        sync_install = false,
+        -- Synchronously when headless, so a scripted install waits for them.
+        sync_install = #vim.api.nvim_list_uis() == 0,
+
+        -- latex must be generated from its grammar (tree-sitter CLI + node); vimtex
+        -- highlights LaTeX without it.
+        ignore_install = { 'latex', 'jsonc' },
 
         -- Automatically install missing parsers when entering buffer
         -- Recommendation: Set to false if you manage `ensure_installed` carefully.
         -- Set to true for convenience but potentially slower startup on first open of new filetypes.
-        auto_install = true,
+        auto_install = has_cc,
 
         -- Core features
         highlight = {

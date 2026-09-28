@@ -7,9 +7,10 @@ return {
       { 'nvim-treesitter/nvim-treesitter', lazy = true },
     },
     config = function()
-      local ts_ok, parsers = pcall(require, 'nvim-treesitter.parsers')
-      if ts_ok and not parsers.has_parser 'org' then
-        vim.cmd 'TSInstall org'
+      -- setup builds orgmode's own tree-sitter grammar (nvim-treesitter has no org
+      -- parser), which needs a C compiler.
+      if vim.fn.executable 'cc' == 0 then
+        return
       end
 
       -- 2. Основной сетап

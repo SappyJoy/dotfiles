@@ -9,6 +9,9 @@ end
 return {
   {
     '3rd/image.nvim',
+    -- Elsewhere it has nothing to draw on, and its setup fails in a tmux without
+    -- allow-passthrough.
+    cond = vim.g.kitty_graphics,
     -- Load when needed, e.g., when opening markdown or specific image files
     -- Or load late if image viewing isn't a primary startup activity
     event = 'VeryLazy',
@@ -54,6 +57,13 @@ return {
       -- editor_only_render_when_active = true, -- Render only when Neovim window is focused
       -- hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif" } -- Files to open with image.nvim by default
     },
-    -- No explicit config function needed if only using opts
+    config = function(_, opts)
+      -- It needs a terminal: a headless nvim (the chezmoi install script) loads it
+      -- when it builds molten.
+      if #vim.api.nvim_list_uis() == 0 then
+        return
+      end
+      require('image').setup(opts)
+    end,
   },
 }

@@ -1,7 +1,8 @@
 #!/bin/sh
 # Fresh-machine test: apply this source (with uncommitted changes) in clean Ubuntu
 # containers, as a non-root user, the way a new machine gets it.
-# Run: sh tests/fresh-machine.sh [IMAGE...]   (default: ubuntu:20.04 ubuntu:24.04)
+# Run: sh tests/fresh-machine.sh [IMAGE...]
+#   (default: ubuntu:20.04 ubuntu:24.04 ubuntu:26.04)
 # Needs docker and the network. GITHUB_TOKEN is passed through when set (GitHub API
 # rate limit), e.g. GITHUB_TOKEN=$(gh auth token) sh tests/fresh-machine.sh
 
@@ -35,8 +36,10 @@ if [ "${1:-}" = --inside ]; then
     printf '%s\n' "$out" | grep -iE 'error|warn' | sed 's/^/     apply: /'
     check "apply succeeds" [ "$code" = 0 ]
     # Shown above but not counted: mise's network warnings that end in a working
-    # fallback, e.g. a GitHub 502 on its release list.
-    problems=$(printf '%s\n' "$out" | grep -iE 'error|warn' | grep -vE '^mise WARN .*fallback=true')
+    # fallback, e.g. a GitHub 502 on its release list; dpkg's about man pages, which
+    # docker's minimal images leave out.
+    problems=$(printf '%s\n' "$out" | grep -iE 'error|warn' | grep -vE '^mise WARN .*fallback=true' |
+        grep -vE '^update-alternatives: warning: skip creation of /usr/share/man/')
     check "apply prints no errors or warnings" [ -z "$problems" ]
     check "verify: the home matches the source" $cz verify
 
@@ -87,6 +90,16 @@ if [ "${1:-}" = --inside ]; then
     # Without the user config, so lazy.nvim doesn't install plugins and rewrite lazy-lock.json
     out=$(bash -lc "nvim --clean --headless --cmd \"lua vim.g.python3_host_prog = vim.fn.stdpath('data') .. '/venv/bin/python'\" +'py3 import pynvim, jupyter_client' +qa" 2>&1)
     check "nvim's Python host works (the uv venv)" [ -z "$out" ]
+    # nvim's plugins, parsers and mason tools came with apply (its script prints "nvim
+    # install error" otherwise, counted above), so its first start in a terminal has
+    # nothing left to install and nothing to report: plain, then Python, then markdown.
+    printf 'import os\n' >t.py
+    printf '# Notes\n\nSome text.\n' >t.md
+    out=$(bash -lc 'for f in "" t.py t.md; do sh /src/tests/nvim-start.sh $f; done' 2>&1)
+    rm -f t.py t.md
+    printf '%s\n' "$out" | grep . | sed 's/^/     nvim: /'
+    check "nvim starts without errors, prompts or installs" [ -z "$out" ]
+    check "nvim left lazy-lock.json as tracked" [ -z "$($cz status ~/.config/nvim/lazy-lock.json)" ]
     out=$(bash -lc 'command -v fish' 2>&1)
     check "fish comes from mise" has "^$HOME/.local/share/mise/shims/fish$"
     # delta (git's pager, lazygit's diffs): the tracked styles, and light from the seeded
@@ -121,7 +134,7 @@ fi
 # --- On the host --------------------------------------------------------------------
 here=$(cd "$(dirname "$0")" && pwd)
 src=$(cd "$here/.." && pwd)
-[ $# -gt 0 ] || set -- ubuntu:20.04 ubuntu:24.04
+[ $# -gt 0 ] || set -- ubuntu:20.04 ubuntu:24.04 ubuntu:26.04
 failed=
 
 for image in "$@"; do

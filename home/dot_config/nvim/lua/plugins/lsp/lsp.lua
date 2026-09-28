@@ -105,6 +105,8 @@ return {
         eslint = {}, -- For eslint LSP, ensure 'eslint_d' or 'eslint-lsp' is installed via Mason
         ts_ls = {}, -- TypeScript/JavaScript LSP (formerly tsserver)
         kotlin_language_server = {},
+        -- .NET: without the ICU library (minimal systems) it aborts; it needs no locales
+        marksman = { cmd_env = { DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = '1' } },
         -- debugpy is a Debug Adapter, not an LSP. Install with mason-tool-installer or mason-nvim-dap.
 
         -- LaTeX LSPs
@@ -219,34 +221,53 @@ return {
         -- 'ltex_ls_plus' was an option, stick to 'ltex' (ltex-ls) for now unless you have a specific reason
       }
 
+      -- mason installs some tools with npm, into a Python venv or from a zip. Where
+      -- those are missing (no node; Ubuntu's python3 without python3-venv; no unzip
+      -- without sudo), skip the tools instead of failing at every start.
+      -- `:checkhealth mason` shows what's missing.
+      local has_npm = vim.fn.executable 'npm' == 1
+      local has_unzip = vim.fn.executable 'unzip' == 1
+      local python = vim.fn.resolve(vim.fn.exepath 'python3') -- e.g. /usr/bin/python3.14
+      local has_venv = python ~= ''
+        and vim.uv.fs_stat(vim.fs.dirname(vim.fs.dirname(python)) .. '/lib/' .. vim.fs.basename(python) .. '/ensurepip') ~= nil
+      local function npm(name)
+        return { name, condition = function() return has_npm end }
+      end
+      local function pip(name)
+        return { name, condition = function() return has_venv end }
+      end
+      local function zip(name)
+        return { name, condition = function() return has_unzip end }
+      end
+
       -- Define ALL tools to be *ENSURED INSTALLED* by mason-tool-installer
       local tools_to_ensure_installed = {
         -- === LSPs ===
         'lua-language-server',
         'jdtls',
-        'pyright',
-        'clangd',
+        npm 'pyright',
+        zip 'clangd',
         'rust-analyzer',
-        'eslint-lsp',
-        'kotlin-language-server',
+        npm 'eslint-lsp',
+        zip 'kotlin-language-server',
         'texlab',
         'ltex-ls',
         'taplo', -- TOML LSP
         'marksman', -- Markdown LSP
-        'typescript-language-server', -- JS/TS LSP
+        npm 'typescript-language-server', -- JS/TS LSP
 
         -- === Formatters (Must match coding/format.lua) ===
         -- 'stylua', -- Lua
-        'clang-format', -- C/C++
-        'cmakelang', -- CMake
-        'black', -- Python
-        'isort', -- Python
+        pip 'clang-format', -- C/C++
+        pip 'cmakelang', -- CMake
+        pip 'black', -- Python
+        pip 'isort', -- Python
         'google-java-format', -- Java
-        'xmlformatter', -- XML
-        'sql-formatter', -- SQL
-        'prettier', -- JS/TS/JSON/YAML/HTML/CSS
-        'prettierd', -- Prettier Daemon (Faster)
-        'eslint_d', -- JS/TS Linter
+        pip 'xmlformatter', -- XML
+        npm 'sql-formatter', -- SQL
+        npm 'prettier', -- JS/TS/JSON/YAML/HTML/CSS
+        npm 'prettierd', -- Prettier Daemon (Faster)
+        npm 'eslint_d', -- JS/TS Linter
         'buf', -- Protobuf
         'ktfmt', -- Kotlin
         -- 'rustfmt', -- Rust
@@ -254,22 +275,23 @@ return {
         -- 'goimports', -- Go
         'cbfmt', -- Markdown code block formatter
         'latexindent', -- LaTeX
-        'bibtex-tidy', -- BibTeX
+        npm 'bibtex-tidy', -- BibTeX
 
         -- === Linters (Must match coding/lint.lua) ===
-        'markdownlint',
+        npm 'markdownlint',
         'hadolint',
-        'jsonlint',
-        'codespell',
+        npm 'jsonlint',
+        pip 'codespell',
 
         -- === Debug Adapters (Must match lsp/dap-core.lua) ===
-        'debugpy',
-        'codelldb',
-        'bash-debug-adapter',
+        pip 'debugpy',
+        zip 'codelldb',
+        zip 'bash-debug-adapter',
       }
             --
-      -- Setup Mason
-      require('mason').setup()
+      -- Setup Mason. A fresh pip in each Python tool's venv: Ubuntu 20.04's pip 20.0
+      -- can't read today's wheel tags.
+      require('mason').setup { pip = { upgrade_pip = true } }
 
       -- (Keep your mason-tool-installer setup as is)
       require('mason-tool-installer').setup {
@@ -281,12 +303,15 @@ return {
       -- Setup mason-lspconfig
       -- NOTE: In Nvim 0.11+, we strictly use this for ensuring installation mapping.
       -- We DO NOT use 'handlers' here anymore because that triggers the deprecated API.
-      require('mason-lspconfig').setup({})
+      -- It enables every installed server, but these run on java, a hand install off
+      -- arch: without it they'd crash on every markdown, text or kotlin buffer.
+      local needs_java = vim.fn.executable 'java' == 0 and { 'ltex', 'kotlin_language_server' } or {}
+      require('mason-lspconfig').setup { automatic_enable = { exclude = needs_java } }
 
       -- Manually configure and enable servers using the new Nvim 0.11 API
       for server_name, server_config in pairs(lsp_servers) do
         -- Skip jdtls (if you handle it separately with nvim-jdtls)
-        if server_name ~= 'jdtls' then
+        if server_name ~= 'jdtls' and not vim.tbl_contains(needs_java, server_name) then
           -- 1. Merge your custom capabilities with the defaults
           server_config.capabilities = vim.tbl_deep_extend('force', capabilities, server_config.capabilities or {})
 

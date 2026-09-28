@@ -18,13 +18,15 @@
 set -eu
 
 state=$HOME/.guest-dotfiles
-# Data and caches the tools write; remove deletes those that didn't exist before.
+# Data and caches the tools write (pip and npm: nvim's mason; gh: git's credential
+# helper; python3.12: uv, for mason); remove deletes those that didn't exist before.
 tool_dirs='.config/chezmoi .local/share/chezmoi .cache/chezmoi
 .config/mise .local/share/mise .local/state/mise .cache/mise .cache/sigstore-rust
 .config/fish .local/share/fish .cache/fish
 .tmux .local/share/nvim .local/state/nvim .cache/nvim
-.local/share/uv .cache/uv .local/share/zoxide .local/state/lazygit'
-tool_files='.bash_eternal_history'
+.local/share/uv .cache/uv .local/share/zoxide .local/state/lazygit
+.cache/pip .npm .local/state/gh'
+tool_files='.bash_eternal_history .local/bin/python3.12'
 # Their parents; removed only when they didn't exist before and are empty.
 parent_dirs='.local/bin .local/share .local/state .local .config .cache'
 

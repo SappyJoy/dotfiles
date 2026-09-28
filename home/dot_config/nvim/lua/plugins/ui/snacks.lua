@@ -87,7 +87,7 @@ return {
         },
       },
       -- Enable nice notifications
-      notifier = { enabled = true },
+      notifier = { enabled = #vim.api.nvim_list_uis() > 0 }, -- see init below
       -- Enable floating terminal
       terminal = { enabled = true },
       -- Enable fast buffer deletion
@@ -271,8 +271,11 @@ return {
       },
     },
     init = function()
-      -- Override Neovim's default notification handler
-      vim.notify = require 'snacks.notifier'
+      -- Override Neovim's default notification handler. Not in a headless nvim
+      -- (the chezmoi install script): there, nvim's own prints them to its log.
+      if #vim.api.nvim_list_uis() > 0 then
+        vim.notify = require 'snacks.notifier'
+      end
     end,
   },
 }

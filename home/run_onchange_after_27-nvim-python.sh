@@ -10,6 +10,9 @@ if ! command -v uv >/dev/null 2>&1; then
     echo "nvim python: no uv yet, skipped" >&2
     exit 0
 fi
+# Python 3.12 from uv, also as ~/.local/bin/python3.12: mason takes it for the tools
+# that need a newer Python than the system's (Ubuntu 20.04 has 3.8).
+uv python install --quiet 3.12
 venv=${XDG_DATA_HOME:-$HOME/.local/share}/nvim/venv
 "$venv/bin/python" -c '' 2>/dev/null || uv venv --quiet --clear --python 3.12 "$venv"
 uv pip install --quiet --python "$venv/bin/python" \

@@ -111,6 +111,12 @@ changed on both sides needs `chezmoi merge <file>`.
   fish's `conf.d/path.fish` put them on PATH.
 - fish plugins: `~/.config/fish/fish_plugins` is installed with fisher, and again
   whenever the list changes.
+- nvim: `apply` also installs its plugins (at `lazy-lock.json`'s commits), treesitter
+  parsers and mason tools, headless, so nvim's first start has nothing left to do.
+  It runs again when the lock or those lists change; its log is
+  `~/.local/state/nvim/install.log`. The parsers need `cc`, some mason tools `unzip`
+  or Python's venv (all apt rows), others npm, and Copilot node (a hand install:
+  `mise use -g node@26`). nvim leaves out what a machine can't build, without errors.
 - arch installs its tools with pacman, so none of this runs there.
 
 ## Per-machine differences
@@ -158,8 +164,13 @@ over with `chezmoi merge`.
   - `sh tests/ssh-config.sh`: the `~/.ssh/config` block and the override order
   - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match
     the one before
-  - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a non-root user in
-    clean Ubuntu containers (docker; default `ubuntu:20.04` and `ubuntu:24.04`)
+  - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a user with sudo in
+    clean Ubuntu containers, then checks the shell, the tools and nvim's first start
+    (docker; default `ubuntu:20.04`, `24.04` and `26.04`)
+  - `sh tests/nvim-start.sh [FILE]`: starts nvim in a scratch tmux and prints the
+    prompts, errors and installs it reports (used by fresh-machine)
+  - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
+    as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 
 ## Moving a machine off the old bare repo
 

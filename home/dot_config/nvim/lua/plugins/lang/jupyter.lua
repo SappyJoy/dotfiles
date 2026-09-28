@@ -15,7 +15,7 @@ return {
     dependencies = { '3rd/image.nvim' },
     build = ':UpdateRemotePlugins',
     init = function()
-      vim.g.molten_image_provider = 'image.nvim'
+      vim.g.molten_image_provider = vim.g.kitty_graphics and 'image.nvim' or 'none'
       vim.g.molten_virt_text_output = true
       vim.g.molten_use_border_highlights = true
       vim.g.molten_auto_open_output = false -- Disable auto-open to prevent focus stealing
