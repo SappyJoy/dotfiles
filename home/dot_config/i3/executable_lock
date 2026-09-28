@@ -1,4 +1,11 @@
 #!/bin/sh
+# Lock the screen: i3lock-color with the screen blurred, a clock and the keyboard
+# layout, in Ayu's orange. Plain i3lock (apt's) has none of these options: it gets a
+# dark screen instead. Extra arguments go to i3lock (xss-lock passes --nofork).
+
+if ! i3lock --version 2>&1 | grep -q 'Raymond Li'; then
+    exec i3lock --color=0f1419 "$@"
+fi
 
 BLANK='#00000000'
 CLEAR='#ffffff22'
@@ -7,7 +14,7 @@ TEXT='#FA8D3FE6'
 WRONG='#FF7383bb'
 VERIFYING='#399EE6E6'
 
-i3lock \
+exec i3lock \
 --insidever-color=$CLEAR     \
 --ringver-color=$VERIFYING   \
 \
@@ -32,5 +39,6 @@ i3lock \
 --clock                      \
 --indicator                  \
 --time-str="%H:%M:%S"        \
---date-str="%A, %Y-%m-%d"       \
+--date-str="%A, %Y-%m-%d"    \
 --keylayout 1                \
+"$@"
