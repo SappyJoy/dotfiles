@@ -1,0 +1,34 @@
+{{- /* Not on arch: arch is where lazy-lock.json is written (:Lazy update, then dots). */ -}}
+{{- if ne .chezmoi.osRelease.id "arch" -}}
+#!/bin/sh
+# nvim's plugins at lazy-lock.json's commits, its treesitter parsers and mason tools,
+# installed headless, so nvim's first start has nothing left to install. After the apt
+# packages (30): the parsers need cc, mason's tools unzip and Python's venv.
+# chezmoi runs this again when one of these changes:
+#   lazy-lock.json {{ include "dot_config/nvim/lazy-lock.json" | sha256sum }}
+#   parsers        {{ include "dot_config/nvim/lua/plugins/coding/treesitter.lua" | sha256sum }}
+#   mason tools    {{ include "dot_config/nvim/lua/plugins/lsp/lsp.lua" | sha256sum }}
+# By hand: chezmoi execute-template <"$(chezmoi source-path)/run_onchange_after_40-nvim-plugins.sh.tmpl" | sh
+set -u
+PATH=$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH
+if ! command -v nvim >/dev/null 2>&1; then
+    echo "nvim plugins: no nvim yet, skipped" >&2
+    exit 0
+fi
+log=${XDG_STATE_HOME:-$HOME/.local/state}/nvim/install.log
+mkdir -p "${log%/*}"
+echo "nvim: installing plugins, parsers and mason tools (log: $log)"
+# Starting nvim installs missing plugins (lazy, headless: it waits), and restore moves
+# them to the lock. VeryLazy loads what an interactive start loads after the UI is up:
+# nvim-treesitter installs its parsers (synchronously when headless), orgmode builds
+# its grammar. Then the mason tools.
+nvim --headless '+Lazy! restore' '+doautocmd User VeryLazy' +MasonToolsInstallSync +qa \
+    >"$log" 2>&1
+code=$?
+problems=$(grep -iE 'error|fail' "$log")
+if [ "$code" != 0 ] || [ -n "$problems" ]; then
+    printf '%s\n' "$problems" | sed 's/^/nvim install error: /' >&2
+    echo "nvim install error: exit $code, see $log" >&2
+fi
+exit 0
+{{ end -}}
