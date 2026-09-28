@@ -48,9 +48,15 @@
 	colorMoved = default            # moved blocks show as moved, not as -/+
 	tool = nvimdiff
 [delta]
-	navigate = true                 # n / N jump between files
+	navigate = true                 # n / N jump between files and hunks
 	line-numbers = true
 	syntax-theme = ansi             # the terminal's palette, like bat
+	file-style = bold blue          # headers without boxes or rules
+	file-decoration-style = none
+	hunk-header-decoration-style = none
+	line-numbers-zero-style = dim   # terminal colors: delta's fixed #444444 is dark on dark
+	line-numbers-minus-style = red
+	line-numbers-plus-style = green
 # delta's light/dark: it can't ask the terminal from inside lazygit, and guesses dark.
 # Seeded light once by chezmoi (create_), then theme-switcher rewrites it.
 [include]
