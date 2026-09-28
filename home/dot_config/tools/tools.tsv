@@ -32,10 +32,10 @@ uv	dev	0.12.18	uv --version	mise aqua:astral-sh/uv
 python3	dev	3.14.7	python3 --version	apt python3-venv
 cc	dev	-	-	apt build-essential
 unzip	dev	-	-	apt unzip
-node	dev	26.10.0	node --version	global: mise use -g node@26 (needs libatomic1)
+node	dev	26.10.0	node --version	global: mise use -p ~/.config/mise/conf.d/local.toml node@26 (needs libatomic1)
 go	dev	1.27.1	go version	go.dev/dl
 rustc	dev	1.91.1	rustc --version	curl https://sh.rustup.rs -sSf | sh
-java	dev	17.0.20.1	java -version	global: mise use -g java@temurin-17
+java	dev	17.0.20.1	java -version	global: mise use -p ~/.config/mise/conf.d/local.toml java@temurin-17
 docker	dev	29.8.1	docker --version	docs.docker.com/engine/install
 lazydocker	dev	0.25.2	lazydocker --version	mise aqua:jesseduffield/lazydocker
 gh	dev	2.101.0	gh --version	mise aqua:cli/cli
