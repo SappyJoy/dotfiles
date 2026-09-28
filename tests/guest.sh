@@ -67,5 +67,5 @@ fi
 here=$(cd "$(dirname "$0")" && pwd)
 src=$(cd "$here/.." && pwd)
 tag=$(sh "$here/base-image.sh" "${1:-ubuntu:24.04}") || exit 1
-docker run --rm -v "$src:/src:ro" -e GITHUB_TOKEN -u tester -w /home/tester \
+docker run --rm -v "$src:/src:ro" -e GITHUB_TOKEN -u guest -w /home/guest \
     "$tag" sh /src/tests/guest.sh --inside
