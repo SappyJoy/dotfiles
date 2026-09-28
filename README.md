@@ -106,7 +106,10 @@ changed on both sides needs `chezmoi merge <file>`.
   `home/.chezmoiexternal.toml.tmpl`. To upgrade it, change the version and the two
   checksums (from the release's `SHASUMS256.txt`).
 - `~/.config/mise/config.toml` is rendered from the list: edit the list, not the
-  config.
+  config. A tool you install by hand through mise (node, java, jless: their hints)
+  goes into `~/.config/mise/conf.d/local.toml`, which mise also reads and chezmoi
+  leaves alone: `mise use -p ~/.config/mise/conf.d/local.toml TOOL@VERSION`.
+  `mise use -g` would write into the rendered config.
 - The tools run through mise's shims (`~/.local/share/mise/shims`); `.profile` and
   fish's `conf.d/path.fish` put them on PATH.
 - fish plugins: `~/.config/fish/fish_plugins` is installed with fisher, and again
@@ -115,8 +118,8 @@ changed on both sides needs `chezmoi merge <file>`.
   parsers and mason tools, headless, so nvim's first start has nothing left to do.
   It runs again when the lock or those lists change; its log is
   `~/.local/state/nvim/install.log`. The parsers need `cc`, some mason tools `unzip`
-  or Python's venv (all apt rows), others npm, and Copilot node (a hand install:
-  `mise use -g node@26`). nvim leaves out what a machine can't build, without errors.
+  or Python's venv (all apt rows), others npm, and Copilot node (a hand install, see
+  above). nvim leaves out what a machine can't build, without errors.
 - arch installs its tools with pacman, so none of this runs there.
 
 ## Per-machine differences

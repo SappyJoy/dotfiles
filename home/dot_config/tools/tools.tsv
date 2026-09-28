@@ -23,6 +23,7 @@ btop	core	1.4.7	btop --version	mise aqua:aristocratos/btop
 ranger	core	1.9.4	ranger --version	mise pipx:ranger-fm
 yazi	core	26.9.1	yazi --version	mise github:sxyazi/yazi[asset_pattern=*linux-musl.zip]
 jq	core	1.8.2	jq --version	mise aqua:jqlang/jq
+jless	core	0.9.0	jless --version	global: mise use -p ~/.config/mise/conf.d/local.toml jless@0.9.0 (glibc 2.34+, apt libxcb-render0 libxcb-shape0 libxcb-xfixes0)
 tldr	core	1.9.0	tldr --version	mise aqua:tealdeer-rs/tealdeer
 chezmoi	core	2.72.2	chezmoi --version	sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
 age	core	1.3.2	age --version	mise aqua:FiloSottile/age
@@ -31,13 +32,14 @@ uv	dev	0.12.18	uv --version	mise aqua:astral-sh/uv
 python3	dev	3.14.7	python3 --version	apt python3-venv
 cc	dev	-	-	apt build-essential
 unzip	dev	-	-	apt unzip
-node	dev	26.10.0	node --version	global: mise use -g node@26 (needs libatomic1)
+node	dev	26.10.0	node --version	global: mise use -p ~/.config/mise/conf.d/local.toml node@26 (needs libatomic1)
 go	dev	1.27.1	go version	go.dev/dl
 rustc	dev	1.91.1	rustc --version	curl https://sh.rustup.rs -sSf | sh
-java	dev	17.0.20.1	java -version	global: mise use -g java@temurin-17
+java	dev	17.0.20.1	java -version	global: mise use -p ~/.config/mise/conf.d/local.toml java@temurin-17
 docker	dev	29.8.1	docker --version	docs.docker.com/engine/install
 lazydocker	dev	0.25.2	lazydocker --version	mise aqua:jesseduffield/lazydocker
 gh	dev	2.101.0	gh --version	mise aqua:cli/cli
+just	dev	1.58.0	just --version	mise aqua:casey/just
 aider	dev	0.86.2	aider --version	mise pipx:aider-chat[uvx_args=--python 3.12]
 dir2md	dev	0.3.1	-	mise pipx:dir2md[uvx_args=--python 3.12]
 dvc	dev	3.67.1	dvc --version	mise pipx:dvc[extras=all]
