@@ -1,0 +1,17 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Claude Code's settings.json, shared by both accounts (~/.claude-personal links
+       to it). Claude Code rewrites it (/model, /theme), so the machine owns the file;
+       this sets the keys every machine shares and leaves the rest alone: theme (the
+       work PCs' terminal is light) and preferredNotifChannel (kitty on arch). */ -}}
+{{- $s := dict }}
+{{- if .chezmoi.stdin }}{{ $s = fromJson .chezmoi.stdin }}{{ end }}
+{{- $s = setValueAtPath "model" "opus[1m]" $s }}
+{{- $s = setValueAtPath "modelSettings" (dict
+      "claude-opus-5-5" (dict "effortLevel" "xhigh")
+      "claude-fable-5-1" (dict "effortLevel" "high")) $s }}
+{{- $s = setValueAtPath "enableWorkflows" false $s }}
+{{- $s = setValueAtPath "agentPushNotifEnabled" true $s }}
+{{- $s = setValueAtPath "statusLine" (dict
+      "type" "command"
+      "command" "bash ~/.claude/statusline-command.sh") $s }}
+{{- toPrettyJson "  " $s -}}

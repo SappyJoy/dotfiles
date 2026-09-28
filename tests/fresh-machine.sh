@@ -78,6 +78,12 @@ if [ "${1:-}" = --inside ]; then
     # A mise row: its install column (after status, tool, have, want) starts with "mise "
     check "tools-check: no mise row missing or older" \
         [ -z "$(printf '%s\n' "$out" | grep -E '^(missing|older) +[^ ]+ +[^ ]+ +[^ ]+ +mise ')" ]
+    # Claude Code's status line: settings.json runs the script, which needs jq
+    check "claude settings run the status line" \
+        grep -q '"command": "bash ~/.claude/statusline-command.sh"' ~/.claude/settings.json
+    out=$(bash -lc 'printf "%s" "{\"workspace\": {\"current_dir\": \"/tmp\"}, \"model\": {\"display_name\": \"Opus\"}}" |
+        bash ~/.claude/statusline-command.sh' 2>&1)
+    check "claude status line runs (bash, jq)" has '/tmp.*\[Opus\]'
     out=$(bash -lc 'tmux -V' 2>&1)
     check "tmux is the pinned 3.7c" has '^tmux 3\.7c$'
     check "tmux takes allow-passthrough (>= 3.3)" bash -lc \
