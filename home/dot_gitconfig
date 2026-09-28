@@ -51,6 +51,10 @@
 	navigate = true                 # n / N jump between files
 	line-numbers = true
 	syntax-theme = ansi             # the terminal's palette, like bat
+# delta's light/dark: it can't ask the terminal from inside lazygit, and guesses dark.
+# Seeded light once by chezmoi (create_), then theme-switcher rewrites it.
+[include]
+	path = ~/.config/git/theme.gitconfig
 
 [alias]
 	st = status

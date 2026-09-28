@@ -15,6 +15,7 @@ POLYBAR_COLORS="$HOME/.config/polybar/colors.ini"
 KITTY_THEME="$HOME/.config/kitty/theme.conf"
 TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.conf
+GIT_THEME="$HOME/.config/git/theme.gitconfig"  # delta's light/dark, included by .gitconfig
 
 # Save state
 echo "$MODE" > "$STATE_FILE"
@@ -54,6 +55,9 @@ EOF
     # Tmux
     echo 'set -g @minimal-tmux-bg "#FF9940"' > "$TMUX_THEME"
 
+    # Delta (git pager, lazygit diffs)
+    printf '[delta]\n\tlight = true\n' > "$GIT_THEME"
+
 else
     # === DARK MODE (Ayu Mirage) ===
 
@@ -88,6 +92,9 @@ EOF
 
     # Tmux
     echo 'set -g @minimal-tmux-bg "#FFCC66"' > "$TMUX_THEME"
+
+    # Delta (git pager, lazygit diffs)
+    printf '[delta]\n\tdark = true\n' > "$GIT_THEME"
 fi
 
 # === RELOAD APPS ===
