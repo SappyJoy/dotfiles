@@ -3,6 +3,9 @@
 gui:
   mainPanelSplitMode: horizontal   # staged and unstaged diffs stacked, not side by side
   nerdFontsVersion: "3"            # file and branch icons (JetBrainsMono NF)
+  theme:
+    # Underline instead of the blue bar, which hid colored text in both Ayu themes
+    selectedLineBgColor: [underline]
 git:
   # The diff panel: delta (also git's pager, see .gitconfig) or plain git; | switches.
   # Plain text where delta isn't installed.
