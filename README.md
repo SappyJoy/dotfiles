@@ -64,10 +64,10 @@ them can be regenerated (API keys, ssh hosts), but it's tedious.
 
 | Task | Command |
 |---|---|
-| Commit edits made to live files | `dots`: re-add the edited files, then lazygit on this repo |
+| Commit edits made to live files | `dots`: re-add the edited files, then lazygit on this repo; it lists what's left with the command for each |
 | Get changes from other machines | `chezmoi update` (pull + apply) |
 | What differs on this machine | `chezmoi status`, `chezmoi diff` |
-| Track a new file | `chezmoi add <file>`; add `--encrypt` for secrets |
+| Track a new file | `dots <file>…` (adds it, then as above); secrets: `chezmoi add --encrypt <file>` |
 | Edit a template or secret | `vd <file>` (`chezmoi edit --apply`) |
 | Tools missing or outdated | `tools-check` (`--missing`: only what needs action) |
 | After upgrading tools on arch | `tools-check --record`, then `dots` |
@@ -162,6 +162,7 @@ over with `chezmoi merge`.
   - `sh tests/tools-check.sh`
   - `sh tests/render.sh`: the templates that read the tool list
   - `sh tests/ssh-config.sh`: the `~/.ssh/config` block and the override order
+  - `sh tests/dots.sh`: the fish function `dots` in a scratch home
   - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match
     the one before
   - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a user with sudo in
