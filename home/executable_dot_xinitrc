@@ -1,0 +1,17 @@
+#!/bin/sh
+# startx's session, the fallback when ly fails: i3, started the way ly starts it.
+# ly also reads ~/.profile and the environment of `fish --login`; a startx from a
+# TTY runs under the login fish, which set the same.
+
+# The system's X session hooks, as ly and Arch's stock xinitrc run them.
+# 50-systemd-user.sh passes DISPLAY to the systemd user manager, so apps it starts
+# over D-Bus (dunst) can open their windows.
+if [ -d /etc/X11/xinit/xinitrc.d ]; then
+    for f in /etc/X11/xinit/xinitrc.d/?*.sh; do
+        [ -x "$f" ] && . "$f"
+    done
+    unset f
+fi
+
+# The i3 config starts the rest (polkit agent, polybar, picom, ...).
+exec i3
