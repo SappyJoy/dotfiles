@@ -135,7 +135,9 @@ In order of preference:
    prefix: written once, then owned by the app.
 4. **A file the machine owns, with one managed part**: a `modify_` script gets the
    live file on stdin and prints the new one. `~/.ssh/config` keeps its own hosts;
-   the script keeps the dotfiles' Include block at its end.
+   the script keeps the dotfiles' Include block at its end. Claude Code's
+   `settings.json` keeps each machine's theme; a modify-template (no script, no jq)
+   sets the keys every machine shares, like the status line.
 5. **State a script writes** stays untracked and is included by a tracked config:
    `theme-switcher` writes `tmux/theme.conf`, `i3/colors` and `polybar/colors.ini`.
 6. **Secrets**: `chezmoi add --encrypt`.

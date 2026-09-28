@@ -22,6 +22,12 @@ render() {
         <"$src/home/$1"
 }
 json_len() { python3 -c 'import json, sys; print(len(json.load(sys.stdin)))'; }
+# modify FILE CURRENT: a modify-template's output for a target that holds CURRENT
+modify() {
+    chezmoi execute-template --source "$src" --override-data \
+        "{\"chezmoi\": {\"stdin\": $(printf '%s' "$2" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))')}}" \
+        <"$src/home/$1"
+}
 rows() { # rows AWK_CONDITION: count the tools.tsv rows matching it
     awk -F '\t' "!/^#/ && NF && ($1)" "$tsv" | wc -l | tr -d ' '
 }
@@ -44,6 +50,14 @@ out=$(render .chezmoitemplates/mise-tools.toml false)
 check "mise config: desktop rows only on a desktop" hasnt 'greenclip'
 out=$(render dot_config/mise/config.toml.tmpl)
 check "mise config: per-project node and java versions" has 'idiomatic_version_file_enable_tools = ["node", "java"]'
+
+# Claude Code's settings.json: the shared keys on every machine, the machine's own
+# (theme) kept
+out=$(modify dot_claude/modify_settings.json '')
+check "claude settings: a new file gets the status line" has '"command": "bash ~/.claude/statusline-command.sh"'
+out=$(modify dot_claude/modify_settings.json '{"theme": "light", "statusLine": {"type": "command", "command": "old"}}')
+check "claude settings: the machine's theme stays" has '"theme": "light"'
+check "claude settings: shared keys win" hasnt '"old"'
 
 # Per machine: arch uses pacman, so its mise config has only the settings (per-project
 # versions), and it gets no mise external, no scripts and no apt list.
