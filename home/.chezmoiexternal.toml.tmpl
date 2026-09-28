@@ -12,6 +12,18 @@
     url = "https://raw.githubusercontent.com/yazi-rs/plugins/f703392df78b5fba5e8f9f1ad0b1cb6d3def9736/piper.yazi/main.lua"
     checksum.sha256 = "4bb1a91a4a9aa0019e7a9bf05aa7ea7070add9d6f42590e1ec7875de978077fc"
 
+{{- /* btop's theme (btop.conf). mise's btop looks for its themes in
+       ../share/btop/themes next to its binary, but the release keeps them in
+       ../themes, so it falls back to its default colors. arch's btop finds them. */}}
+{{- if ne .chezmoi.osRelease.id "arch" }}
+
+# btop's Ayu theme, from the release tag of the btop in tools.tsv
+[".config/btop/themes/ayu.theme"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/aristocratos/btop/v1.4.7/themes/ayu.theme"
+    checksum.sha256 = "d5484417195f43235313c14764ffc7be5be1c40a1545f8fbe4d86e77e742dd89"
+{{- end }}
+
 {{- /* mise, which installs the tools.tsv rows "mise <tool>". Not on arch (pacman).
        To upgrade: new version and checksums from the release's SHASUMS256.txt. */}}
 {{- if ne .chezmoi.osRelease.id "arch" }}

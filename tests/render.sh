@@ -60,6 +60,7 @@ if [ "$os" = arch ]; then
     done
     out=$(render .chezmoiexternal.toml.tmpl)
     check "arch: no mise external" hasnt '.local/bin/mise'
+    check "arch: no btop theme external (pacman's btop has its themes)" hasnt '.config/btop/themes'
 else
     out=$(render dot_config/mise/config.toml.tmpl)
     check "$os: mise config pins the tools" has '[tools]'
@@ -70,6 +71,13 @@ else
     out=$(render .chezmoiexternal.toml.tmpl)
     check "$os: mise external" has '.local/bin/mise'
 fi
+
+# btop's seed names a theme; off arch, mise's btop can't find its own themes, so an
+# external brings that file. Rendered as Ubuntu, so it's checked on arch too.
+theme=$(sed -n 's/^color_theme = "\(.*\)"$/\1/p' "$src/home/dot_config/btop/create_btop.conf")
+out=$(chezmoi execute-template --source "$src" --override-data '{"chezmoi": {"osRelease": {"id": "ubuntu"}}}' \
+    <"$src/home/.chezmoiexternal.toml.tmpl")
+check "ubuntu: btop's theme \"$theme\" comes as an external" has "\".config/btop/themes/$theme.theme\""
 
 if [ $fails -gt 0 ]; then
     echo "$fails failed"
