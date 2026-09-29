@@ -1,0 +1,37 @@
+# dunst: only my changes; the defaults are in /etc/dunst/dunstrc and dunst(5).
+# Colors: Ayu light, like i3 and polybar. theme-switcher writes the dark ones into
+# dunstrc.d/50-theme.conf; dunst-place writes dunstrc.d/60-place.conf, which keeps
+# the notifications on the primary monitor inside FILM. Test: `dunstctl reload`,
+# then `notify-send -u low|normal|critical TITLE BODY`.
+
+[global]
+    # The terminal and bar font, readable at a glance (default: Monospace 8)
+    font = "JetBrainsMono Nerd Font 10"
+    # Like a focused i3 window: a 2 px border in the accent color
+    frame_width = 2
+    frame_color = "#FF9940"
+    # The GTK icon theme; Adwaita lacks many app icons (flameshot's)
+    icon_theme = "Papirus, Adwaita"
+    # Look icons up in the themes (the stock dunstrc's value; without it dunst
+    # searches only icon_path)
+    enable_recursive_icon_lookup = true
+    # The actions menu (middle click, `dunstctl context`) in rofi
+    dmenu = "rofi -dmenu -p dunst"
+
+# highlight: the progress bar (e.g. volume), in the frame's color
+[urgency_low]
+    background = "#FAFAFA"
+    foreground = "#8295A6"
+    frame_color = "#ABB0B6"
+    highlight = "#ABB0B6"
+
+[urgency_normal]
+    background = "#FAFAFA"
+    foreground = "#5C6A72"
+    highlight = "#FF9940"
+
+[urgency_critical]
+    background = "#FAFAFA"
+    foreground = "#5C6A72"
+    frame_color = "#F07178"
+    highlight = "#F07178"

@@ -160,7 +160,9 @@ In order of preference:
    sets the keys every machine shares, like the status line.
 5. **State a script writes** stays untracked and is included by a tracked config:
    `theme-switcher` writes `tmux/theme.conf` and `i3/colors` (both skip a missing
-   include).
+   include). dunst reads drop-ins from `dunstrc.d/`: `theme-switcher` writes the dark
+   colors there, `dunst-place` the offset that keeps notifications on the primary
+   monitor inside FILM.
 6. **Secrets**: `chezmoi add --encrypt`.
 
 `re-add` (and so `dots`) skips templates. Edit those with `vd`, or bring a live edit
@@ -190,6 +192,8 @@ over with `chezmoi merge`.
   - `sh tests/render.sh`: the templates that read the tool list
   - `sh tests/ssh-config.sh`: the `~/.ssh/config` block and the override order
   - `sh tests/dots.sh`: the fish function `dots` in a scratch home
+  - `sh tests/dunst-place.sh`: the notification offset for a few desks
+  - `sh tests/lock.sh`: the lock script (dunst paused, xss-lock's sleep lock)
   - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match
     the one before
   - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a user with sudo in

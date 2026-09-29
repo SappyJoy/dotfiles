@@ -4,6 +4,7 @@
 # X11 + i3 stack
 .config/autorandr/**
 .config/bspwm/**
+.config/dunst/**
 .config/flameshot/**
 .config/greenclip.toml
 .config/gtk-3.0/**
@@ -18,6 +19,7 @@
 .config/user-dirs.locale
 .gtkrc-2.0
 .xinitrc
+.local/bin/dunst-place
 .local/bin/film-snap
 .local/bin/film_mode.sh
 .local/bin/i3-outputs
