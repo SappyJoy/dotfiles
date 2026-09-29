@@ -37,6 +37,11 @@
 .local/lib/film_snap/**
 {{- end }}
 
+{{ if ne .chezmoi.osRelease.id "arch" -}}
+# makepkg exists only on Arch
+.config/pacman/**
+{{- end }}
+
 {{ if not .personal -}}
 # secrets: only on own machines, which hold the age key
 .config/fish/private.fish
