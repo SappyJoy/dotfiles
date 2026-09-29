@@ -6,9 +6,10 @@
 # The level lives in ~/.cache/brightness, which the bar shows. ddcutil's udev rule
 # gives the logged-in user the monitors' i2c buses, so no sudo. The buses come from
 # `ddcutil detect` (0.8 s), cached in ~/.cache/brightness-buses and found again when
-# a write fails. A write takes ~0.35 s: the monitors get theirs in parallel, the
-# notification comes first, and presses that arrive meanwhile (key repeat) merge:
-# only the latest level gets written.
+# a write fails. The monitors get theirs in parallel, without ddcutil's DDC checks
+# (the buses are known; a write to a missing monitor still fails): ~0.4 s for three
+# instead of 0.9 s one after another. The notification comes first, and presses
+# that arrive meanwhile (key repeat) merge: only the latest level gets written.
 
 set -u
 cache=${XDG_CACHE_HOME:-$HOME/.cache}
@@ -33,7 +34,7 @@ detect() {
 write_all() {
     local bus pids=() status=0
     for bus in $(<"$buses_file"); do
-        ddcutil setvcp 10 "$1" --bus "$bus" --noverify >/dev/null 2>&1 &
+        ddcutil setvcp 10 "$1" --bus "$bus" --noverify --skip-ddc-checks >/dev/null 2>&1 &
         pids+=($!)
     done
     for pid in "${pids[@]}"; do wait "$pid" || status=1; done
