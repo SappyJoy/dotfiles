@@ -20,6 +20,8 @@ focused=$(i3-msg -t get_workspaces | jq -r '.[] | select(.focused).name')
 
 xrandr --delmonitor FILM >/dev/null 2>&1 || true
 xrandr --setmonitor FILM "$geometry" "$outputs" >/dev/null
+# dunst sees only FILM too: keep its notifications on the primary monitor
+"$HOME/.local/bin/dunst-place" || true
 
 # i3-msg gets the reply from the restarted i3, so it is ready right after this.
 i3-msg -q restart

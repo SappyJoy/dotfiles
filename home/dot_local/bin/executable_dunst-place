@@ -1,0 +1,36 @@
+#!/bin/sh
+# Keep dunst's notifications at the top-right of the primary monitor. dunst places
+# them in the first RandR monitor, which on a spanned desk is FILM (film_mode.sh),
+# so its top-right corner would be the rightmost monitor's. This writes the offset
+# from FILM's corner to the primary's into a drop-in and reloads dunst. Without
+# FILM the first monitor is the primary itself, and the drop-in goes away.
+# film_mode.sh runs it after spanning.
+
+drop="${XDG_CONFIG_HOME:-$HOME/.config}/dunst/dunstrc.d/60-place.conf"
+dx=10 dy=50 # dunst's default offset from the corner
+
+# "DP-0 connected primary 1200x1920+1200+0 left ...": the primary's WxH+X+Y
+primary=$(xrandr --current | awk '$2 == "connected" && $3 == "primary" { print $4 }')
+# " 0: FILM 3600/972x1920/518+0+0  DP-4 DP-0 DP-2": the first monitor's geometry
+first=$(xrandr --listactivemonitors | awk '$1 == "0:" { print $3 }')
+
+# Nothing when the primary is off, missing or outside the first monitor
+offset=$(echo "$primary $first" | awk -v dx="$dx" -v dy="$dy" '
+    $1 !~ /^[0-9]+x[0-9]+\+[0-9]+\+[0-9]+$/ { exit }
+    {
+        split($1, p, /[x+]/)             # w h x y
+        gsub(/\/[0-9]+/, "", $2)         # drop the millimetres
+        split($2, m, /[x+]/)
+        if (p[3] < m[3] || p[3] + p[1] > m[3] + m[1] || p[4] < m[4]) exit
+        print m[3] + m[1] - p[3] - p[1] + dx, p[4] - m[4] + dy
+    }')
+
+if [ -n "$offset" ] && [ "$offset" != "$dx $dy" ]; then
+    mkdir -p "${drop%/*}"
+    printf '# written by dunst-place: the primary monitor'"'"'s top-right\n[global]\n    offset = (%s, %s)\n' \
+        ${offset% *} ${offset#* } >"$drop"
+else
+    rm -f "$drop"
+fi
+
+if pgrep -xu "$USER" dunst >/dev/null; then dunstctl reload; fi
