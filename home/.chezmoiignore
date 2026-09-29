@@ -4,6 +4,7 @@
 # X11 + i3 stack
 .config/autorandr/**
 .config/bspwm/**
+.config/dunst/**
 .config/flameshot/**
 .config/greenclip.toml
 .config/gtk-3.0/**
