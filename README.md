@@ -85,6 +85,25 @@ them can be regenerated (API keys, ssh hosts), but it's tedious.
 - sshfs: its own connection, and a reconnect after a dead link:
   `sshfs -o reconnect,ServerAliveInterval=15,ControlPath=none HOST:DIR MOUNTPOINT`
 
+### VPN (own desktops)
+
+Two tunnels, one at a time: WireGuard (NetworkManager's connection `vpnconfig`) and
+VLESS (sing-box's tunnel, no window or tray). `toggle-wireguard` ($mod+Shift+v) and
+`toggle-vless` ($mod+Shift+t), or a click on the bar; turning one on turns the other
+off.
+
+- The profiles are encrypted here: `~/.config/wireguard/vpnconfig.conf` (wg-quick
+  format) and `~/.config/sing-box/config.json`. Edit with `vd`; after a WireGuard
+  change, `nmcli connection delete vpnconfig` and run `vpn-setup` to import it again.
+  The VLESS server in use is the `proxy` outbound; `systemctl restart vless` applies
+  an edit.
+- A new machine: install sing-box (`tools-check`), then run `vpn-setup` once (sudo). It
+  writes the `vless` service (sing-box as you, with network rights only), a polkit rule
+  that lets you start and stop it without a password, and imports the WireGuard
+  profile into NetworkManager. The package's own `sing-box.service` stays off: its
+  default config is a shadowsocks server open to the LAN.
+- Logs: `journalctl -u vless`.
+
 Pull with `chezmoi update`, not in lazygit. If you do pull in lazygit, run
 `chezmoi apply` right after. `dots` leaves pulled changes alone, but a file that
 changed on both sides needs `chezmoi merge <file>`.

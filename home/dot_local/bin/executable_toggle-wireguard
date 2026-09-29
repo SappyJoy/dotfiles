@@ -1,0 +1,16 @@
+#!/bin/sh
+# WireGuard on/off: NetworkManager's connection "vpnconfig" (imported by vpn-setup).
+# Turning it on stops VLESS first: one tunnel at a time. $mod+Shift+v and a click on
+# the bar run this.
+conn=vpnconfig
+
+if [ "$(nmcli -g GENERAL.STATE connection show "$conn" 2>/dev/null)" = activated ]; then
+    nmcli connection down "$conn" >/dev/null && notify-send -t 1500 WireGuard off
+else
+    systemctl is-active -q vless && systemctl stop vless
+    if nmcli connection up "$conn" >/dev/null; then
+        notify-send -t 1500 WireGuard on
+    else
+        notify-send -u critical WireGuard "failed to connect ($conn)"
+    fi
+fi
