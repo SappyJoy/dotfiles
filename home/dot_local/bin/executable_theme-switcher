@@ -150,19 +150,10 @@ fi
 
 # === RELOAD APPS ===
 
-# i3
-i3-msg reload >/dev/null
+# i3 (reads its colors); its restart also restarts polybar, which reads its colors
+# too: i3 runs polybar's launch.sh on every restart (exec_always). A second run
+# from here raced it and left two bars.
 i3-msg restart >/dev/null
-
-# Polybar: Kill all instances and restart (Assuming you have a launch script)
-killall polybar
-# If you use the standard launch script location:
-if [ -x "$HOME/.config/polybar/launch.sh" ]; then
-    "$HOME/.config/polybar/launch.sh" &
-else
-    # Fallback if no launch script
-    polybar-msg cmd restart >/dev/null
-fi
 
 # Kitty (Live Reload)
 kill -SIGUSR1 $(pidof kitty)
