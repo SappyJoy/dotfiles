@@ -17,6 +17,7 @@ TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.conf
 GIT_THEME="$HOME/.config/git/theme.gitconfig"  # delta's light/dark, included by .gitconfig
 GTK3_SETTINGS="$HOME/.config/gtk-3.0/settings.ini"  # a create_ seed; GTK3 apps read it on start
+ROFI_COLORS="$HOME/.config/rofi/colors.rasi"  # untracked; config.rasi holds the light colors
 
 # gtk3_dark true|false: GTK3 apps (no settings daemon on i3, so gsettings doesn't
 # reach them) pick the dark variant of their theme on their next start.
@@ -67,6 +68,9 @@ EOF
     # Delta (git pager, lazygit diffs)
     printf '[delta]\n\tlight = true\n' > "$GIT_THEME"
 
+    # rofi: its config's own colors are the light ones (a missing file only warns)
+    echo '/* light: the colors in config.rasi (theme-switcher) */' > "$ROFI_COLORS"
+
 else
     # === DARK MODE (Ayu Mirage) ===
 
@@ -105,6 +109,16 @@ EOF
 
     # Delta (git pager, lazygit diffs)
     printf '[delta]\n\tdark = true\n' > "$GIT_THEME"
+
+    # rofi: overrides config.rasi's light colors (read at each start)
+    cat <<EOF > "$ROFI_COLORS"
+* {
+    bg: #1F2430;
+    bg-alt: #232834;
+    fg: #D9D7CE;
+    accent: #FFCC66;
+}
+EOF
 fi
 
 # === RELOAD APPS ===
