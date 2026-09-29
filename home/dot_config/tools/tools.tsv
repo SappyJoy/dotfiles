@@ -58,4 +58,5 @@ greenclip	desktop	4.2	greenclip --version	mise github:erebe/greenclip
 autorandr	desktop	1.15	autorandr --version	apt autorandr
 xclip	desktop	0.13	xclip -version	apt xclip
 i3lock	desktop	2.13	i3lock --version	apt i3lock
+xss-lock	desktop	-	-	apt xss-lock
 nitrogen	desktop	-	-	apt nitrogen

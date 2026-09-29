@@ -1,0 +1,89 @@
+# Key and mouse bindings; $mod (Super) comes from `config`. Arrows rather than
+# h/j/k/l: the keyboard has them on a layer.
+
+# Apps
+bindsym $mod+t exec kitty
+bindsym $mod+d exec --no-startup-id rofi -show drun -theme ~/.config/rofi/config.rasi
+bindsym $mod+c exec --no-startup-id rofi -modi "clipboard:greenclip print" -show clipboard
+bindsym $mod+Shift+b exec --no-startup-id /home/$USER/.config/i3/bookmark/bin/bookmark.sh
+bindsym Print exec flameshot gui
+bindsym $mod+Print exec flameshot full
+
+# Windows: focus, move, split, layout
+bindsym $mod+Shift+q kill
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+bindsym $mod+b split h
+bindsym $mod+v split v
+bindsym $mod+f fullscreen toggle
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+g layout toggle split
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+bindsym $mod+a focus parent
+bindsym $mod+r mode "resize"
+
+# Mouse: $mod+drag moves a floating window; a tiled one moves by its title bar or
+# with $mod+drag
+floating_modifier $mod
+tiling_drag modifier titlebar
+
+# Workspaces: FILM is a single output, so every workspace spans the whole desk.
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+bindsym $mod+0 workspace number 10
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+bindsym $mod+Shift+6 move container to workspace number 6
+bindsym $mod+Shift+7 move container to workspace number 7
+bindsym $mod+Shift+8 move container to workspace number 8
+bindsym $mod+Shift+9 move container to workspace number 9
+bindsym $mod+Shift+0 move container to workspace number 10
+bindsym Control+$mod+Up workspace next_on_output
+bindsym Control+$mod+Down workspace prev_on_output
+
+# Desk: re-span FILM (e.g. after plugging in a monitor), night light, VPN, Throne
+bindsym $mod+Shift+f exec --no-startup-id film_mode.sh
+bindsym $mod+Shift+y exec --no-startup-id toggle-redshift
+bindsym $mod+Shift+v exec --no-startup-id toggle-vpn
+{{- if eq .chezmoi.osRelease.id "arch" }}
+bindsym $mod+Shift+t exec --no-startup-id toggle-throne
+{{- end }}
+
+# Volume; brightness on $mod+PgUp/PgDn
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10%
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10%
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
+bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
+bindsym $mod+Prior exec --no-startup-id brightness-up
+bindsym $mod+Next exec --no-startup-id brightness-down
+
+# Power: lock (through xss-lock, which owns the one locker; the lock script itself
+# where xss-lock doesn't run), suspend, monitors off. Monitors off waits for the keys'
+# release, which would wake them again, and sets the DPMS timers to 0 (never), since
+# `force off` turns DPMS on; any key or mouse move wakes the monitors.
+bindsym Control+$mod+l exec --no-startup-id sh -c 'pgrep -xu "$USER" xss-lock >/dev/null && loginctl lock-session || ~/.config/i3/lock'
+bindsym Control+$mod+s exec --no-startup-id systemctl suspend
+bindsym --release Control+$mod+m exec --no-startup-id sh -c 'sleep 0.5; xset dpms 0 0 0; xset dpms force off'
+
+# Session: reload, restart, exit
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r restart
+bindsym $mod+Shift+u exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
