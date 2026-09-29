@@ -60,5 +60,5 @@ xclip	desktop	0.13	xclip -version	apt xclip
 i3lock	desktop	2.13	i3lock --version	apt i3lock
 xss-lock	desktop	-	-	apt xss-lock
 nitrogen	desktop	-	-	apt nitrogen
-sing-box	desktop	1.14.2	sing-box version	mise github:SagerNet/sing-box[asset_pattern=*linux-amd64-musl.tar.gz]
+sing-box	desktop	1.14.1	sing-box version	mise github:SagerNet/sing-box[asset_pattern=*linux-amd64-musl.tar.gz]
 wg	desktop	1.0.20260223	wg --version	apt wireguard-tools
