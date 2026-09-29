@@ -1,27 +1,28 @@
+/* rofi 2.0: only what differs from rofi's defaults (man rofi, man rofi-theme). */
+
 configuration {
-    modi: "drun,run,window";
+    modes: "drun,run,window";
     font: "Hack Nerd Font 12";
     show-icons: true;
     terminal: "kitty";
-    drun-display-format: "{icon} {name}";
-    location: 0;
-    disable-history: false;
-    hide-scrollbar: true;
-    sidebar-mode: false;
+    /* apps by name only, without the generic name (Web Browser) */
+    drun-display-format: "{name}";
 }
 
+/* Start from an empty theme, not rofi's default one */
 @theme "/dev/null"
 
+/* Ayu light; in dark mode theme-switcher writes colors.rasi with Ayu Mirage */
 * {
-    /* ayu-light theme variables */
     bg: #FAFAFA;
     bg-alt: #F3F4F5;
     fg: #5C6A72;
     accent: #FA8D3E;
-    
+
     background-color: @bg;
     text-color: @fg;
 }
+?import "colors"
 
 window {
     width: 600px;
@@ -43,16 +44,13 @@ inputbar {
 }
 
 prompt {
-    enabled: true;
     text-color: @accent;
 }
 
 listview {
-    columns: 1;
     lines: 8;
     cycle: true;
     dynamic: true;
-    layout: vertical;
 }
 
 element {
