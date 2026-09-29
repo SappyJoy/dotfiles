@@ -97,7 +97,7 @@ check "ubuntu: btop's theme \"$theme\" comes as an external" has "\".config/btop
 # rewrites it later) and defines every color the config uses
 seed="$src/home/dot_config/polybar/create_colors.ini"
 keys=$(sed -n 's/^\([a-z-]*\) = .*/\1/p' "$seed" 2>/dev/null)
-missing=$(grep -o '${colors\.[a-z-]*}' "$src/home/dot_config/polybar/config.ini" | sort -u |
+missing=$(grep -v '^[[:space:]]*;' "$src/home/dot_config/polybar/config.ini" | grep -o '${colors\.[a-z-]*}' | sort -u |
     sed 's/^${colors\.\(.*\)}$/\1/' |
     while IFS= read -r key; do printf '%s\n' "$keys" | grep -qx -- "$key" || echo "$key"; done)
 check "polybar: colors.ini is seeded" [ -f "$seed" ]
