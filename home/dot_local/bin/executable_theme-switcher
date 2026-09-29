@@ -18,6 +18,7 @@ TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.c
 GIT_THEME="$HOME/.config/git/theme.gitconfig"  # delta's light/dark, included by .gitconfig
 GTK3_SETTINGS="$HOME/.config/gtk-3.0/settings.ini"  # a create_ seed; GTK3 apps read it on start
 ROFI_COLORS="$HOME/.config/rofi/colors.rasi"  # untracked; config.rasi holds the light colors
+DUNST_THEME="$HOME/.config/dunst/dunstrc.d/50-theme.conf"  # untracked; dunstrc holds the light colors
 
 # gtk3_dark true|false: GTK3 apps (no settings daemon on i3, so gsettings doesn't
 # reach them) pick the dark variant of their theme on their next start.
@@ -71,6 +72,9 @@ EOF
     # rofi: its config's own colors are the light ones (a missing file only warns)
     echo '/* light: the colors in config.rasi (theme-switcher) */' > "$ROFI_COLORS"
 
+    # dunst: its dunstrc's own colors are the light ones
+    rm -f "$DUNST_THEME"
+
 else
     # === DARK MODE (Ayu Mirage) ===
 
@@ -119,6 +123,29 @@ EOF
     accent: #FFCC66;
 }
 EOF
+
+    # dunst: a drop-in overrides dunstrc's light colors
+    mkdir -p "${DUNST_THEME%/*}"
+    cat <<EOF > "$DUNST_THEME"
+# dark: written by theme-switcher, removed in light mode
+[global]
+    frame_color = "#FFCC66"
+    icon_theme = "Papirus-Dark, Adwaita"
+[urgency_low]
+    background = "#1F2430"
+    foreground = "#707A8C"
+    frame_color = "#404652"
+    highlight = "#404652"
+[urgency_normal]
+    background = "#1F2430"
+    foreground = "#D9D7CE"
+    highlight = "#FFCC66"
+[urgency_critical]
+    background = "#1F2430"
+    foreground = "#D9D7CE"
+    frame_color = "#F28779"
+    highlight = "#F28779"
+EOF
 fi
 
 # === RELOAD APPS ===
@@ -142,3 +169,6 @@ kill -SIGUSR1 $(pidof kitty)
 
 # Tmux
 tmux source-file "$TMUX_CONF"
+
+# dunst (if running; otherwise it reads the files when it starts)
+if pgrep -xu "$USER" dunst >/dev/null; then dunstctl reload; fi
