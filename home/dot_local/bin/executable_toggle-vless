@@ -1,0 +1,18 @@
+#!/bin/sh
+# VLESS on/off: the vless system service (sing-box's tunnel, installed by vpn-setup;
+# a polkit rule lets you start and stop it without a password). Turning it on takes
+# WireGuard down first: one tunnel at a time. $mod+Shift+t and a click on the bar
+# run this.
+
+if systemctl is-active -q vless; then
+    systemctl stop vless && notify-send -t 1500 VLESS off
+else
+    nmcli connection down vpnconfig >/dev/null 2>&1 # when it's up
+    systemctl start vless
+    sleep 1 # sing-box exits at once on a bad config
+    if systemctl is-active -q vless; then
+        notify-send -t 1500 VLESS on
+    else
+        notify-send -u critical VLESS "didn't start: journalctl -u vless"
+    fi
+fi

@@ -59,13 +59,12 @@ bindsym $mod+Shift+0 move container to workspace number 10
 bindsym Control+$mod+Up workspace next_on_output
 bindsym Control+$mod+Down workspace prev_on_output
 
-# Desk: re-span FILM (e.g. after plugging in a monitor), night light, VPN, Throne
+# Desk: re-span FILM (e.g. after plugging in a monitor), night light, and the tunnels
+# (one at a time: turning one on turns the other off)
 bindsym $mod+Shift+f exec --no-startup-id film_mode.sh
 bindsym $mod+Shift+y exec --no-startup-id toggle-redshift
-bindsym $mod+Shift+v exec --no-startup-id toggle-vpn
-{{- if eq .chezmoi.osRelease.id "arch" }}
-bindsym $mod+Shift+t exec --no-startup-id toggle-throne
-{{- end }}
+bindsym $mod+Shift+v exec --no-startup-id toggle-wireguard
+bindsym $mod+Shift+t exec --no-startup-id toggle-vless
 
 # Volume; brightness on $mod+PgUp/PgDn
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10%

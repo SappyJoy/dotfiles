@@ -24,21 +24,21 @@
 .local/bin/monitors
 .local/bin/theme-switcher
 .local/bin/toggle-redshift
-.local/bin/toggle-throne
-.local/bin/toggle-vpn
+.local/bin/toggle-vless
+.local/bin/toggle-wireguard
+.local/bin/vpn-setup
+.config/sing-box/**
+.config/wireguard/**
 .local/bin/brightness
 .local/bin/brightness-up
 .local/bin/brightness-down
 .local/lib/film_snap/**
 {{- end }}
 
-{{ if ne .chezmoi.osRelease.id "arch" -}}
-# arch only (see the i3 config template)
-.local/bin/toggle-throne
-{{- end }}
-
 {{ if not .personal -}}
 # secrets: only on own machines, which hold the age key
 .config/fish/private.fish
 .ssh/personal.conf
+.config/sing-box/**
+.config/wireguard/**
 {{- end }}

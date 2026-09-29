@@ -1,0 +1,76 @@
+#!/bin/sh
+# One-time VPN setup on a personal desktop; safe to run again (it changes only what
+# differs, and asks for sudo for the two system files):
+# - /etc/systemd/system/vless.service: sing-box's tunnel, run as you, with network
+#   rights only (the package's own sing-box.service stays off)
+# - /etc/polkit-1/rules.d/50-vless.rules: you start and stop vless without a password
+# - WireGuard: NetworkManager imports ~/.config/wireguard/vpnconfig.conf when it has no
+#   "vpnconfig" connection yet (NetworkManager may ask for your password once)
+# The profiles come with chezmoi, encrypted: ~/.config/sing-box/config.json and
+# ~/.config/wireguard/vpnconfig.conf. toggle-vless and toggle-wireguard switch them.
+set -eu
+
+user=$(id -un)
+config=$HOME/.config/sing-box/config.json
+wireguard=$HOME/.config/wireguard/vpnconfig.conf
+
+bin=$(command -v sing-box) || { echo "sing-box is missing: see tools-check sing-box" >&2; exit 1; }
+# mise's shim needs mise's environment; the service runs the binary itself (after a
+# mise upgrade of sing-box, run vpn-setup again)
+case $bin in */mise/shims/*) bin=$(mise which sing-box) ;; esac
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+cat >"$tmp/vless.service" <<EOF
+# Written by vpn-setup: VLESS through sing-box's tunnel, as $user with network rights
+# only. toggle-vless starts and stops it; it doesn't start at boot.
+[Unit]
+Description=VLESS tunnel (sing-box, $config)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=$user
+StateDirectory=vless
+ExecStart=$bin -D /var/lib/vless -c $config run
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE
+Restart=on-failure
+RestartSec=5s
+EOF
+
+cat >"$tmp/50-vless.rules" <<EOF
+// Written by vpn-setup: $user may start, stop and restart vless.service without a
+// password (toggle-vless).
+polkit.addRule(function (action, subject) {
+    if (action.id == "org.freedesktop.systemd1.manage-units" &&
+        action.lookup("unit") == "vless.service" &&
+        ["start", "stop", "restart"].indexOf(action.lookup("verb")) >= 0 &&
+        subject.user == "$user") {
+        return polkit.Result.YES;
+    }
+});
+EOF
+
+# install SOURCE TARGET: copy with sudo when the target differs
+install_file() {
+    if sudo cmp -s "$1" "$2"; then
+        echo "ok      $2"
+    else
+        sudo install -D -m 644 "$1" "$2" && echo "written $2"
+    fi
+}
+install_file "$tmp/vless.service" /etc/systemd/system/vless.service
+install_file "$tmp/50-vless.rules" /etc/polkit-1/rules.d/50-vless.rules
+sudo systemctl daemon-reload
+
+[ -f "$config" ] || echo "missing $config: VLESS won't start until chezmoi brings it"
+
+if nmcli -g NAME connection show | grep -qx vpnconfig; then
+    echo "ok      WireGuard: NetworkManager has vpnconfig"
+elif [ -f "$wireguard" ]; then
+    nmcli connection import type wireguard file "$wireguard"
+else
+    echo "missing $wireguard: no WireGuard profile to import"
+fi
