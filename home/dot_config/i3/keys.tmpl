@@ -75,8 +75,15 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 bindsym $mod+Prior exec --no-startup-id brightness-up
 bindsym $mod+Next exec --no-startup-id brightness-down
 
-# Session: lock, reload, restart, exit
-bindsym Control+$mod+l exec /home/$USER/.config/i3/lock
+# Power: lock (through xss-lock, which owns the one locker; the lock script itself
+# where xss-lock doesn't run), suspend, monitors off. Monitors off waits for the keys'
+# release, which would wake them again, and sets the DPMS timers to 0 (never), since
+# `force off` turns DPMS on; any key or mouse move wakes the monitors.
+bindsym Control+$mod+l exec --no-startup-id sh -c 'pgrep -xu "$USER" xss-lock >/dev/null && loginctl lock-session || ~/.config/i3/lock'
+bindsym Control+$mod+s exec --no-startup-id systemctl suspend
+bindsym --release Control+$mod+m exec --no-startup-id sh -c 'sleep 0.5; xset dpms 0 0 0; xset dpms force off'
+
+# Session: reload, restart, exit
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+r restart
 bindsym $mod+Shift+u exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"

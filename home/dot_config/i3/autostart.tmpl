@@ -6,8 +6,12 @@
 exec --no-startup-id sh -c 'setxkbmap -query | grep -q colemak_dh_ortho || setxkbmap -layout "us,ru" -variant "colemak_dh_ortho," -option "grp:alt_shift_toggle"'
 exec_always --no-startup-id xset r rate 200 30
 
-# Screen: no screensaver, no DPMS blanking
+# Screen: never blank on a timeout (no screensaver, no DPMS timers); the monitors go
+# off only on Ctrl+$mod+m (keys)
 exec_always --no-startup-id xset s off -dpms
+
+# Lock before every suspend, and on `loginctl lock-session` (the lock key)
+exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.config/i3/lock --nofork
 
 # Monitors: the layout comes from X (autorandr, if installed). FILM spans all of
 # them as one output; log in to it, focused on workspace 1.
