@@ -131,15 +131,17 @@ In order of preference:
 2. **Machine data** in a template (`*.tmpl`) or in `.chezmoiignore`: the prompt answers
    (`.desktop`, `.personal`) or detected facts (`.chezmoi.osRelease.id`, hostname).
    Example: the i3 config renders the Throne key and the polkit agent on Arch only.
-3. **Files an app rewrites** (`btop.conf`, kitty `theme.conf`) get the `create_`
-   prefix: written once, then owned by the app.
+3. **Files an app rewrites** (`btop.conf`, kitty `theme.conf`, polybar's
+   `colors.ini`) get the `create_` prefix: written once, then owned by the app. A
+   seed is also the way when a config can't start without its include (polybar).
 4. **A file the machine owns, with one managed part**: a `modify_` script gets the
    live file on stdin and prints the new one. `~/.ssh/config` keeps its own hosts;
    the script keeps the dotfiles' Include block at its end. Claude Code's
    `settings.json` keeps each machine's theme; a modify-template (no script, no jq)
    sets the keys every machine shares, like the status line.
 5. **State a script writes** stays untracked and is included by a tracked config:
-   `theme-switcher` writes `tmux/theme.conf`, `i3/colors` and `polybar/colors.ini`.
+   `theme-switcher` writes `tmux/theme.conf` and `i3/colors` (both skip a missing
+   include).
 6. **Secrets**: `chezmoi add --encrypt`.
 
 `re-add` (and so `dots`) skips templates. Edit those with `vd`, or bring a live edit

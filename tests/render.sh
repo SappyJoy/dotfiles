@@ -93,6 +93,17 @@ out=$(chezmoi execute-template --source "$src" --override-data '{"chezmoi": {"os
     <"$src/home/.chezmoiexternal.toml.tmpl")
 check "ubuntu: btop's theme \"$theme\" comes as an external" has "\".config/btop/themes/$theme.theme\""
 
+# polybar stops when a file it includes is missing: colors.ini is seeded (theme-switcher
+# rewrites it later) and defines every color the config uses
+seed="$src/home/dot_config/polybar/create_colors.ini"
+keys=$(sed -n 's/^\([a-z-]*\) = .*/\1/p' "$seed" 2>/dev/null)
+missing=$(grep -o '${colors\.[a-z-]*}' "$src/home/dot_config/polybar/config.ini" | sort -u |
+    sed 's/^${colors\.\(.*\)}$/\1/' |
+    while IFS= read -r key; do printf '%s\n' "$keys" | grep -qx -- "$key" || echo "$key"; done)
+check "polybar: colors.ini is seeded" [ -f "$seed" ]
+check "polybar: the seed has every color the config uses" [ -z "$missing" ]
+[ -z "$missing" ] || printf '     not in the seed: %s\n' "$missing"
+
 if [ $fails -gt 0 ]; then
     echo "$fails failed"
     exit 1
