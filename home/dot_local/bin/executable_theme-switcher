@@ -4,8 +4,8 @@ MODE=$1
 STATE_FILE="$HOME/.config/nvim/.theme_state"
 
 # Verify arguments
-if [ -z "$MODE" ]; then
-    echo "Usage: $0 [light|dark]"
+if [ "$MODE" != light ] && [ "$MODE" != dark ]; then
+    echo "Usage: $0 light|dark"
     exit 1
 fi
 
@@ -163,3 +163,15 @@ tmux source-file "$TMUX_CONF"
 
 # dunst (if running; otherwise it reads the files when it starts)
 if pgrep -xu "$USER" dunst >/dev/null; then dunstctl reload; fi
+
+# nvim: every running one follows (a new one reads the state file). One already in
+# the mode is left alone, such as the one whose colorscheme change called this. A
+# prompt blocks nvim's RPC until it's answered, hence the timeout, in the background.
+if command -v nvim >/dev/null; then
+    if [ "$MODE" == "light" ]; then scheme=ayu-light; else scheme=ayu-mirage; fi
+    for sock in "${XDG_RUNTIME_DIR:-/run/user/$UID}"/nvim.*.0; do
+        [ -S "$sock" ] || continue
+        timeout 2 nvim --server "$sock" --remote-expr \
+            "execute(&background ==# '$MODE' ? '' : 'colorscheme $scheme')" >/dev/null 2>&1 &
+    done
+fi
