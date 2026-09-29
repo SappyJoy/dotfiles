@@ -194,6 +194,7 @@ over with `chezmoi merge`.
   - `sh tests/dots.sh`: the fish function `dots` in a scratch home
   - `sh tests/dunst-place.sh`: the notification offset for a few desks
   - `sh tests/lock.sh`: the lock script (dunst paused, xss-lock's sleep lock)
+  - `sh tests/brightness.sh`: levels, the bus cache, parallel writes, merged presses
   - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match
     the one before
   - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a user with sudo in

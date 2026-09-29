@@ -32,8 +32,6 @@
 .config/sing-box/**
 .config/wireguard/**
 .local/bin/brightness
-.local/bin/brightness-up
-.local/bin/brightness-down
 .local/lib/film_snap/**
 {{- end }}
 

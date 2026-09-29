@@ -1,41 +1,83 @@
 #!/bin/bash
+# Monitor brightness over DDC/CI (ddcutil), every monitor at once:
+#   brightness +N | -N   up or down by N (the level runs 0-100)
+#   brightness N         set it to N
+#   brightness           print the level
+# The level lives in ~/.cache/brightness, which the bar shows. ddcutil's udev rule
+# gives the logged-in user the monitors' i2c buses, so no sudo. The buses come from
+# `ddcutil detect` (0.8 s), cached in ~/.cache/brightness-buses and found again when
+# a write fails. A write takes ~0.35 s: the monitors get theirs in parallel, the
+# notification comes first, and presses that arrive meanwhile (key repeat) merge:
+# only the latest level gets written.
 
-# Usage: brightness <value (0-100)>
-if [ $# -eq 0 ]; then
-    echo "Usage: brightness <value (0-100)>"
+set -u
+cache=${XDG_CACHE_HOME:-$HOME/.cache}
+level_file=$cache/brightness
+buses_file=$cache/brightness-buses
+# the last level written, per session (a monitor's own buttons may change it later)
+written_file=${XDG_RUNTIME_DIR:-$cache}/brightness-written
+
+fail() {
+    echo "brightness: $1" >&2
+    notify-send -u critical Brightness "$1"
     exit 1
+}
+# detect: the buses of the monitors that answer DDC/CI, into the cache
+detect() {
+    ddcutil detect --brief 2>/dev/null |
+        awk '/^Display /{ ok = 1 } /^Invalid display/{ ok = 0 }
+             ok && /I2C bus:/ { sub(/.*\/dev\/i2c-/, ""); print }' >"$buses_file.new"
+    [[ -s $buses_file.new ]] && mv "$buses_file.new" "$buses_file"
+}
+# write_all LEVEL: every cached bus in parallel; fails if one does
+write_all() {
+    local bus pids=() status=0
+    for bus in $(<"$buses_file"); do
+        ddcutil setvcp 10 "$1" --bus "$bus" --noverify >/dev/null 2>&1 &
+        pids+=($!)
+    done
+    for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+    return $status
+}
+
+if [[ $# -eq 0 ]]; then
+    cat "$level_file" 2>/dev/null || echo unknown
+    exit
 fi
+[[ $1 =~ ^[+-]?[0-9]+$ ]] || { echo "usage: brightness [+N|-N|N]" >&2; exit 2; }
+command -v ddcutil >/dev/null || fail "ddcutil isn't installed"
+mkdir -p "$cache"
 
-brightness=$1
-
-# Validate brightness value
-if ! [[ "$brightness" =~ ^[0-9]+$ ]] || [ "$brightness" -lt 0 ] || [ "$brightness" -gt 100 ]; then
-    echo "Error: Brightness value must be an integer between 0 and 100."
-    exit 1
+# The new level, one press at a time
+exec 9>"$cache/brightness.lock"
+flock 9
+[[ -s $buses_file ]] || detect || fail "no monitor answers over DDC/CI"
+level=$(cat "$level_file" 2>/dev/null)
+if ! [[ $level =~ ^[0-9]+$ ]]; then
+    # first run: the first monitor's level
+    level=$(ddcutil getvcp 10 --bus "$(head -1 "$buses_file")" --brief 2>/dev/null |
+        awk '$1 == "VCP" { print $4 }')
+    [[ $level =~ ^[0-9]+$ ]] || level=100
 fi
+case $1 in
+    +*) level=$((10#$level + 10#${1#+})) ;;
+    -*) level=$((10#$level - 10#${1#-})) ;;
+    *) level=$((10#$1)) ;;
+esac
+((level < 0)) && level=0
+((level > 100)) && level=100
+echo "$level" >"$level_file"
+# One stack tag: each press replaces the last notification (inside the lock, so an
+# older press can't overwrite a newer level)
+notify-send -t 1500 -i display-brightness-symbolic -h string:x-dunst-stack-tag:brightness \
+    -h "int:value:$level" Brightness "$level%"
+flock -u 9
 
-# Adjust brightness for Dell monitors using ddccontrol
-for device in /dev/i2c-5 /dev/i2c-7 /dev/i2c-9; do
-    echo "Setting brightness to $brightness on $device..."
-    if sudo ddccontrol dev:"$device" -r 0x10 -w "$brightness"; then
-        echo "Successfully set brightness on $device."
-    else
-        echo "Failed to set brightness on $device."
-    fi
-done
-
-# Adjust brightness for Samsung monitor using xrandr
-# samsung_display=$(xrandr -display :0 --query | grep ' connected' | grep 'HDMI-0' | awk '{ print $1 }')
-#
-# if [ -n "$samsung_display" ]; then
-#     # Convert 0-100 to 0.0-1.0 scale (adjust formula if needed)
-#     brightness_scaled=$(echo "scale=1.6; $brightness / 160 + 0.2" | bc)
-#     echo "Setting software brightness to $brightness_scaled on $samsung_display..."
-#     if xrandr --output "$samsung_display" --brightness "$brightness_scaled"; then
-#         echo "Successfully set software brightness on $samsung_display."
-#     else
-#         echo "Failed to set software brightness on $samsung_display."
-#     fi
-# else
-#     echo "Samsung monitor not found or not connected via HDMI-0."
-# fi
+# The monitors, one writer at a time; a newer press's level wins
+exec 8>"$cache/brightness.write.lock"
+flock 8
+level=$(<"$level_file")
+[[ $level == "$(cat "$written_file" 2>/dev/null)" ]] && exit 0
+write_all "$level" || { detect && write_all "$level"; } ||
+    fail "a monitor didn't take the level (buses: $(<"$buses_file"))"
+echo "$level" >"$written_file"
