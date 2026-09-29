@@ -66,6 +66,12 @@ bindsym $mod+Shift+y exec --no-startup-id toggle-redshift
 bindsym $mod+Shift+v exec --no-startup-id toggle-wireguard
 bindsym $mod+Shift+t exec --no-startup-id toggle-vless
 
+# Notifications (dunst): close the newest, bring back the last closed one, pause them
+# (do not disturb: they queue until resumed; the bar shows a bell meanwhile)
+bindsym $mod+n exec --no-startup-id dunstctl close
+bindsym $mod+Shift+n exec --no-startup-id dunstctl history-pop
+bindsym Control+$mod+n exec --no-startup-id dunstctl set-paused toggle
+
 # Volume; brightness on $mod+PgUp/PgDn
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10%
 bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10%
