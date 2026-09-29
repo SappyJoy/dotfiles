@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Light theme
+Comment=Ayu light for i3, polybar, kitty, tmux, rofi, dunst, GTK and nvim (theme-switcher)
+Icon=weather-clear
+Exec=theme-switcher light
+Keywords=theme;light;day;ayu;
+Categories=Settings;

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Dark theme
+Comment=Ayu Mirage for i3, polybar, kitty, tmux, rofi, dunst, GTK and nvim (theme-switcher)
+Icon=weather-clear-night
+Exec=theme-switcher dark
+Keywords=theme;dark;night;mirage;
+Categories=Settings;

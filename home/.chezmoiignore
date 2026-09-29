@@ -18,6 +18,7 @@
 .config/user-dirs.dirs
 .config/user-dirs.locale
 .gtkrc-2.0
+.local/share/applications/theme-*.desktop
 .xinitrc
 .local/bin/dunst-place
 .local/bin/film-snap
