@@ -7,8 +7,8 @@ exec --no-startup-id sh -c 'setxkbmap -query | grep -q colemak_dh_ortho || setxk
 exec_always --no-startup-id xset r rate 200 30
 
 # Screen: never blank on a timeout (no screensaver, no DPMS timers); the monitors go
-# off only on Ctrl+$mod+m (keys)
-exec_always --no-startup-id xset s off -dpms
+# off only on Ctrl+$mod+m (keys). No X bell either: it beeps through the PC speaker.
+exec_always --no-startup-id xset s off -dpms b off
 
 # Lock before every suspend, and on `loginctl lock-session` (the lock key)
 exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.config/i3/lock --nofork
