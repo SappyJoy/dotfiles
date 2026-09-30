@@ -51,6 +51,7 @@ polybar	desktop	3.7.2	polybar --version	apt polybar
 picom	desktop	13	picom --version	apt picom
 rofi	desktop	2.0.0	rofi -version	apt rofi
 dunst	desktop	1.13.2	dunst --version	apt dunst
+ddcutil	desktop	3.0.2	ddcutil --version	apt ddcutil
 kitty	desktop	0.49.1	kitty --version	sw.kovidgoyal.net/kitty/binary
 redshift	desktop	1.12	redshift -V	apt redshift
 flameshot	desktop	14.0.0	flameshot --version	apt flameshot

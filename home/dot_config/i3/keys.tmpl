@@ -77,8 +77,8 @@ bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT
 bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10%
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
 bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
-bindsym $mod+Prior exec --no-startup-id brightness-up
-bindsym $mod+Next exec --no-startup-id brightness-down
+bindsym $mod+Prior exec --no-startup-id brightness +10
+bindsym $mod+Next exec --no-startup-id brightness -10
 
 # Power: lock (through xss-lock, which owns the one locker; the lock script itself
 # where xss-lock doesn't run), suspend, monitors off. Monitors off waits for the keys'
