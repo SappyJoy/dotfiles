@@ -149,7 +149,7 @@ In order of preference:
    `isdirectory()` in nvim. It works everywhere and needs no chezmoi logic.
 2. **Machine data** in a template (`*.tmpl`) or in `.chezmoiignore`: the prompt answers
    (`.desktop`, `.personal`) or detected facts (`.chezmoi.osRelease.id`, hostname).
-   Example: the i3 config renders the Throne key and the polkit agent on Arch only.
+   Example: the i3 autostart starts the polkit agent on Arch only.
 3. **Files an app rewrites** (`btop.conf`, kitty `theme.conf`, polybar's
    `colors.ini`) get the `create_` prefix: written once, then owned by the app. A
    seed is also the way when a config can't start without its include (polybar).
