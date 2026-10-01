@@ -1,13 +1,16 @@
 {{- /* Not on arch: arch is where lazy-lock.json is written (:Lazy update, then dots). */ -}}
 {{- if ne .chezmoi.osRelease.id "arch" -}}
+{{- $inputs := list "lazy-lock.json" "lua/install.lua" "lua/parsers.lua" "lua/plugins/lsp.lua" -}}
+{{- $hash := "" -}}
+{{- range $inputs }}{{ $hash = print $hash (include (print "dot_config/nvim/" .)) }}{{ end -}}
+{{- range (joinPath .chezmoi.sourceDir "dot_config/nvim/lua/lang/*.lua" | glob) }}{{ $hash = print $hash (include .) }}{{ end -}}
 #!/bin/sh
-# nvim's plugins at lazy-lock.json's commits, its treesitter parsers and mason tools,
-# installed headless, so nvim's first start has nothing left to install. After the apt
-# packages (30): the parsers need cc, mason's tools unzip and Python's venv.
-# chezmoi runs this again when one of these changes:
-#   lazy-lock.json {{ include "dot_config/nvim/lazy-lock.json" | sha256sum }}
-#   parsers        {{ include "dot_config/nvim/lua/plugins/coding/treesitter.lua" | sha256sum }}
-#   mason tools    {{ include "dot_config/nvim/lua/plugins/lsp/lsp.lua" | sha256sum }}
+# nvim's plugins at lazy-lock.json's commits, then what they download or build
+# (lua/install.lua: parsers, mason tools, blink's matcher, orgmode's grammar, the
+# Russian spell file), headless, so nvim's first start has nothing left to install.
+# After the apt packages (30): parsers need cc, mason's tools unzip and Python's venv.
+# chezmoi runs this again when the lock, the installer, the parser or tool lists or a
+# language change: {{ $hash | sha256sum }}
 # By hand: chezmoi execute-template <"$(chezmoi source-path)/run_onchange_after_40-nvim-plugins.sh.tmpl" | sh
 set -u
 PATH=$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH
@@ -18,13 +21,9 @@ fi
 log=${XDG_STATE_HOME:-$HOME/.local/state}/nvim/install.log
 mkdir -p "${log%/*}"
 echo "nvim: installing plugins, parsers and mason tools (log: $log)"
-# Starting nvim installs missing plugins (lazy, headless: it waits), and restore moves
-# them to the lock. VeryLazy loads what an interactive start loads after the UI is up:
-# nvim-treesitter installs its parsers (synchronously when headless), orgmode builds
-# its grammar. Then the mason tools.
-nvim --headless '+Lazy! restore' '+doautocmd User VeryLazy' +MasonToolsInstallSync +qa \
-    >"$log" 2>&1
+nvim --headless '+Lazy! restore' '+lua require("install").run()' +qa >"$log" 2>&1
 code=$?
+grep '^nvim install: ' "$log" | grep -v error
 problems=$(grep -iE 'error|fail' "$log")
 if [ "$code" != 0 ] || [ -n "$problems" ]; then
     printf '%s\n' "$problems" | sed 's/^/nvim install error: /' >&2

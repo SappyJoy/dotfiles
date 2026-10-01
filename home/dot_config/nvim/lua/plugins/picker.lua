@@ -12,7 +12,7 @@ return {
     cmd = 'Telescope',
     dependencies = {
       'nvim-lua/plenary.nvim',
-      { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
+      { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make', enabled = vim.fn.executable 'make' == 1 },
       'nvim-telescope/telescope-ui-select.nvim',
     },
     keys = {
@@ -75,7 +75,8 @@ return {
         },
         extensions = { ['ui-select'] = { require('telescope.themes').get_dropdown() } },
       }
-      require('telescope').load_extension 'fzf'
+      -- fzf's sorter is built with make and cc; without them telescope's own sorts
+      pcall(require('telescope').load_extension, 'fzf')
     end,
   },
 }
