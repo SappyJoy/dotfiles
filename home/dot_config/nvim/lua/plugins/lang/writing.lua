@@ -112,7 +112,7 @@ return {
     'reedes/vim-pencil',
     -- Check an issue with conceallevel here: https://github.com/preservim/vim-pencil/issues/47
     -- Because of it symbols in jupyter notebook doesn't not work properly
-    enabled = true, -- Disable by default, enable via command
+    enabled = false, -- E216 on every text buffer; autocmds.lua soft-wraps text
     -- Load specifically for writing filetypes. Add others like 'text', 'gitcommit' if needed.
     -- Quarto is markdown-based, so it should inherit fine if ft is set correctly elsewhere.
     ft = { 'tex', 'latex', 'bib', 'markdown', 'text', 'gitcommit', 'quarto', 'norg', 'org' }, -- Added common writing types + quarto/norg/org
