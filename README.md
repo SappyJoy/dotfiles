@@ -204,6 +204,8 @@ over with `chezmoi merge`.
     prompts, errors and installs it reports (used by fresh-machine)
   - `sh tests/nvim-langmap.sh [--write]`: nvim's Russian langmap against the XKB
     layouts (`--write` regenerates it)
+  - `sh tests/nvim-bench.sh [FILE]`: nvim's startup to the first screen in a scratch
+    tmux, empty and with a file, against the budget (60 / 120 ms)
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 
