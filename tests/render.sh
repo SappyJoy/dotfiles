@@ -58,6 +58,11 @@ check "claude settings: a new file gets the status line" has '"command": "bash ~
 out=$(modify dot_claude/modify_settings.json '{"theme": "light", "statusLine": {"type": "command", "command": "old"}}')
 check "claude settings: the machine's theme stays" has '"theme": "light"'
 check "claude settings: shared keys win" hasnt '"old"'
+out=$(modify dot_claude/modify_settings.json '{"env": {"OWN": "1"}}')
+check "claude settings: auto-connect to nvim, the machine's env kept" python3 -c '
+import json, sys
+env = json.loads(sys.argv[1])["env"]
+sys.exit(env != {"OWN": "1", "CLAUDE_CODE_AUTO_CONNECT_IDE": "1"})' "$out"
 
 # Per machine: arch uses pacman, so its mise config has only the settings (per-project
 # versions), and it gets no mise external, no scripts and no apt list.
