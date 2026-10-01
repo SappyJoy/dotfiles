@@ -33,6 +33,7 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - `<leader>sf` files, `<leader>sg` grep, `<leader>sw` word under cursor,
   `<leader>s.` recent, `<leader>sr` resume the last search, `<leader><leader>` buffers
 - In a telescope list, `Ctrl+Q`: every result to the list (trouble), `Ctrl+Y` opens
+- In a telescope list, `Ctrl+/` (Normal mode: `?`) shows all of its keys
 - `<leader>xr`: replace in every line of the list (asks old, new; plain text,
   case-sensitive, files saved)
 - The same by hand: `:cdo s/old/new/g | update` (`cdo` runs a command on each list
