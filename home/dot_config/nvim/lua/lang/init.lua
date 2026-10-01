@@ -12,6 +12,8 @@
 --   tools      = { 'mason package', { 'package', need = 'npm' | 'python' | 'unzip' | 'go' | 'java' } }
 --   filetypes  = { extension = { ets = 'typescript' } }   vim.filetype.add
 --   plugins    = { lazy specs }                    language-only plugins
+--   dap        = function(dap) end                 debug adapters, when nvim-dap loads
+--   test_adapters = function() return { … } end    neotest adapters, when it loads
 local M = {}
 
 local cache

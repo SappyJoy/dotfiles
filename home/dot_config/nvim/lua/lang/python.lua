@@ -34,4 +34,15 @@ return {
   formatters = { python = { 'ruff_format' } },
   formats_if = { 'ruff.toml', '.ruff.toml', { 'pyproject.toml', '%[tool%.ruff' }, { 'pyproject.toml', '%[tool%.black' } },
   tools = { { 'basedpyright', need = 'python' }, { 'ruff', need = 'python' }, { 'debugpy', need = 'python' } },
+  plugins = {
+    { 'mfussenegger/nvim-dap-python', lazy = true },
+    { 'nvim-neotest/neotest-python', lazy = true },
+  },
+  -- debugpy runs in mason's venv; the program in the project's (.venv found by itself)
+  dap = function()
+    require('dap-python').setup(vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python')
+  end,
+  test_adapters = function()
+    return { require 'neotest-python' { runner = 'pytest', dap = { justMyCode = false } } }
+  end,
 }

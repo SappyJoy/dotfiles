@@ -72,6 +72,22 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - SQL: `<leader>db` the database UI (dadbod): connections, tables, saved queries
 - Python finds the project's uv `.venv` by itself (imports resolve and complete)
 
+## Debugging and tests
+
+- `<leader>b`: a breakpoint on this line (again: remove it)
+- `<leader>D`: debug mode until Esc: `c` start / continue, `n` next line, `i` step
+  into, `o` step out, `r` run to the cursor, `b` breakpoint, `B` one that stops only
+  when a condition holds, `e` the value under the cursor, `w` watch it, `u` the
+  panel, `q` stop
+- While stopped, values show next to the code. The panel: `S` scopes (locals), `W`
+  watches, `B` breakpoints, `T` threads, `R` REPL (type code there, e.g. Python)
+- `<leader>tt` run the test under the cursor, `<leader>td` debug it (it stops at
+  your breakpoints), `<leader>tf` the file's tests, `<leader>ta` all, `<leader>tl`
+  the last again, `<leader>ts` summary, `<leader>to` the output, `<leader>tw` rerun
+  on every save
+- Python runs in the project's `.venv`; `<leader>Dc` in a plain file offers "Launch
+  file". C, C++, Rust: build with debug info first, `<leader>Dc` asks for the program
+
 ## Lists
 
 - `<leader>xx` diagnostics, `<leader>xX` this file's, `<leader>xq` the quickfix list,

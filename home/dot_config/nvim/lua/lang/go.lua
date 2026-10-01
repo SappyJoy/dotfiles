@@ -5,4 +5,14 @@ return {
   formatters = { go = { 'goimports', 'gofmt' } },
   formats_if = { 'go.mod' },
   tools = { { 'gopls', need = 'go' }, { 'goimports', need = 'go' }, { 'delve', need = 'go' } },
+  plugins = {
+    { 'leoluz/nvim-dap-go', lazy = true },
+    { 'fredrikaverpil/neotest-golang', lazy = true },
+  },
+  dap = function()
+    require('dap-go').setup()
+  end,
+  test_adapters = function()
+    return { require 'neotest-golang' { dap_go_enabled = true } }
+  end,
 }
