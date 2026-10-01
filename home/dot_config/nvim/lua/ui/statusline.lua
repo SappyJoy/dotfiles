@@ -18,7 +18,7 @@ local modes = {
   t = { 'TERMINAL', 'Constant' },
 }
 
-local text_filetypes = { markdown = true, text = true, gitcommit = true, tex = true, typst = true, org = true }
+local text_filetypes = require('ui.prose').filetypes
 
 local function color(group, attr)
   return vim.api.nvim_get_hl(0, { name = group, link = false })[attr]

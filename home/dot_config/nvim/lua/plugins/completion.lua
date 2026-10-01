@@ -2,7 +2,7 @@
 -- selected one), Enter only an item picked with Ctrl+N/Ctrl+P, Ctrl+Space opens
 -- the menu, Ctrl+E closes it. Snippets come as items: nothing to memorize.
 -- On the : line it completes commands as you type (:cd → cdo, cfdo, …).
-local text = { markdown = true, text = true, gitcommit = true, tex = true, typst = true, org = true }
+local text = require('ui.prose').filetypes
 
 return {
   'saghen/blink.cmp',

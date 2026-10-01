@@ -133,6 +133,12 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
   `Alt+Shift+Left/Right`: move them
 - `Ctrl+S` save, `Ctrl+Q` close (asks if unsaved)
 
+## Writing
+
+- In text (Markdown, notes, commit messages, LaTeX, Typst) the line you type on stays
+  in the middle of the screen, like paper in a typewriter: `<leader>mt` on / off;
+  `<leader>mn` line numbers on / off
+
 ## Spelling (in text)
 
 - `]s` `[s`: next / previous typo; `z=`: suggestions; `1z=`: take the first
