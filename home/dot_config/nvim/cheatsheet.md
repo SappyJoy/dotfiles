@@ -115,7 +115,8 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - Selection: `<leader>ne` extract into a new note, `<leader>nl` link it to a note,
   `<leader>nn` to a new one
 - `Enter`: follow a link, toggle a checkbox (on a list item: make one), list a tag's
-  notes, fold a heading; `]o` `[o` next / previous link; `K` a link's preview
+  notes, fold a heading; `]o` `[o` next / previous link; `gd` follows a link too,
+  `grr` lists the notes linking here
 - Org: `<leader>oa` agenda, `<leader>oc` capture (task, note, prompt into
   ~/orgfiles), `<leader>oh` every heading and TODO, `<leader>of` the org files
 
