@@ -37,6 +37,11 @@ if [ -d "$HOME/.local/share/JetBrains/Toolbox/scripts" ]; then
     esac
 fi
 
+# The mouse cursor's size for X: i3 (libxcb-cursor) and every other X app. Unset, it's
+# derived from the screen's height (1920 px here: 40 px instead of Adwaita's 24),
+# which every i3 restart showed. Harmless outside X.
+export XCURSOR_SIZE=24
+
 # ssh-agent from openssh's user unit ssh-agent.socket, where it runs. An agent set up
 # earlier (ssh -A forwarding, a desktop keyring) wins.
 if [ -z "$SSH_AUTH_SOCK" ] && [ -S "$XDG_RUNTIME_DIR/ssh-agent.socket" ]; then
