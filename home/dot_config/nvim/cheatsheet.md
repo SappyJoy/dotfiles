@@ -104,6 +104,21 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - For the whole machine instead: `set -gx CLANGD_FLAGS …` in an untracked fish file
   such as `~/.config/fish/conf.d/local.fish`
 
+## Notes (vault-13, prompts, dota-analytics in ~/notes)
+
+- `<leader>na` today's note, `<leader>nc` this week's, `<leader>nf` next week's,
+  `<leader>nd` the last 30 days, `<leader>ni` the inbox (vault-13's inbox.md)
+- `<leader>no` open a note, `<leader>ns` search, `<leader>nt` tags, `<leader>nn` new,
+  `<leader>nb` backlinks, `<leader>nl` links, `<leader>nr` rename (links follow),
+  `<leader>nm` insert a template, `<leader>nw` switch vault, `<leader>nO` the Obsidian
+  app, `<leader>np` paste an image
+- Selection: `<leader>ne` extract into a new note, `<leader>nl` link it to a note,
+  `<leader>nn` to a new one
+- `Enter`: follow a link, toggle a checkbox (on a list item: make one), list a tag's
+  notes, fold a heading; `]o` `[o` next / previous link; `K` a link's preview
+- Org: `<leader>oa` agenda, `<leader>oc` capture (task, note, prompt into
+  ~/orgfiles), `<leader>oh` every heading and TODO, `<leader>of` the org files
+
 ## Notebooks
 
 - An `.ipynb` opens as Python with `# %%` cells (markdown cells are comments), starts
