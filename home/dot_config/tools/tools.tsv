@@ -9,7 +9,8 @@
 #   anything else: a hint for installing by hand
 fish	core	4.9.3	fish --version	mise github:fish-shell/fish-shell
 tmux	core	3.7c	tmux -V	mise aqua:tmux/tmux-builds
-nvim	core	0.11.5	nvim --version	mise github:neovim/neovim-releases
+nvim	core	0.12.5	nvim --version	mise github:neovim/neovim-releases
+tree-sitter	core	0.26.9	tree-sitter --version	mise aqua:tree-sitter/tree-sitter
 git	core	2.55.0	git --version	apt git
 fzf	core	0.74.4	fzf --version	mise aqua:junegunn/fzf
 rg	core	15.2.0	rg --version	mise aqua:BurntSushi/ripgrep
