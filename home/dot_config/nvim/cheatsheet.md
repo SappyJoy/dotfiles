@@ -104,6 +104,22 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - For the whole machine instead: `set -gx CLANGD_FLAGS …` in an untracked fish file
   such as `~/.config/fish/conf.d/local.fish`
 
+## Notebooks
+
+- An `.ipynb` opens as Python with `# %%` cells (markdown cells are comments), starts
+  the project's kernel (its `.venv`, registered once as a Jupyter kernel) and shows the
+  saved outputs (`[OLD]` until rerun). Saving writes code and outputs back
+- `Shift+Enter` run the cell and go to the next (a new one at the end), `Ctrl+Enter`
+  run it and stay; in Insert mode too
+- `]j` `[j` next / previous cell; `ij` `aj` a cell's code / with its `# %%` line
+  (`vij`, `daj`); `za` folds a cell
+- `<leader>J` notebook mode until Esc, or `<leader>j` + key once: arrows cells, `r`
+  run, `a` this and all above, `A` all, `o` `O` new cell below / above, `d` delete,
+  `s` output in a float, `h` hide it, `x` clear it, `i` interrupt, `k` (re)start the
+  kernel, `c` connect to a running one (VS Code, jupyter), `b` output in the browser
+- A `.py` file with `# %%` cells gets the same keys (its kernel starts on the first
+  run)
+
 ## Documents
 
 - PDF, Word and LibreOffice (docx, odt, rtf), epub, pptx, Excel, Parquet, SQLite,

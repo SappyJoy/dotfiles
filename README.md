@@ -213,6 +213,8 @@ over with `chezmoi merge`.
     file: its servers attach, it's highlighted
   - `sh tests/nvim-documents.sh`: nvim's documents module on a sample of each format
     (and the files it must leave alone)
+  - `sh tests/nvim-notebook.sh`: nvim's notebooks in a scratch tmux: a uv project's
+    kernel, saved outputs back, running cells, outputs saved
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 
