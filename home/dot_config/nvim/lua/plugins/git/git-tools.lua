@@ -70,8 +70,11 @@ return {
           { '<leader>dl', "<Esc><Cmd>'<,'>DiffviewFileHistory --follow<CR>", desc = 'File History for visual selection' },
         },
       }
+      -- Ctrl+Q closes the whole diffview tab, as it quits elsewhere (keymaps.lua)
+      local close = { 'n', '<C-q>', '<cmd>DiffviewClose<cr>', { desc = 'Close Diffview' } }
       require('diffview').setup {
         use_icons = vim.g.have_nerd_font,
+        keymaps = { view = { close }, file_panel = { close }, file_history_panel = { close } },
         signs = {
           fold_closed = '',
           fold_open = '',

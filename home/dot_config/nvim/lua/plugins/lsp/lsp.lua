@@ -124,101 +124,6 @@ return {
             },
           },
         },
-        ltex = {
-          -- filetypes for nvim-lspconfig to activate ltex
-          filetypes = { 'tex', 'latex', 'bib', 'markdown', 'gitcommit', 'text', 'rmd', 'org' },
-          settings = {
-            ltex = {
-              -- Internal ltex setting for which "sub-languages" or types it processes
-              -- This list is from your :LspInfo, seems to be a default from ltex-ls itself now
-              enabled = {
-                'bibtex',
-                'gitcommit',
-                'markdown',
-                'org',
-                'tex',
-                'restructuredtext',
-                'rsweave',
-                'latex',
-                'quarto',
-                'rmd',
-                'context',
-                'html',
-                'xhtml',
-                'mail',
-                'plaintext',
-              },
-              language = 'ru-RU', -- Or 'ru'
-              diagnosticSeverity = 'information', -- Or 'warning' to make them more prominent
-              sentenceCacheSize = 2000,
-              additionalRules = {
-                enablePickyRules = true,
-                motherTongue = 'ru',
-              },
-              -- Use your more robust dynamic dictionary or the simple one for now
-              -- dictionary = (function()
-              --   local files = {}
-              --   for _, file in ipairs(vim.api.nvim_get_runtime_file('dict/*', true)) do
-              --     local lang = vim.fn.fnamemodify(file, ':t:r')
-              --     if lang ~= '' then -- Ensure lang is not empty
-              --       local fullpath = vim.fs.normalize(file) -- Use vim.fs.normalize
-              --       if files[lang] then
-              --         table.insert(files[lang], ':' .. fullpath)
-              --       else
-              --         files[lang] = { ':' .. fullpath }
-              --       end
-              --     end
-              --   end
-              --   if files.default then
-              --     for lang, _ in pairs(files) do
-              --       if lang ~= 'default' and files[lang] then
-              --         vim.list_extend(files[lang], files.default)
-              --       end
-              --     end
-              --     files.default = nil -- Remove default after merging
-              --   end
-              --   -- Ensure the target language dictionary exists, even if empty, if specified in 'language'
-              --   if not files['ru-RU'] and not files['ru'] then
-              --     files['ru-RU'] = {}
-              --   end
-              --   return files
-              -- end)(),
-              -- Or simpler for testing:
-              dictionary = {
-                ['ru-RU'] = { "LaTeX", "BibTeX", "терминXYZ" },
-              },
-
-              -- dictionary = (function()
-              --   -- For dictionary, search for files in the runtime to have
-              --   -- and include them as externals the format for them is
-              --   -- dict/{LANG}.txt
-              --   --
-              --   -- Also add dict/default.txt to all of them
-              --   local files = {}
-              --   for _, file in ipairs(vim.api.nvim_get_runtime_file('dict/*', true)) do
-              --     local lang = vim.fn.fnamemodify(file, ':t:r')
-              --     local fullpath = vim.fs.normalize(file, ':p')
-              --     files[lang] = { ':' .. fullpath }
-              --   end
-              --
-              --   if files.default then
-              --     for lang, _ in pairs(files) do
-              --       if lang ~= 'default' then
-              --         vim.list_extend(files[lang], files.default)
-              --       end
-              --     end
-              --     files.default = nil
-              --   end
-              --   return files
-              -- end)(),
-
-              -- Potentially useful: If ltex-ls has trouble finding java or LT
-              -- java = { path = "/path/to/your/java" }, -- If not on PATH or non-standard
-              -- LanguageTool path might be configurable too, check ltex-ls docs
-            },
-          },
-        },
-        -- 'ltex_ls_plus' was an option, stick to 'ltex' (ltex-ls) for now unless you have a specific reason
       }
 
       -- mason installs some tools with npm, into a Python venv or from a zip. Where
@@ -251,7 +156,6 @@ return {
         npm 'eslint-lsp',
         zip 'kotlin-language-server',
         'texlab',
-        'ltex-ls',
         'taplo', -- TOML LSP
         'marksman', -- Markdown LSP
         npm 'typescript-language-server', -- JS/TS LSP
@@ -278,7 +182,6 @@ return {
         npm 'bibtex-tidy', -- BibTeX
 
         -- === Linters (Must match coding/lint.lua) ===
-        npm 'markdownlint',
         'hadolint',
         npm 'jsonlint',
         pip 'codespell',
@@ -304,9 +207,13 @@ return {
       -- NOTE: In Nvim 0.11+, we strictly use this for ensuring installation mapping.
       -- We DO NOT use 'handlers' here anymore because that triggers the deprecated API.
       -- It enables every installed server, but these run on java, a hand install off
-      -- arch: without it they'd crash on every markdown, text or kotlin buffer.
-      local needs_java = vim.fn.executable 'java' == 0 and { 'ltex', 'kotlin_language_server' } or {}
-      require('mason-lspconfig').setup { automatic_enable = { exclude = needs_java } }
+      -- arch: without it they'd crash on every kotlin buffer.
+      local needs_java = vim.fn.executable 'java' == 0 and { 'kotlin_language_server' } or {}
+      -- ltex (grammar) stays off where mason still has it: text gets spelling only
+      -- (autocmds.lua).
+      require('mason-lspconfig').setup {
+        automatic_enable = { exclude = vim.list_extend({ 'ltex' }, needs_java) },
+      }
 
       -- Manually configure and enable servers using the new Nvim 0.11 API
       for server_name, server_config in pairs(lsp_servers) do

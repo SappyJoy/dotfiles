@@ -6,12 +6,9 @@ return {
       local lint = require 'lint'
 
       lint.linters_by_ft = {
-        markdown = { 'markdownlint' },
         dockerfile = { 'hadolint' },
         json = { 'jsonlint' },
-        -- Use codespell for all text/code files to catch typos
-        -- You can extend this list
-        text = { 'codespell' },
+        -- codespell catches typos in code; text gets nvim's spelling (autocmds.lua)
         javascript = { 'codespell' },
         typescript = { 'codespell' },
         python = { 'codespell' },
