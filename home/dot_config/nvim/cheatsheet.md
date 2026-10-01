@@ -157,12 +157,18 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - `]t` `[t`: next / previous TODO comment; `<leader>st`: search TODOs
 - `<leader>cs`: outline of the file (functions, or a note's headings)
 
-## Git review
+## Git
 
 - `<leader>H`: review mode, stays until Esc: arrows = next / previous hunk,
   `s` stage, `r` reset, `S` / `R` the whole file, `u` undo a stage, `p` preview,
   `b` blame, `d` diff
 - `]c` `[c`: next / previous hunk; `<leader>h` + key: the same keys once
+- diffview, in its own tab, `Ctrl+Q` closes it: `<leader>do` the changes not
+  committed, `<leader>dm` this branch against main, `<leader>dh` this file's
+  history, `<leader>dH` all history, `<leader>dl` this line's history (or the
+  selected lines'), `<leader>dc` the commit that last changed this line. Inside:
+  `Tab` / `Shift+Tab` next / previous file, `-` stages a file, `g?` help
+- `<leader>g`: lazygit in a float (`q` closes)
 
 ## Claude Code
 
@@ -194,6 +200,12 @@ this folder connects too.
 - `Ctrl+T`: a scratch tab (closes without asking); `Alt+Left/Right`: switch tabs,
   `Alt+Shift+Left/Right`: move them
 - `Ctrl+S` save, `Ctrl+Q` close (asks if unsaved)
+
+## Tools
+
+- `<leader>T`: translate the line or the selection: Russian to English, anything else
+  to Russian (Google, needs the network)
+- Color codes (`#e6b450`, `rgb(…)`) show their color behind them
 
 ## Writing
 
