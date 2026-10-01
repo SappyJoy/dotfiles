@@ -211,6 +211,8 @@ over with `chezmoi merge`.
     window modes, the scratch tab
   - `sh tests/nvim-lang.sh [NAME…]`: every language of nvim's `lang/` on a sample
     file: its servers attach, it's highlighted
+  - `sh tests/nvim-documents.sh`: nvim's documents module on a sample of each format
+    (and the files it must leave alone)
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 

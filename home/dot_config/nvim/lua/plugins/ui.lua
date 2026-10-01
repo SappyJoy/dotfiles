@@ -76,6 +76,7 @@ return {
       -- headless (tests, installs): notifications stay plain messages
       notifier = { enabled = #vim.api.nvim_list_uis() > 0 },
       indent = { enabled = true },
+      bigfile = { enabled = true }, -- over 1.5 MB: no treesitter, LSP, folds
     },
   },
 }

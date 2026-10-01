@@ -104,6 +104,18 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - For the whole machine instead: `set -gx CLANGD_FLAGS …` in an untracked fish file
   such as `~/.config/fish/conf.d/local.fish`
 
+## Documents
+
+- PDF, Word and LibreOffice (docx, odt, rtf), epub, pptx, Excel, Parquet, SQLite,
+  arrays and weights (npy, npz, safetensors, pt, pkl, h5), audio and video, 7z and
+  rar open as text, read-only. `gx` opens the original (a PDF in zathura)
+- Wide tables: `zl` `zh` scroll sideways, `zL` `zH` half a screen
+- zip and tar: nvim's own browser, Enter opens a file inside
+- CSV and TSV: columns aligned on screen, still editable; `Tab` `Shift+Tab` next /
+  previous field, `if` `af` a field
+- A pickle (`.pkl`, `.pt`) is read without running it: its classes show by name
+- Files over 1.5 MB open without treesitter, LSP and folds, so they open fast
+
 ## Lists
 
 - `<leader>xx` diagnostics, `<leader>xX` this file's, `<leader>xq` the quickfix list,
