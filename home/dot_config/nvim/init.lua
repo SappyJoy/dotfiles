@@ -5,5 +5,6 @@ vim.loader.enable()
 require 'core.options'
 require 'core.keymaps'
 require 'core.autocmds'
+require 'core.russian'
 require 'ui.statusline'
 require 'core.lazy'

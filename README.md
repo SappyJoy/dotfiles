@@ -206,6 +206,9 @@ over with `chezmoi merge`.
     layouts (`--write` regenerates it)
   - `sh tests/nvim-bench.sh [FILE]`: nvim's startup to the first screen in a scratch
     tmux, empty and with a file, against the budget (60 / 120 ms)
+  - `sh tests/nvim-keys.sh`: nvim's own keys in a scratch tmux: the Russian layout
+    (leader keys through which-key's popup, twins like `ъс` = `]c`), the review and
+    window modes, the scratch tab
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 
