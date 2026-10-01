@@ -1,6 +1,6 @@
 -- Treesitter (the `main` rewrite, nvim 0.12): parsers, highlighting and folds per
 -- filetype; textobjects' ]f/[f moves and the queries mini.ai selects with; the
--- sticky context. Languages add their parsers in lang/.
+-- sticky context. Which parsers: lua/parsers.lua (languages add theirs in lang/).
 -- Needs tree-sitter-cli >= 0.26.1 and a C compiler to build parsers.
 return {
   {
@@ -8,41 +8,13 @@ return {
     branch = 'main',
     lazy = false, -- main doesn't lazy-load (its README)
     build = ':TSUpdate',
-    opts = {
-      ensure = {
-        'bash',
-        'diff',
-        'git_config',
-        'git_rebase',
-        'gitcommit',
-        'json',
-        'lua',
-        'luadoc',
-        'markdown',
-        'markdown_inline',
-        'python',
-        'query',
-        'regex',
-        'toml',
-        'vim',
-        'vimdoc',
-        'yaml',
-      },
-    },
-    config = function(_, opts)
+    config = function()
       -- install what's missing once the UI is up; nothing is checked online at start
       vim.api.nvim_create_autocmd('User', {
         pattern = 'VeryLazy',
         once = true,
         callback = function()
-          local wanted = vim.list_extend(vim.deepcopy(opts.ensure), require('lang').list 'parsers')
-          local have = require('nvim-treesitter').get_installed()
-          local missing = vim.tbl_filter(function(p)
-            return not vim.tbl_contains(have, p)
-          end, wanted)
-          if #missing > 0 and vim.fn.executable 'tree-sitter' == 1 then
-            require('nvim-treesitter').install(missing)
-          end
+          require('parsers').install()
         end,
       })
       local vim_syntax = require('lang').list 'vim_syntax'

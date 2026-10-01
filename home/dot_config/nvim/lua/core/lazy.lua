@@ -12,12 +12,10 @@ if not vim.uv.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Modules extend these plugins' lists (which-key's groups, treesitter's parsers).
--- lazy reads opts_extend from the specs merged so far, so it's declared before any
--- module: plugins/ loads in name order.
+-- Modules extend which-key's list of groups. lazy reads opts_extend from the specs
+-- merged so far, so it's declared before any module: plugins/ loads in name order.
 local hubs = {
   { 'folke/which-key.nvim', opts_extend = { 'spec' } },
-  { 'nvim-treesitter/nvim-treesitter', opts_extend = { 'ensure' } },
 }
 
 require('lazy').setup({ hubs, { import = 'plugins' } }, {
