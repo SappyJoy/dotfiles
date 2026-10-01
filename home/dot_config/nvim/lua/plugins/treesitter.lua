@@ -1,6 +1,6 @@
 -- Treesitter (the `main` rewrite, nvim 0.12): parsers, highlighting and folds per
 -- filetype; textobjects' ]f/[f moves and the queries mini.ai selects with; the
--- sticky context. Language modules add their parsers through opts.ensure.
+-- sticky context. Languages add their parsers in lang/.
 -- Needs tree-sitter-cli >= 0.26.1 and a C compiler to build parsers.
 return {
   {
@@ -35,10 +35,11 @@ return {
         pattern = 'VeryLazy',
         once = true,
         callback = function()
+          local wanted = vim.list_extend(vim.deepcopy(opts.ensure), require('lang').list 'parsers')
           local have = require('nvim-treesitter').get_installed()
           local missing = vim.tbl_filter(function(p)
             return not vim.tbl_contains(have, p)
-          end, opts.ensure)
+          end, wanted)
           if #missing > 0 and vim.fn.executable 'tree-sitter' == 1 then
             require('nvim-treesitter').install(missing)
           end

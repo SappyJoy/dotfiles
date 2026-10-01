@@ -38,6 +38,32 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - The same by hand: `:cdo s/old/new/g | update` (`cdo` runs a command on each list
   entry; `:cfdo` on each file)
 
+## Code
+
+- `gd` definition, `gD` declaration, `grr` references, `gri` implementations,
+  `grt` type definition, `K` docs (twice: into the float)
+- `<leader>ca` (or `gra`) code action: fixes, organize imports; `<leader>cr` (or `grn`)
+  rename
+- `<leader>ss` symbols of the file, `<leader>sS` of the project
+- `<leader>ch` inlay hints (types, parameter names) on / off
+- Diagnostics: the message shows on the cursor's line; `<leader>cD` on every line;
+  `]d` `[d` next / previous; `Ctrl+W d` the full message in a float
+
+## Completion
+
+- `Ctrl+Y` take the first item (or the picked one), `Enter` only a picked one,
+  `Ctrl+N` `Ctrl+P` move, `Ctrl+E` close, `Ctrl+Space` open (in text it doesn't open
+  by itself), `Ctrl+K` the signature
+- Snippets are items too; `Tab` / `Shift+Tab` jump between their fields
+- On the `:` line the menu completes commands as you type (`:cd` → `cdo`, `cfdo`)
+
+## Formatting
+
+- Saving formats the lines you changed, where the project has a formatter config
+  (`[tool.ruff]`, `.clang-format`, `stylua.toml`, …); other lines stay as they are
+- `<leader>fm` format your changes (Visual: the selection), `<leader>fM` the whole
+  file
+
 ## Lists
 
 - `<leader>xx` diagnostics, `<leader>xX` this file's, `<leader>xq` the quickfix list,
