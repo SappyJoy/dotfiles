@@ -164,6 +164,22 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
   `b` blame, `d` diff
 - `]c` `[c`: next / previous hunk; `<leader>h` + key: the same keys once
 
+## Claude Code
+
+Claude runs in tmux, connected to this nvim: it sees the file and the selection,
+shows its edits here as diffs and reads the errors. A `claude` started by hand in
+this folder connects too.
+
+- `<leader>ac` / `<leader>aC`: Claude (personal / team) in a pane to the right,
+  connected; again: jumps to it. `Ctrl+\` back
+- `<leader>as`: send the selection (or this file; in oil or the tree, the file under
+  the cursor) as `@file#L10-20`, then jump to Claude to ask
+- An edit Claude asks about opens here as a diff: `<leader>aa` or `:w` accepts (edit
+  it first if you like), `<leader>ad` rejects. An edit it doesn't ask about (auto or
+  accept-edits mode) is written at once: review it with `<leader>H`
+- In Claude: `Ctrl+G` writes the prompt in nvim (`:wq` hands it back), `/ide` picks
+  another nvim, `/export` saves the conversation
+
 ## Files
 
 - `-`: the file's directory in oil: rename, move, delete by editing lines,

@@ -2,6 +2,7 @@
   "SchemaStore.nvim": { "branch": "main", "commit": "fae5c76c00dec18485f264396ce24368e9c4e9fb" },
   "android-nvim": { "branch": "main", "commit": "54ca11bc00df0bd913083bdd6ec9f9754950311d" },
   "blink.cmp": { "branch": "main", "commit": "78336bc89ee5365633bcf754d93df01678b5c08f" },
+  "claudecode.nvim": { "branch": "main", "commit": "2390c6e45c4789072c293ac69de051d169668b29" },
   "conform.nvim": { "branch": "master", "commit": "016802de402556da54c36bd7359b441266b01cdd" },
   "csvview.nvim": { "branch": "main", "commit": "2466bdda54047f525d4faca53040fe657c9c33db" },
   "flash.nvim": { "branch": "main", "commit": "5f0f270fdc7c5b0c21d903ee85b9cb06f2ac636a" },
