@@ -89,6 +89,21 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - Python runs in the project's `.venv`; `<leader>Dc` in a plain file offers "Launch
   file". C, C++, Rust: build with debug info first, `<leader>Dc` asks for the program
 
+## Per-project settings
+
+- A `.nvim.lua` in a project (or any dir above where nvim starts) runs at start.
+  nvim shows it once and asks; after you edit it, `:trust`. Keep it out of the
+  project's git: add `.nvim.lua` to its `.git/info/exclude`.
+- Example: the project's own C/C++ compilers, for clangd's system headers:
+
+  ```lua
+  local root = vim.fs.dirname(debug.getinfo(1, 'S').source:sub(2))
+  vim.env.CLANGD_FLAGS = '--query-driver=' .. root .. '/prebuilts/**/bin/clang*'
+  ```
+
+- For the whole machine instead: `set -gx CLANGD_FLAGS …` in an untracked fish file
+  such as `~/.config/fish/conf.d/local.fish`
+
 ## Lists
 
 - `<leader>xx` diagnostics, `<leader>xX` this file's, `<leader>xq` the quickfix list,

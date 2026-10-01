@@ -12,10 +12,9 @@ return {
         '--function-arg-placeholders',
         '--fallback-style=llvm',
         -- compilers clangd may ask for their system headers (compile_commands.json
-        -- names them), the HarmonyOS prebuilts at work too
-        '--query-driver=/usr/bin/clang*,/usr/bin/c++,/usr/bin/g++,/**/llvm/bin/clang*,'
-          .. vim.env.HOME
-          .. '/src/work/HarmonyOS/ohos-src/prebuilts/**/bin/clang*',
+        -- names them). A project's own toolchain: CLANGD_FLAGS in its .nvim.lua
+        -- (the cheatsheet has an example); clangd adds those flags to these.
+        '--query-driver=/usr/bin/**',
       },
       init_options = { usePlaceholders = true, completeUnimported = true, clangdFileStatus = true },
     },

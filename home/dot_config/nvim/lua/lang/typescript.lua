@@ -1,4 +1,4 @@
--- JavaScript, TypeScript and ArkTS (HarmonyOS .ets, read as TypeScript): vtsls,
+-- JavaScript, TypeScript and ArkTS (.ets, read as TypeScript): vtsls,
 -- eslint where the project has its config, prettier where it has one.
 local prettier = { 'prettierd', 'prettier', stop_after_first = true }
 

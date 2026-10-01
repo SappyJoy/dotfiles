@@ -48,6 +48,7 @@ o.smartcase = true
 o.inccommand = 'split'
 o.mouse = 'a'
 o.confirm = true -- :q on a changed buffer asks instead of failing
+o.exrc = true -- a project's .nvim.lua, once trusted (nvim asks; :trust after edits)
 o.updatetime = 250
 o.timeoutlen = 300
 
