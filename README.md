@@ -202,6 +202,8 @@ over with `chezmoi merge`.
     (docker; default `ubuntu:20.04`, `24.04` and `26.04`)
   - `sh tests/nvim-start.sh [FILE]`: starts nvim in a scratch tmux and prints the
     prompts, errors and installs it reports (used by fresh-machine)
+  - `sh tests/nvim-langmap.sh [--write]`: nvim's Russian langmap against the XKB
+    layouts (`--write` regenerates it)
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 

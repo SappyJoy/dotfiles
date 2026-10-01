@@ -1,0 +1,2 @@
+# nvim compiles the zg word list next to it (chezmoi skips this dot file)
+spell/*.spl
