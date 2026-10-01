@@ -54,11 +54,17 @@ return {
     end,
     config = function()
       local actions = require 'telescope.actions'
+      -- Ctrl+Q: all results to the quickfix list (for <leader>xr, :cdo), shown in
+      -- trouble only, not also in vim's own quickfix window
+      local function to_list(bufnr)
+        actions.send_to_qflist(bufnr)
+        vim.cmd 'Trouble qflist open'
+      end
       require('telescope').setup {
         defaults = {
           mappings = {
-            i = { ['<C-y>'] = actions.select_default },
-            n = { ['<C-y>'] = actions.select_default },
+            i = { ['<C-y>'] = actions.select_default, ['<C-q>'] = to_list },
+            n = { ['<C-y>'] = actions.select_default, ['<C-q>'] = to_list },
           },
           layout_config = {
             horizontal = { prompt_position = 'bottom', preview_width = 0.5 },
