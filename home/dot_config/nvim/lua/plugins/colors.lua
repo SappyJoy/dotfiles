@@ -25,9 +25,11 @@ return {
         overrides()
         local mode = args.match == 'ayu-light' and 'light' or 'dark'
         local current = vim.fn.filereadable(state_file) == 1 and vim.fn.readfile(state_file)[1]
-        -- not from a headless nvim (tests, installs): it would switch the desktop
+        -- only a desktop's own nvim switches the desktop: one with a UI (not a test or
+        -- an install) where theme-switcher keeps its state file (not a fresh or fake
+        -- HOME: a test with one once restarted i3 and set GTK to light)
         local ui = #vim.api.nvim_list_uis() > 0
-        if ui and mode ~= current and vim.fn.executable 'theme-switcher' == 1 then
+        if ui and current and mode ~= current and vim.fn.executable 'theme-switcher' == 1 then
           vim.system({ 'theme-switcher', mode }, { detach = true })
         end
       end,
