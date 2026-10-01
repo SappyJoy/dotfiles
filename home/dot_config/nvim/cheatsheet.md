@@ -117,6 +117,8 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - `Enter`: follow a link, toggle a checkbox (on a list item: make one), list a tag's
   notes, fold a heading; `]o` `[o` next / previous link; `gd` follows a link too,
   `grr` lists the notes linking here
+- In any Markdown file (nvim's own): `]]` `[[` next / previous heading, `gO` an
+  outline of the headings in a side list
 - Org: `<leader>oa` agenda, `<leader>oc` capture (task, note, prompt into
   ~/orgfiles), `<leader>oh` every heading and TODO, `<leader>of` the org files
 
