@@ -33,6 +33,11 @@ map('v', '<S-Up>', ":m '<-2<cr>gv=gv", { desc = 'Move lines up' })
 map('v', '>', '>gv')
 map('v', '<', '<gv')
 
+map('n', '<leader>u', function()
+  vim.cmd.packadd 'nvim.undotree'
+  require('undotree').open()
+end, { desc = 'Undo tree' })
+
 map('n', '<C-d>', '<C-d>zz')
 map('n', '<C-u>', '<C-u>zz')
 

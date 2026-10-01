@@ -27,6 +27,7 @@ o.signcolumn = 'yes'
 o.cursorline = true
 o.colorcolumn = '120'
 o.wrap = false -- text soft-wraps (autocmds.lua)
+o.foldlevelstart = 99 -- files open unfolded (treesitter folds, zc/zo)
 o.breakindent = true
 o.scrolloff = 10
 o.list = true
