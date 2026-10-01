@@ -2,7 +2,7 @@
 return {
   {
     'folke/trouble.nvim',
-    cmd = { 'TroubleToggle', 'Trouble' }, -- Lazy load on command
+    cmd = 'Trouble',
     dependencies = { 'nvim-tree/nvim-web-devicons' }, -- Optional for icons
     opts = {
       -- Use your preferred settings here, or leave empty for defaults
@@ -81,21 +81,6 @@ return {
         '<leader>xQ',
         '<cmd>Trouble qflist toggle<cr>',
         desc = 'Quickfix List (Trouble)',
-      },
-      {
-        '<leader>xx',
-        '<cmd>TroubleToggle<cr>',
-        desc = 'Toggle Trouble',
-      },
-      {
-        '<leader>xw',
-        '<cmd>TroubleToggle workspace_diagnostics<cr>',
-        desc = 'Workspace Diagnostics (Trouble)',
-      },
-      {
-        '<leader>xd',
-        '<cmd>TroubleToggle document_diagnostics<cr>',
-        desc = 'Document Diagnostics (Trouble)',
       },
     },
   },
