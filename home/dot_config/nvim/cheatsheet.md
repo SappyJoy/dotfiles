@@ -138,6 +138,14 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - In text (Markdown, notes, commit messages, LaTeX, Typst) the line you type on stays
   in the middle of the screen, like paper in a typewriter: `<leader>mt` on / off;
   `<leader>mn` line numbers on / off
+- Markdown is rendered in place: `<leader>mr` on / off. Images, `$math$` and
+  ```` ```mermaid ```` blocks are drawn in the note (kitty)
+- `<leader>mp` paste a screenshot from the clipboard as an image file + link (in a
+  vault: into its attachments folder)
+- `<leader>me` export to PDF, DOCX or HTML next to the file (pandoc; the PDF opens in
+  zathura)
+- Typst: saving writes the PDF, `\lv` opens it in zathura, which reloads it on every
+  save. LaTeX: `\ll` (Languages)
 
 ## Spelling (in text)
 

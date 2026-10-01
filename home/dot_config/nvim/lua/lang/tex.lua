@@ -2,7 +2,8 @@
 -- shows the spot; Ctrl+click in zathura jumps back), texlab, latexindent where the
 -- project has its config.
 return {
-  parsers = { 'bibtex' },
+  parsers = { 'bibtex', 'latex' }, -- latex: for math inside notes (snacks.image)
+  vim_syntax = { 'tex' }, -- vimtex's highlighting, not treesitter's
   servers = { texlab = {} },
   formatters = { tex = { 'latexindent' } },
   formats_if = { '.latexindent.yaml', 'latexindent.yaml', 'localSettings.yaml' },

@@ -45,10 +45,11 @@ return {
           end
         end,
       })
+      local vim_syntax = require('lang').list 'vim_syntax'
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('treesitter', { clear = true }),
         callback = function(args)
-          if pcall(vim.treesitter.start, args.buf) then
+          if not vim.tbl_contains(vim_syntax, args.match) and pcall(vim.treesitter.start, args.buf) then
             vim.wo[0][0].foldmethod = 'expr'
             vim.wo[0][0].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
           end

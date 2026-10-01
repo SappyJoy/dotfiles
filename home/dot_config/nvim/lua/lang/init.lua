@@ -11,9 +11,12 @@
 --   linters    = { filetype = { 'nvim-lint name' } }
 --   tools      = { 'mason package', { 'package', need = 'npm' | 'python' | 'unzip' | 'go' | 'java' } }
 --   filetypes  = { extension = { ets = 'typescript' } }   vim.filetype.add
+--   vim_syntax = { 'tex' }                          filetypes highlighted by vim's syntax
+--                (a plugin's), not treesitter
 --   plugins    = { lazy specs }                    language-only plugins
 --   dap        = function(dap) end                 debug adapters, when nvim-dap loads
 --   test_adapters = function() return { … } end    neotest adapters, when it loads
+--   ftplugin   = { filetype = function(buf) end }  buffer settings and keys
 local M = {}
 
 local cache
