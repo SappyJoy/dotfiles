@@ -166,6 +166,8 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - In text (Markdown, notes, commit messages, LaTeX, Typst) the line you type on stays
   in the middle of the screen, like paper in a typewriter: `<leader>mt` on / off;
   `<leader>mn` line numbers on / off
+- In text `j` `k` and the arrows move by screen line through a wrapped paragraph
+  (in Insert mode too); a count moves by real lines (`5j`)
 - Markdown is rendered in place: `<leader>mr` on / off. Images, `$math$` and
   ```` ```mermaid ```` blocks are drawn in the note (kitty)
 - `<leader>mp` paste a screenshot from the clipboard as an image file + link (in a

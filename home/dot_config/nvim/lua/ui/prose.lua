@@ -21,11 +21,35 @@ local function center()
   end
 end
 
-local function prose()
+-- moving through wrapped text: j/k and the arrows go by screen line (as vim-pencil
+-- did), a count by real lines (5j); in Insert mode the arrows too, unless blink's
+-- menu is open (they move through it)
+local function display_moves(buf)
+  for key, screen in pairs { j = 'j', k = 'k', ['<Down>'] = 'j', ['<Up>'] = 'k' } do
+    vim.keymap.set({ 'n', 'x' }, key, function()
+      return vim.v.count == 0 and 'g' .. screen or key
+    end, { buffer = buf, expr = true })
+  end
+  for key, dir in pairs { ['<Down>'] = 'next', ['<Up>'] = 'prev' } do
+    vim.keymap.set('i', key, function()
+      local ok, blink = pcall(require, 'blink.cmp')
+      if ok and blink.is_menu_visible() then
+        return blink['select_' .. dir]()
+      end
+      vim.cmd('normal! g' .. (dir == 'next' and 'j' or 'k'))
+    end, { buffer = buf })
+  end
+end
+
+local function prose(args)
+  display_moves(args.buf)
   local wo = vim.wo[0][0]
   wo.wrap, wo.linebreak, wo.smoothscroll = true, true, true
   wo.spell = true
   wo.number, wo.relativenumber, wo.colorcolumn = false, false, ''
+  -- the typewriter scrolls; scrolloff's own margin would fight it (a wrapped
+  -- paragraph is one line, so keeping 10 lines below moved the cursor up)
+  wo.scrolloff = 0
   vim.b.typewriter = true
 end
 
@@ -39,6 +63,7 @@ vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI', 'WinResized' }, { g
 
 vim.keymap.set('n', '<leader>mt', function()
   vim.b.typewriter = not vim.b.typewriter
+  vim.wo.scrolloff = vim.b.typewriter and 0 or -1 -- -1: the global value again
   center()
 end, { desc = 'Typewriter on/off' })
 vim.keymap.set('n', '<leader>mn', function()
