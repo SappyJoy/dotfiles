@@ -64,6 +64,14 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - `<leader>fm` format your changes (Visual: the selection), `<leader>fM` the whole
   file
 
+## Languages
+
+- LaTeX (vimtex, `\` is `<localleader>`): `\ll` compile on every save (again:
+  stop), `\lv` show the cursor's spot in zathura (Ctrl+click there jumps back),
+  `\le` errors, `\lc` clean
+- SQL: `<leader>db` the database UI (dadbod): connections, tables, saved queries
+- Python finds the project's uv `.venv` by itself (imports resolve and complete)
+
 ## Lists
 
 - `<leader>xx` diagnostics, `<leader>xX` this file's, `<leader>xq` the quickfix list,

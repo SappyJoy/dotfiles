@@ -6,7 +6,8 @@
 --   formatters = { filetype = { 'conform name' } }
 --   formats_if = { 'ruff.toml', { 'pyproject.toml', '%[tool%.ruff' } }
 --                a file (or a file holding a pattern) up the tree: the project
---                formats, so saving formats the changed lines (format.lua)
+--                formats, so saving formats the changed lines (format.lua);
+--                true: always
 --   linters    = { filetype = { 'nvim-lint name' } }
 --   tools      = { 'mason package', { 'package', need = 'npm' | 'python' | 'unzip' | 'go' | 'java' } }
 --   filetypes  = { extension = { ets = 'typescript' } }   vim.filetype.add

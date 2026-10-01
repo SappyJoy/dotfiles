@@ -1,0 +1,10 @@
+SELECT 
+    m.id AS match_id,
+    m.start_time,
+    CASE WHEN m.winner IS NULL THEN '??' ELSE m.winner END AS actual_winner,
+    p.model_name,
+    p.predicted_winner,
+    ROUND(CAST(p.probability_radiant * 100 AS numeric), 1) || '%' as radiant_confidence
+FROM matches m
+JOIN predictions p ON m.id = p.match_id
+ORDER BY m.start_time DESC;

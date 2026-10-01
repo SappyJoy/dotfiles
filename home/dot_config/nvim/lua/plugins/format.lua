@@ -6,6 +6,9 @@
 
 local function project_formats(buf)
   local markers = require('lang').format_markers()[vim.bo[buf].filetype]
+  if markers == true then -- the language always formats (fish)
+    return true
+  end
   local dir = vim.fs.dirname(vim.api.nvim_buf_get_name(buf))
   for _, marker in ipairs(markers or {}) do
     local file, pattern = marker, nil

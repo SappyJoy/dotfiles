@@ -209,6 +209,8 @@ over with `chezmoi merge`.
   - `sh tests/nvim-keys.sh`: nvim's own keys in a scratch tmux: the Russian layout
     (leader keys through which-key's popup, twins like `ъс` = `]c`), the review and
     window modes, the scratch tab
+  - `sh tests/nvim-lang.sh [NAME…]`: every language of nvim's `lang/` on a sample
+    file: its servers attach, it's highlighted
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 
