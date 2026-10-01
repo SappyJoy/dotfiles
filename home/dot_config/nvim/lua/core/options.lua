@@ -64,6 +64,10 @@ o.spellfile = vim.fn.stdpath 'config' .. '/spell/en.utf-8.add'
 
 o.langmap = require 'core.langmap'
 
+-- vim's regex syntax only where treesitter doesn't highlight (treesitter.lua sets it):
+-- markdown's alone pulled in HTML, CSS, YAML and VB syntax for nothing
+vim.cmd 'syntax manual'
+
 -- The clipboard provider's check costs startup time: set it once the UI is up.
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'

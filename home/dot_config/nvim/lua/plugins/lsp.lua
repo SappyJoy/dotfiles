@@ -52,7 +52,8 @@ end
 return {
   {
     'neovim/nvim-lspconfig',
-    event = { 'BufReadPre', 'BufNewFile' },
+    -- after the first screen: vim.lsp.enable attaches to the buffers already open
+    event = 'VeryLazy',
     dependencies = { 'mason-org/mason.nvim' },
     config = function()
       vim.api.nvim_create_autocmd('LspAttach', { callback = on_attach })

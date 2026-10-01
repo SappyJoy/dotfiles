@@ -62,22 +62,33 @@ printf 'FROM alpine\nRUN echo hi\n' >Dockerfile
 printf '# A note\n\nText.\n' >note.md
 
 cat >"$tmp/check.lua" <<'EOF'
-local want = vim.env.WANT == '-' and {} or vim.split(vim.env.WANT, ',')
-local function names()
-  local out = vim.tbl_map(function(c) return c.name end, vim.lsp.get_clients { bufnr = 0 })
-  table.sort(out)
-  return out
-end
-vim.wait(60000, function()
-  local have = names()
-  return vim.iter(want):all(function(n) return vim.tbl_contains(have, n) end)
-end, 200)
--- treesitter, or vim's syntax where a plugin owns it (vimtex for LaTeX)
-local hl = vim.treesitter.highlighter.active[vim.api.nvim_get_current_buf()] and 'treesitter'
-  or vim.b.current_syntax and 'syntax'
-  or 'none'
-vim.fn.writefile({ table.concat(names(), ','), hl }, vim.env.OUT)
-vim.cmd 'qa!'
+-- after VimEnter, as in a real start: lazy fires VeryLazy (which loads the LSP) once
+-- a UI has entered, and headless has none; vim.lsp.enable attaches to the buffers
+-- already open only after VimEnter
+vim.api.nvim_create_autocmd('VimEnter', {
+  once = true,
+  callback = vim.schedule_wrap(function()
+    if not vim.g.did_very_lazy then
+      vim.api.nvim_exec_autocmds('User', { pattern = 'VeryLazy', modeline = false })
+    end
+    local want = vim.env.WANT == '-' and {} or vim.split(vim.env.WANT, ',')
+    local function names()
+      local out = vim.tbl_map(function(c) return c.name end, vim.lsp.get_clients { bufnr = 0 })
+      table.sort(out)
+      return out
+    end
+    vim.wait(60000, function()
+      local have = names()
+      return vim.iter(want):all(function(n) return vim.tbl_contains(have, n) end)
+    end, 200)
+    -- treesitter, or vim's syntax where a plugin owns it (vimtex for LaTeX)
+    local hl = vim.treesitter.highlighter.active[vim.api.nvim_get_current_buf()] and 'treesitter'
+      or vim.b.current_syntax and 'syntax'
+      or 'none'
+    vim.fn.writefile({ table.concat(names(), ','), hl }, vim.env.OUT)
+    vim.cmd 'qa!'
+  end),
+})
 EOF
 
 printf '%s\n' "$expect" | while read -r file want; do

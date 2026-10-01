@@ -45,7 +45,22 @@ local function prose(args)
   display_moves(args.buf)
   local wo = vim.wo[0][0]
   wo.wrap, wo.linebreak, wo.smoothscroll = true, true, true
-  wo.spell = true
+  -- spelling loads its dictionaries on the first draw (~10 ms for en + ru): while
+  -- nvim starts, it waits until the first screen is up
+  local win = vim.api.nvim_get_current_win()
+  if vim.v.vim_did_enter == 1 then
+    wo.spell = true
+  else
+    vim.api.nvim_create_autocmd('User', {
+      pattern = 'VeryLazy',
+      once = true,
+      callback = function()
+        if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == args.buf then
+          vim.wo[win][0].spell = true
+        end
+      end,
+    })
+  end
   wo.number, wo.relativenumber, wo.colorcolumn = false, false, ''
   -- the typewriter scrolls; scrolloff's own margin would fight it (a wrapped
   -- paragraph is one line, so keeping 10 lines below moved the cursor up)

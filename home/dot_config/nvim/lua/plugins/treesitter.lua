@@ -52,6 +52,8 @@ return {
           if not vim.tbl_contains(vim_syntax, args.match) and pcall(vim.treesitter.start, args.buf) then
             vim.wo[0][0].foldmethod = 'expr'
             vim.wo[0][0].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+          elseif vim.bo[args.buf].syntax == '' then
+            vim.bo[args.buf].syntax = args.match -- 'syntax manual' (core/options.lua)
           end
         end,
       })

@@ -34,14 +34,45 @@ local function inbox()
   vim.cmd 'normal! G'
 end
 
+-- Loading costs ~16 ms (its picker and completion come with it), so a note opened
+-- while nvim starts gets it once the first screen is up; obsidian then attaches to
+-- the notes already open. A note opened later loads it at once.
+local function load_obsidian()
+  if package.loaded['obsidian'] then
+    return
+  end
+  require('lazy').load { plugins = { 'obsidian.nvim' } }
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.bo[buf].filetype == 'markdown' and vim.startswith(vim.api.nvim_buf_get_name(buf), notes .. '/') then
+      vim.api.nvim_exec_autocmds('FileType', { group = 'obsidian_setup', buffer = buf })
+      if buf == vim.api.nvim_get_current_buf() then
+        vim.api.nvim_exec_autocmds('BufEnter', { group = 'obsidian_setup', buffer = buf })
+      end
+    end
+  end
+end
+
+local function on_note()
+  if vim.v.vim_did_enter == 1 then
+    return load_obsidian()
+  end
+  vim.api.nvim_create_autocmd('User', { pattern = 'VeryLazy', once = true, callback = load_obsidian })
+end
+
 return {
   { 'folke/which-key.nvim', opts = { spec = { { '<leader>n', group = 'notes' } } } },
   {
     'obsidian-nvim/obsidian.nvim',
     version = '*',
     enabled = #workspaces > 0,
-    event = { 'BufReadPre ' .. notes .. '/**.md', 'BufNewFile ' .. notes .. '/**.md' },
     cmd = 'Obsidian',
+    init = function()
+      vim.api.nvim_create_autocmd({ 'BufReadPre', 'BufNewFile' }, {
+        pattern = notes .. '/**.md',
+        once = true,
+        callback = on_note,
+      })
+    end,
     dependencies = { 'nvim-telescope/telescope.nvim' }, -- its picker, loaded first
     keys = {
       { '<leader>na', cmd 'today', desc = "Today's note" },
