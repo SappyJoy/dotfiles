@@ -1,0 +1,4 @@
+# chezmoi skips this dot file. nvim compiles the zg word list next to it; dadbod's
+# connections hold passwords.
+spell/*.spl
+db_ui/connections.json

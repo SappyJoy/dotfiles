@@ -32,7 +32,7 @@ settle() {
         sleep 1
         i=$((i + 1))
         screen=$(tm capture-pane -p -t 0 2>/dev/null) || return
-        if printf '%s\n' "$screen" | grep -qE -- '-- More --|Press ENTER'; then
+        if printf '%s\n' "$screen" | grep -qE -- '-- More --|Press ENTER|Download\? \[y/N\]'; then
             printf '%s\n' "$screen" | grep -v '^[[:space:]~]*$' | sed 's/^/screen: /'
             tm send-keys -t 0 Enter
         fi

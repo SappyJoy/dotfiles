@@ -9,7 +9,8 @@
 #   anything else: a hint for installing by hand
 fish	core	4.9.3	fish --version	mise github:fish-shell/fish-shell
 tmux	core	3.7c	tmux -V	mise aqua:tmux/tmux-builds
-nvim	core	0.11.5	nvim --version	mise github:neovim/neovim-releases
+nvim	core	0.12.5	nvim --version	mise github:neovim/neovim-releases
+tree-sitter	core	0.26.9	tree-sitter --version	mise aqua:tree-sitter/tree-sitter
 git	core	2.55.0	git --version	apt git
 fzf	core	0.74.4	fzf --version	mise aqua:junegunn/fzf
 rg	core	15.2.0	rg --version	mise aqua:BurntSushi/ripgrep
@@ -45,6 +46,7 @@ dir2md	dev	0.3.1	-	mise pipx:dir2md[uvx_args=--python 3.12]
 dvc	dev	3.67.1	dvc --version	mise pipx:dvc[extras=all]
 jupytext	dev	1.19.5	jupytext --version	mise pipx:jupytext
 claude	dev	2.1.282	claude --version	curl -fsSL https://claude.ai/install.sh | bash
+tree-sitter	dev	0.26.9	tree-sitter --version	cargo install --locked tree-sitter-cli (nvim builds its parsers with it; upstream's binary needs glibc 2.39)
 codex	dev	0.158.0	codex --version	mise aqua:openai/codex
 i3	desktop	4.25.1	i3 --version	apt i3-wm
 polybar	desktop	3.7.2	polybar --version	apt polybar
@@ -63,3 +65,4 @@ xss-lock	desktop	-	-	apt xss-lock
 nitrogen	desktop	-	-	apt nitrogen
 sing-box	desktop	1.14.1	sing-box version	mise github:SagerNet/sing-box[asset_pattern=*linux-amd64-musl.tar.gz]
 wg	desktop	1.0.20260223	wg --version	apt wireguard-tools
+mmdc	desktop	12.0.0	mmdc --version	PUPPETEER_SKIP_DOWNLOAD=1 npm i -g @mermaid-js/mermaid-cli (renders with an installed Chrome; nvim draws Mermaid blocks with it)
