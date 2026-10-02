@@ -14,4 +14,7 @@
 {{- $s = setValueAtPath "statusLine" (dict
       "type" "command"
       "command" "bash ~/.claude/statusline-command.sh") $s }}
+{{- /* A claude started by hand connects to the nvim (claudecode.nvim) that has its
+       folder open, when there's exactly one; otherwise /ide. */ -}}
+{{- $s = setValueAtPath "env.CLAUDE_CODE_AUTO_CONNECT_IDE" "1" $s }}
 {{- toPrettyJson "  " $s -}}
