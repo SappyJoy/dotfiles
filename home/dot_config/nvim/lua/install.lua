@@ -8,8 +8,10 @@
 -- a note; a real failure is reported as "error" (the script greps for it).
 local M = {}
 
+-- on a line of its own (the script greps for it): headless nvim ends its messages
+-- without a newline
 local function say(part, msg)
-  io.stdout:write(('nvim install: %s: %s\n'):format(part, msg))
+  io.stdout:write(('\nnvim install: %s: %s\n'):format(part, msg))
 end
 
 local function load(name)
@@ -65,14 +67,19 @@ function parts.orgmode()
 end
 
 function parts.spell()
-  if #vim.api.nvim_get_runtime_file('spell/ru.utf-8.spl', false) > 0 then
+  local function there()
+    return #vim.api.nvim_get_runtime_file('spell/ru.utf-8.spl', false) > 0
+  end
+  if there() then
     return say('spell', 'ru there')
   end
   local spellfile = require 'nvim.spellfile'
   spellfile.config { confirm = false }
   spellfile.get 'ru'
-  local ok = #vim.api.nvim_get_runtime_file('spell/ru.utf-8.spl', false) > 0
-  say('spell', ok and 'ru downloaded' or 'ru not downloaded (network?)')
+  -- nvim caches the runtimepath's dirs at the first lookup: the site/spell/ the
+  -- download created shows up once 'runtimepath' is set again
+  vim.o.runtimepath = vim.o.runtimepath
+  say('spell', there() and 'ru downloaded' or 'ru not downloaded (network?)')
 end
 
 function M.run()

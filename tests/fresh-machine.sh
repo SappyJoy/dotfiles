@@ -41,6 +41,10 @@ if [ "${1:-}" = --inside ]; then
     problems=$(printf '%s\n' "$out" | grep -iE 'error|warn' | grep -vE '^mise WARN .*fallback=true' |
         grep -vE '^update-alternatives: warning: skip creation of /usr/share/man/')
     check "apply prints no errors or warnings" [ -z "$problems" ]
+    # nvim's installer (lua/install.lua) prints a line per part: parsers, mason, blink,
+    # orgmode, spell
+    check "nvim install reports its five parts" [ "$(printf '%s\n' "$out" | grep -c '^nvim install: ')" = 5 ]
+    check "nvim install: the Russian spell file came" has '^nvim install: spell: ru downloaded$'
     check "verify: the home matches the source" $cz verify
 
     # ssh: the machine's hosts stay first, the dotfiles block goes last
