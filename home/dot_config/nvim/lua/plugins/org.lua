@@ -50,6 +50,14 @@ return {
       },
     },
     config = function(_, opts)
+      -- orgmode builds its grammar with tree-sitter-cli whenever it's on PATH, even
+      -- where it can't run (Ubuntu 20.04): there, with cc
+      if not require('parsers').cli_runs() then
+        local install = require 'orgmode.utils.treesitter.install'
+        install.compilers = vim.tbl_filter(function(c)
+          return c ~= 'tree-sitter'
+        end, install.compilers)
+      end
       require('orgmode').setup(opts)
       require('telescope').load_extension 'orgmode'
     end,

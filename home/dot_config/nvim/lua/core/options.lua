@@ -56,9 +56,10 @@ o.swapfile = false
 o.undofile = true
 o.undodir = vim.fn.expand '~/.vim/undodir' -- shared with the old config
 
--- Spelling (on in text, autocmds.lua): 0.12 offers to download a missing language.
--- Words added with zg go to the config, so they're tracked.
-o.spelllang = 'en,ru'
+-- Spelling (on in text, ui/prose.lua, which adds Russian where its spell file is:
+-- the installer downloads it, install.lua). Words added with zg go to the config,
+-- so they're tracked.
+o.spelllang = 'en'
 o.spellcapcheck = '' -- no "capital letter" marks, only misspellings
 o.spellfile = vim.fn.stdpath 'config' .. '/spell/en.utf-8.add'
 

@@ -21,10 +21,14 @@ fi
 log=${XDG_STATE_HOME:-$HOME/.local/state}/nvim/install.log
 mkdir -p "${log%/*}"
 echo "nvim: installing plugins, parsers and mason tools (log: $log)"
-nvim --headless '+Lazy! restore' '+lua require("install").run()' +qa >"$log" 2>&1
+# A plugin's wait loop that never ends would hang chezmoi with no output: stop
+# after 45 min (exit 124); the first start then installs what's left.
+timeout 45m nvim --headless '+Lazy! restore' '+lua require("install").run()' +qa >"$log" 2>&1
 code=$?
 grep '^nvim install: ' "$log" | grep -v error
 problems=$(grep -iE 'error|fail' "$log")
+[ "$code" = 124 ] && problems="$problems${problems:+
+}stopped after 45 min"
 if [ "$code" != 0 ] || [ -n "$problems" ]; then
     printf '%s\n' "$problems" | sed 's/^/nvim install error: /' >&2
     echo "nvim install error: exit $code, see $log" >&2

@@ -41,6 +41,17 @@ local function display_moves(buf)
   end
 end
 
+-- English, and Russian where its spell file is (a machine that couldn't download
+-- it would warn "Cannot find word list" in every text file)
+local has_ru
+local function spell(win, buf)
+  if has_ru == nil then
+    has_ru = #vim.api.nvim_get_runtime_file('spell/ru.utf-8.spl', false) > 0
+  end
+  vim.bo[buf].spelllang = has_ru and 'en,ru' or 'en'
+  vim.wo[win][0].spell = true
+end
+
 local function prose(args)
   display_moves(args.buf)
   local wo = vim.wo[0][0]
@@ -49,14 +60,14 @@ local function prose(args)
   -- nvim starts, it waits until the first screen is up
   local win = vim.api.nvim_get_current_win()
   if vim.v.vim_did_enter == 1 then
-    wo.spell = true
+    spell(win, args.buf)
   else
     vim.api.nvim_create_autocmd('User', {
       pattern = 'VeryLazy',
       once = true,
       callback = function()
         if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == args.buf then
-          vim.wo[win][0].spell = true
+          spell(win, args.buf)
         end
       end,
     })

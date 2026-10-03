@@ -13,13 +13,15 @@ local has = {
   java = vim.fn.executable 'java' == 1,
 }
 
+-- each tool once: languages share some (codelldb), and mason-tool-installer waits
+-- for a duplicate that never reports back, so :MasonToolsInstallSync hung forever
 local function tools()
-  local out = {}
+  local out, seen = {}, {}
   for _, tool in ipairs(require('lang').list 'tools') do
-    if type(tool) == 'string' then
-      table.insert(out, tool)
-    elseif has[tool.need] then
-      table.insert(out, tool[1])
+    local name = type(tool) == 'string' and tool or has[tool.need] and tool[1]
+    if name and not seen[name] then
+      seen[name] = true
+      table.insert(out, name)
     end
   end
   return out
