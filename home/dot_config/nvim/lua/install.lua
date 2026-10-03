@@ -66,9 +66,12 @@ function parts.orgmode()
   say('orgmode', ok and 'grammar installed' or 'error: no grammar after 5 min')
 end
 
+-- Also checked where nvim.spellfile saves it: lazy rebuilds the runtimepath from the
+-- dirs that exist when it loads a plugin, so on a new machine site/ (made later by
+-- the parsers or this download) isn't on it until the next start.
 function parts.spell()
   local function there()
-    return #vim.api.nvim_get_runtime_file('spell/ru.utf-8.spl', false) > 0
+    return vim.uv.fs_stat(vim.fn.stdpath 'data' .. '/site/spell/ru.utf-8.spl') ~= nil or #vim.api.nvim_get_runtime_file('spell/ru.utf-8.spl', false) > 0
   end
   if there() then
     return say('spell', 'ru there')
@@ -76,9 +79,6 @@ function parts.spell()
   local spellfile = require 'nvim.spellfile'
   spellfile.config { confirm = false }
   spellfile.get 'ru'
-  -- nvim caches the runtimepath's dirs at the first lookup: the site/spell/ the
-  -- download created shows up once 'runtimepath' is set again
-  vim.o.runtimepath = vim.o.runtimepath
   say('spell', there() and 'ru downloaded' or 'ru not downloaded (network?)')
 end
 
