@@ -33,14 +33,23 @@ function M.missing()
   end, vim.list_extend(vim.deepcopy(M.base), require('lang').list 'parsers'))
 end
 
+-- whether tree-sitter-cli is here and runs (orgmode's grammar uses it too)
+local cli_runs
+function M.cli_runs()
+  if cli_runs == nil then
+    local ok, cli = pcall(vim.system, { 'tree-sitter', '--version' })
+    cli_runs = ok and cli:wait().code == 0
+  end
+  return cli_runs
+end
+
 -- the install's task (nvim-treesitter's: :wait() blocks), or nil and why not
 function M.install()
   local missing = M.missing()
   if #missing == 0 then
     return nil, 'all installed'
   end
-  local ok, cli = pcall(vim.system, { 'tree-sitter', '--version' })
-  if not ok or cli:wait().code ~= 0 then
+  if not M.cli_runs() then
     return nil, 'tree-sitter-cli is missing or does not run here'
   end
   return require('nvim-treesitter').install(missing)
