@@ -187,6 +187,8 @@ over with `chezmoi merge`.
 - `home/.chezmoitemplates/tools.json`: the list parsed, for the templates that install
 - `home/run_onchange_after_*`: install scripts; chezmoi runs one again when its input
   changes
+- `home/run_once_before_10-nvim-old-aside.sh`: once per machine, before the new nvim
+  config is written, moves the old one (and its plugins and state) to `*.bak-<time>`
 - `tests/`:
   - `sh tests/tools-check.sh`
   - `sh tests/render.sh`: the templates that read the tool list
@@ -195,6 +197,7 @@ over with `chezmoi merge`.
   - `sh tests/dunst-place.sh`: the notification offset for a few desks
   - `sh tests/lock.sh`: the lock script (dunst paused, xss-lock's sleep lock)
   - `sh tests/brightness.sh`: levels, the bus cache, parallel writes, merged presses
+  - `sh tests/nvim-old-aside.sh`: the move of the old nvim config in a scratch home
   - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match
     the one before
   - `sh tests/fresh-machine.sh [IMAGE…]`: applies this source as a user with sudo in
