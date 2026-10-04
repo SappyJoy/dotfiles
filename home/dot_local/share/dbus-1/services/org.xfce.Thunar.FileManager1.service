@@ -1,0 +1,7 @@
+# Pins Thunar as the file manager that D-Bus starts for "Show in folder"
+# (org.freedesktop.FileManager1). xdg-desktop-portal-gnome pulls in Nautilus, whose
+# file sorts first and would take the name; this user dir comes before /usr/share.
+[D-BUS Service]
+Name=org.freedesktop.FileManager1
+Exec=/usr/bin/Thunar --gapplication-service
+SystemdService=thunar.service
