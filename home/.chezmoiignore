@@ -20,6 +20,8 @@
 .config/rofi/**
 .config/sxhkd/**
 .config/user-dirs.dirs
+.config/xmobar/**
+.config/xmonad/**
 .config/user-dirs.locale
 .gtkrc-2.0
 .local/share/applications/theme-*.desktop
