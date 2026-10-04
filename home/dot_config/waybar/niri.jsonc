@@ -1,0 +1,12 @@
+// waybar for niri in the WM tour (its stock config only has sway modules)
+{
+    "layer": "top",
+    "position": "top",
+    "height": 26,
+    "modules-left": ["niri/workspaces"],
+    "modules-center": ["niri/window"],
+    "modules-right": ["niri/language", "pulseaudio", "cpu", "memory", "clock", "tray"],
+    "niri/language": { "format-en": "EN", "format-ru": "RU" },
+    "clock": { "format": "{:%a %Y-%m-%d %H:%M}" },
+    "tray": { "spacing": 8 }
+}
