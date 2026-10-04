@@ -56,9 +56,10 @@ local function film_saved()
     return v == "off" and "off" or "on"
 end
 local function film_toggle()
+    local next_mode = film_saved() == "on" and "off" or "on" -- before "w" empties the file
     os.execute("mkdir -p '" .. film_state:match("(.*)/") .. "'")
     local f = io.open(film_state, "w")
-    f:write(film_saved() == "on" and "off\n" or "on\n")
+    f:write(next_mode .. "\n")
     f:close()
     awesome.restart()
 end
