@@ -9,6 +9,7 @@
 .config/dunst/**
 .config/flameshot/**
 .config/greenclip.toml
+.config/herbstluftwm/**
 .config/gtk-3.0/**
 .config/i3/**
 .config/kitty/**
