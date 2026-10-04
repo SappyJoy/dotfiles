@@ -13,6 +13,7 @@
 .config/i3/**
 .config/kitty/**
 .config/picom/**
+.config/qtile/**
 .config/polybar/**
 .config/redshift/**
 .config/rofi/**
