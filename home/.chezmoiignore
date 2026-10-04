@@ -3,19 +3,25 @@
 {{ if not .desktop -}}
 # X11 + i3 stack
 .config/autorandr/**
+.config/awesome/**
+.config/xdg-desktop-portal/i3-portals.conf
 .config/bspwm/**
 .config/dunst/**
 .config/flameshot/**
 .config/greenclip.toml
+.config/herbstluftwm/**
 .config/gtk-3.0/**
 .config/i3/**
 .config/kitty/**
 .config/picom/**
+.config/qtile/**
 .config/polybar/**
 .config/redshift/**
 .config/rofi/**
 .config/sxhkd/**
 .config/user-dirs.dirs
+.config/xmobar/**
+.config/xmonad/**
 .config/user-dirs.locale
 .gtkrc-2.0
 .local/share/applications/theme-*.desktop
@@ -33,6 +39,7 @@
 .config/sing-box/**
 .config/wireguard/**
 .local/bin/brightness
+.local/share/dbus-1/services/org.knopwob.dunst.service
 .local/lib/film_snap/**
 {{- end }}
 

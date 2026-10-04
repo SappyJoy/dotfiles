@@ -1,77 +1,27 @@
 #!/bin/sh
+# bspwm: binary space partitioning. Each new window splits the focused one in two,
+# on its longer side or where Super+Ctrl+arrow preselected. bspwm only manages
+# windows: its keys are sxhkd's (sxhkdrc), and it has no bar.
+# `bspc config …` changes a setting live; Super+Shift+r restarts bspwm, which keeps
+# the windows and runs this file again ($1 = the number of restarts).
 
-# Launch hotkey daemon
-sxhkd &
+# Once per login: keys, notifications (xfce4-notifyd), key repeat, root cursor
+if [ "${1:-0}" -eq 0 ]; then
+    sxhkd &
+    /usr/lib/xfce4/notifyd/xfce4-notifyd &
+    xset r rate 200 30
+    xsetroot -cursor_name left_ptr
+fi
 
-# -------------------------------------------------------------------
-# AESTHETICS & GAPS
-# -------------------------------------------------------------------
-bspc config border_width         2
-bspc config window_gap           12
+# Desktops 1-10, all on FILM or spread over the three monitors (Super+Shift+f
+# switches; the choice is kept for the next login)
+if [ "${1:-0}" -eq 0 ]; then
+    "$HOME/.config/bspwm/film" start
+fi
 
-bspc config split_ratio          0.50
+# Settings from bspwm's example config
+bspc config border_width        2
+bspc config window_gap         12
+bspc config split_ratio          0.52
 bspc config borderless_monocle   true
 bspc config gapless_monocle      true
-
-# -------------------------------------------------------------------
-# COLORS
-# -------------------------------------------------------------------
-bspc config normal_border_color    "#44475a" # Grey
-bspc config active_border_color    "#bd93f9" # Purple
-bspc config focused_border_color   "#ff79c6" # Pink
-bspc config presel_feedback_color  "#50fa7b" # Green
-
-# -------------------------------------------------------------------
-# STARTUP APPLICATIONS
-# -------------------------------------------------------------------
-# Kill polybar instances and launch new one
-killall -q polybar
-~/.config/polybar/launch.sh &
-
-# Compositor
-killall -q picom
-picom --config ~/.config/picom/picom.conf &
-
-# Notification daemon
-killall -q dunst
-dunst &
-
-# Wallpaper
-feh --bg-scale ~/images/wallpaper/wallhaven-7jg5vy.jpg &
-
-# Keyboard layout and rate
-setxkbmap us,ru -option 'grp:alt_shift_toggle,caps:super'
-xset r rate 200 30
-
-# System tray and other utilities
-nm-applet &
-flameshot &
-greenclip daemon &
-
-# Don't let the screen go black
-xset s off -dpms
-
-# -------------------------------------------------------------------
-# MOUSE BEHAVIOR (similar to i3)
-# -------------------------------------------------------------------
-bspc config focus_follows_pointer false
-# super + left-click to move, super + right-click to resize
-bspc config mouse_modifier super
-bspc config border_radius 8
-
-
-# -------------------------------------------------------------------
-# RULES (for floating windows, etc.)
-# -------------------------------------------------------------------
-bspc rule -a 'nitrogen' state=floating
-bspc rule -a 'lxappearance' state=floating
-bspc rule -a 'pavucontrol' state=floating
-bspc rule -a 'flameshot' state=floating
-bspc rule -a 'Rofi' state=floating
-
-# -------------------------------------------------------------------
-# INITIAL MODE
-# -------------------------------------------------------------------
-# Start in your preferred mode on login
-# You can choose film_mode.sh or work_mode.sh
-~/.local/bin/film_mode.sh

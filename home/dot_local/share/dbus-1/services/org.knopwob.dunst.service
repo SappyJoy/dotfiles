@@ -1,0 +1,8 @@
+# Pins dunst as the notification daemon that D-Bus starts on demand. This user dir
+# comes before /usr/share, and of two files claiming the same name the first wins,
+# so mako, swaync, fnott or xfce4-notifyd (installed for other WMs) never start in
+# i3. A WM that runs its own daemon at login takes the name before any activation.
+[D-BUS Service]
+Name=org.freedesktop.Notifications
+Exec=/usr/bin/dunst
+SystemdService=dunst.service
