@@ -3,6 +3,7 @@
 {{ if not .desktop -}}
 # X11 + i3 stack
 .config/autorandr/**
+.config/awesome/**
 .config/xdg-desktop-portal/i3-portals.conf
 .config/bspwm/**
 .config/dunst/**
