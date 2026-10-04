@@ -1,0 +1,67 @@
+#!/bin/sh
+# FILM for bspwm: `film on|off|toggle|start`. bspwm makes one monitor per physical
+# output, so FILM moves every desktop onto one of them and stretches it over the
+# whole screen. Off splits it again along the physical heads that Xinerama lists
+# (on NVIDIA these are the real monitors), left to right, with desktops 1-3, 4-7
+# and 8-10. `start` sets up desktops 1-10 and applies the saved choice.
+set -e
+state=${XDG_STATE_HOME:-$HOME/.local/state}/wm-tour/film
+
+# Physical heads as "WxH+X+Y", left to right
+heads() {
+    xdpyinfo -ext XINERAMA | awk '/head #/ { split($5, p, ","); print p[1], p[2], $3 }' |
+        sort -n -k1,1 -k2,2 | awk '{ print $3 "+" $1 "+" $2 }'
+}
+
+# Move every desktop onto the first monitor, stretch it over the screen, call it FILM
+merge() {
+    set -- $(bspc query -M)
+    keep=$1
+    shift
+    for m; do
+        for d in $(bspc query -D -m "$m"); do bspc desktop "$d" -m "$keep"; done
+        bspc monitor "$m" -r
+    done
+    size=$(xdpyinfo | awk '/dimensions:/ { print $2 }')
+    bspc monitor "$keep" -n FILM -g "$size+0+0"
+}
+
+on() {
+    [ "$(bspc query -M | wc -l)" -gt 1 ] || return 0
+    merge
+    bspc monitor FILM -o 1 2 3 4 5 6 7 8 9 10
+}
+
+off() {
+    [ "$(bspc query -M | wc -l)" -eq 1 ] || return 0
+    film=$(bspc query -M)
+    n=0
+    for rect in $(heads); do
+        n=$((n + 1))
+        case $n in
+            1) bspc monitor "$film" -n left -g "$rect"; continue ;;
+            2) name=middle; desks="4 5 6 7" ;;
+            3) name=right; desks="8 9 10" ;;
+            *) name=head$n; desks= ;;
+        esac
+        bspc wm -a "$name" "$rect"
+        for d in $desks; do bspc desktop "$d" -m "$name"; done
+        # `wm -a` gave the new monitor a placeholder desktop; drop it
+        [ -z "$desks" ] || bspc desktop "$name:^1" -r
+    done
+}
+
+case $1 in
+    on) on; mkdir -p "${state%/*}"; echo on >"$state" ;;
+    off) off; mkdir -p "${state%/*}"; echo off >"$state" ;;
+    toggle) if [ "$(bspc query -M | wc -l)" -eq 1 ]; then "$0" off; else "$0" on; fi ;;
+    start)
+        # every monitor gets one desktop, then FILM collects and names them 1-10
+        for m in $(bspc query -M); do bspc monitor "$m" -d tmp; done
+        merge
+        bspc monitor FILM -d 1 2 3 4 5 6 7 8 9 10
+        [ "$(cat "$state" 2>/dev/null)" != off ] || off
+        bspc desktop -f 1
+        ;;
+    *) echo "usage: film on|off|toggle|start" >&2; exit 2 ;;
+esac
