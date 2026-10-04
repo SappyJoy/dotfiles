@@ -4,4 +4,6 @@
 # i3, and i3's exec_always lines relaunch the bar and film-snap inside i3's session.
 # Starting them here would not work: from autorandr.service, which is a oneshot
 # unit, they would die with the service.
+# Only under i3: other WMs set up their monitors themselves.
+pgrep -xu "$(id -u)" i3 >/dev/null || exit 0
 exec "$HOME/.local/bin/film_mode.sh"

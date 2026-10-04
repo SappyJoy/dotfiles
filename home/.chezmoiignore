@@ -3,6 +3,7 @@
 {{ if not .desktop -}}
 # X11 + i3 stack
 .config/autorandr/**
+.config/xdg-desktop-portal/i3-portals.conf
 .config/bspwm/**
 .config/dunst/**
 .config/flameshot/**
@@ -33,6 +34,7 @@
 .config/sing-box/**
 .config/wireguard/**
 .local/bin/brightness
+.local/share/dbus-1/services/org.knopwob.dunst.service
 .local/lib/film_snap/**
 {{- end }}
 
