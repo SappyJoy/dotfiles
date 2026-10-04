@@ -4,7 +4,7 @@
 # X11 + i3 stack
 .config/autorandr/**
 .config/awesome/**
-.config/xdg-desktop-portal/i3-portals.conf
+.config/xdg-desktop-portal/portals.conf
 .config/bspwm/**
 .config/dunst/**
 .config/flameshot/**
@@ -40,6 +40,7 @@
 .config/wireguard/**
 .local/bin/brightness
 .local/share/dbus-1/services/org.knopwob.dunst.service
+.local/share/dbus-1/services/org.xfce.Thunar.FileManager1.service
 .local/lib/film_snap/**
 {{- end }}
 
