@@ -71,7 +71,7 @@ super + {s,p,shift + space}
 super + m
 	bspc desktop -l next
 
-# Focus the parent, the last window, the last desktop, the next or previous
+# Focus the parent, the last window, the last desktop, the previous or next
 # desktop on this monitor
 super + a
 	bspc node -f @parent
@@ -79,5 +79,5 @@ super + Tab
 	bspc node -f last
 super + grave
 	bspc desktop -f last
-super + ctrl + {Up,Down}
-	bspc desktop -f {next,prev}.local
+super + bracket{left,right}
+	bspc desktop -f {prev,next}.local

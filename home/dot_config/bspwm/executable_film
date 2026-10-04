@@ -19,7 +19,10 @@ merge() {
     keep=$1
     shift
     for m; do
-        for d in $(bspc query -D -m "$m"); do bspc desktop "$d" -m "$keep"; done
+        # bspwm won't move a monitor's last desktop: give it a placeholder first
+        desks=$(bspc query -D -m "$m")
+        bspc monitor "$m" -a placeholder
+        for d in $desks; do bspc desktop "$d" -m "$keep"; done
         bspc monitor "$m" -r
     done
     size=$(xdpyinfo | awk '/dimensions:/ { print $2 }')
