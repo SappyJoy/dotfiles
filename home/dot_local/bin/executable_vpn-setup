@@ -5,7 +5,8 @@
 #   rights only (the package's own sing-box.service stays off)
 # - /etc/polkit-1/rules.d/50-vless.rules: you start and stop vless without a password
 # - WireGuard: NetworkManager imports ~/.config/wireguard/vpnconfig.conf when it has no
-#   "vpnconfig" connection yet (NetworkManager may ask for your password once)
+#   "vpnconfig" connection yet (NetworkManager may ask for your password once), and
+#   gives it a routing rule so ssh from outside still works while the tunnel is on
 # The profiles come with chezmoi, encrypted: ~/.config/sing-box/config.json and
 # ~/.config/wireguard/vpnconfig.conf. toggle-vless and toggle-wireguard switch them.
 set -eu
@@ -73,4 +74,21 @@ elif [ -f "$wireguard" ]; then
     nmcli connection import type wireguard file "$wireguard"
 else
     echo "missing $wireguard: no WireGuard profile to import"
+fi
+
+# While WireGuard is on, sshd's replies (TCP from port 22) take the normal routes: a
+# login through the router's port forward would otherwise be answered into the
+# tunnel, whose server drops it. Priority 30000 comes before NetworkManager's VPN
+# rules (31xxx); outgoing ssh uses other local ports and stays in the tunnel.
+if nmcli -g NAME connection show | grep -qx vpnconfig; then
+    if nmcli -g ipv4.routing-rules connection show vpnconfig | grep -q 'ipproto 6 sport 22 table 254'; then
+        echo "ok      WireGuard: ssh replies skip the tunnel"
+    else
+        nmcli connection modify vpnconfig +ipv4.routing-rules 'priority 30000 ipproto 6 sport 22 table main'
+        # a running tunnel takes the rule now, without a reconnect
+        if nmcli -g NAME connection show --active | grep -qx vpnconfig; then
+            nmcli device reapply vpnconfig >/dev/null
+        fi
+        echo "written WireGuard: ssh replies skip the tunnel"
+    fi
 fi
