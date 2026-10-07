@@ -66,26 +66,26 @@ mkdir -p "$usage"
 # The window above has 2h05m left: 58% of it passed, so the tick sits in cell 6 of 10
 echo "42 $reset" >"$usage/claude-personal"
 check "42%: 4 of 10 cells, the tick past them, the time to the reset" \
-    draws "%{F#FF9940}━━━━%{F#ABB0B6}─%{F#5C6A72}┼%{F#ABB0B6}────%{F-} 42% %{F#8295A6}2h05m%{F-}"
+    draws "%{F#FF9940}━━━━%{F#ABB0B6}━%{F#5C6A72}┿%{F#ABB0B6}━━━━%{F-} 42% %{F#8295A6}2h05m%{F-}"
 
 echo "74 $((now + 4 * 3600 + 8 * 60 + 30))" >"$usage/claude-personal"
-check "74% after 17% of the window: the tick on the fill (┿)" \
-    draws "%{F#FF9940}━%{F#5C6A72}┿%{F#FF9940}━━━━━%{F#ABB0B6}───%{F-} 74% %{F#8295A6}4h08m%{F-}"
+check "74% after 17% of the window: the tick on the fill" \
+    draws "%{F#FF9940}━%{F#5C6A72}┿%{F#FF9940}━━━━━%{F#ABB0B6}━━━%{F-} 74% %{F#8295A6}4h08m%{F-}"
 
 echo "85 $((now + 630))" >"$usage/claude-personal"
 check "85%: red, the tick in the last cell, minutes only under an hour" \
-    draws "%{F#F07178}━━━━━━━━━%{F#5C6A72}┼%{F-} 85% %{F#8295A6}10m%{F-}"
+    draws "%{F#F07178}━━━━━━━━━%{F#5C6A72}┿%{F-} 85% %{F#8295A6}10m%{F-}"
 
 echo "100 $reset" >"$usage/claude-personal"
 check "100%: all cells" \
     draws "%{F#F07178}━━━━━%{F#5C6A72}┿%{F#F07178}━━━━%{F-} 100% %{F#8295A6}2h05m%{F-}"
 
 echo "64 $((now - 10))" >"$usage/claude-personal"
-check "the window has reset: empty, no tick, no time" draws "%{F#ABB0B6}──────────%{F-}  0%"
+check "the window has reset: empty, no tick, no time" draws "%{F#ABB0B6}━━━━━━━━━━%{F-}  0%"
 
 echo "30 $reset" >"$usage/claude"
 touch -d '1 minute ago' "$usage/claude-personal"
 check "two accounts: the one used last" \
-    draws "%{F#FF9940}━━━%{F#ABB0B6}──%{F#5C6A72}┼%{F#ABB0B6}────%{F-} 30% %{F#8295A6}2h05m%{F-}"
+    draws "%{F#FF9940}━━━%{F#ABB0B6}━━%{F#5C6A72}┿%{F#ABB0B6}━━━━%{F-} 30% %{F#8295A6}2h05m%{F-}"
 
 [ "$fails" -eq 0 ] && echo "all passed" || { echo "$fails failed"; exit 1; }

@@ -40,6 +40,8 @@ if [ -n "$left" ]; then
     [ "$tick" -ge "$cells" ] && tick=$((cells - 1))
 fi
 
+# The track is as thick as the fill (━), so the fill covers it: a thin ─ sits on the
+# heavy line's bottom edge, not its middle.
 # seg COLOR TEXT: add TEXT to the bar, with a color tag only where the color changes
 bar= cur=
 seg() {
@@ -49,11 +51,11 @@ seg() {
 i=0
 while [ "$i" -lt "$cells" ]; do
     if [ "$i" -eq "$tick" ]; then
-        if [ "$i" -lt "$full" ]; then seg "$tick_color" ┿; else seg "$tick_color" ┼; fi
+        seg "$tick_color" ┿
     elif [ "$i" -lt "$full" ]; then
         seg "$fill" ━
     else
-        seg "$track" ─
+        seg "$track" ━
     fi
     i=$((i + 1))
 done
