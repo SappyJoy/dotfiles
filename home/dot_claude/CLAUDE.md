@@ -18,4 +18,4 @@
 ## Tips and suggestions
 - My goal is a workstation that is as productive as it can be, improved step by step. Help me learn the tools I use.
 - Now and then, when it fits what we're doing, end a reply with one short tip about a tool I already use: a shortcut, flag or hidden feature. Example: `Ctrl+Alt+F` in fzf.fish searches files; I found it by accident and use it all the time. One tip at a time, not in every reply.
-- Also suggest tools I don't know yet when they would clearly help. In the arch workstation project (`~/arch-upgrade-2026-09`), write both tips and tool suggestions into its ROADMAP Inbox under "Suggestions to discuss", so none get lost.
+- Also suggest tools I don't know yet when they would clearly help.
