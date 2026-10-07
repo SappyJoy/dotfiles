@@ -23,10 +23,10 @@ busy=$XDG_RUNTIME_DIR/claude-busy
 mkdir -p "$tmp/bin" "$XDG_RUNTIME_DIR"
 cp "$(command -v sh)" "$tmp/bin/claude"
 
-# from_claude ACTION JSON: run the hook as Claude Code does (claude → sh -c → hook);
+# from_claude ACTION JSON: run the hook as settings.json does (claude → sh -c → sh);
 # the stand-in claude saves its PID in $tmp/claude.pid
 from_claude() {
-    printf '%s' "$2" | "$tmp/bin/claude" -c "echo \$\$ >'$tmp/claude.pid'; sh -c 'sh $hook $1'; :"
+    printf '%s' "$2" | "$tmp/bin/claude" -c "echo \$\$ >'$tmp/claude.pid'; sh -c 'sh $hook $1 || :'; :"
 }
 session='{"session_id": "s1", "hook_event_name": "UserPromptSubmit"}'
 
