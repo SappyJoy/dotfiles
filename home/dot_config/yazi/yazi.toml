@@ -5,6 +5,9 @@
 [mgr]
 # Each file's size on its row, as ranger shows it.
 linemode = "size"
+# Directories sort in with the files, as in ranger: `,M` puts the newest entry of
+# either kind on top (`,m` sorts oldest first).
+sort_dir_first = false
 
 # Notebooks as Markdown, as ranger's scope.sh showed them. piper (a chezmoi external)
 # runs the command; without jupyter (e.g. on a work PC) the raw JSON shows instead.
