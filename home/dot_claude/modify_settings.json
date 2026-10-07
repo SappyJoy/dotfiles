@@ -17,4 +17,18 @@
 {{- /* A claude started by hand connects to the nvim (claudecode.nvim) that has its
        folder open, when there's exactly one; otherwise /ide. */ -}}
 {{- $s = setValueAtPath "env.CLAUDE_CODE_AUTO_CONNECT_IDE" "1" $s }}
+{{- /* Desktops: polybar's claude glyph spins while a session works; busy-hook.sh marks
+       it (see there). `|| :` keeps the exit code 0. These hooks own their events. */ -}}
+{{- if .desktop }}
+{{-   $on := list (dict "hooks" (list (dict "type" "command" "command" "sh ~/.claude/busy-hook.sh on || :" "timeout" 5))) }}
+{{-   $off := list (dict "hooks" (list (dict "type" "command" "command" "sh ~/.claude/busy-hook.sh off || :" "timeout" 5))) }}
+{{-   $s = setValueAtPath "hooks.UserPromptSubmit" $on $s }}
+{{-   $s = setValueAtPath "hooks.PostToolUse" $on $s }}
+{{-   $s = setValueAtPath "hooks.Stop" $off $s }}
+{{-   $s = setValueAtPath "hooks.StopFailure" $off $s }}
+{{-   $s = setValueAtPath "hooks.SessionEnd" $off $s }}
+{{-   $s = setValueAtPath "hooks.Notification" (list (dict
+        "matcher" "permission_prompt|idle_prompt|elicitation_dialog|agent_needs_input"
+        "hooks" (index $off 0).hooks)) $s }}
+{{- end }}
 {{- toPrettyJson "  " $s -}}

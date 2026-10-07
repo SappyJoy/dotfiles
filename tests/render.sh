@@ -22,10 +22,11 @@ render() {
         <"$src/home/$1"
 }
 json_len() { python3 -c 'import json, sys; print(len(json.load(sys.stdin)))'; }
-# modify FILE CURRENT: a modify-template's output for a target that holds CURRENT
+# modify FILE CURRENT [DESKTOP]: a modify-template's output for a target that holds
+# CURRENT, with .desktop set (default true)
 modify() {
     chezmoi execute-template --source "$src" --override-data \
-        "{\"chezmoi\": {\"stdin\": $(printf '%s' "$2" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))')}}" \
+        "{\"desktop\": ${3:-true}, \"chezmoi\": {\"stdin\": $(printf '%s' "$2" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))')}}" \
         <"$src/home/$1"
 }
 rows() { # rows AWK_CONDITION: count the tools.tsv rows matching it
@@ -63,6 +64,21 @@ check "claude settings: auto-connect to nvim, the machine's env kept" python3 -c
 import json, sys
 env = json.loads(sys.argv[1])["env"]
 sys.exit(env != {"OWN": "1", "CLAUDE_CODE_AUTO_CONNECT_IDE": "1"})' "$out"
+# Desktops: the busy hook (polybar's spinning glyph) on its events; nowhere else
+out=$(modify dot_claude/modify_settings.json '{}')
+check "claude settings: busy hook on and off on a desktop" python3 -c '
+import json, sys
+hooks = json.loads(sys.argv[1])["hooks"]
+cmd = lambda event: hooks[event][0]["hooks"][0]["command"]
+on = [e for e in hooks if cmd(e).endswith(" on || :")]
+off = [e for e in hooks if cmd(e).endswith(" off || :")]
+ok = (sorted(on) == ["PostToolUse", "UserPromptSubmit"]
+      and sorted(off) == ["Notification", "SessionEnd", "Stop", "StopFailure"]
+      and "idle_prompt" in hooks["Notification"][0]["matcher"]
+      and all(cmd(e).startswith("sh ~/.claude/busy-hook.sh ") for e in hooks))
+sys.exit(not ok)' "$out"
+out=$(modify dot_claude/modify_settings.json '{}' false)
+check "claude settings: no hooks elsewhere" hasnt '"hooks"'
 
 # Per machine: arch uses pacman, so its mise config has only the settings (per-project
 # versions), and it gets no mise external, no scripts and no apt list.
