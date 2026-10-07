@@ -97,6 +97,9 @@ off.
   change, `nmcli connection delete vpnconfig` and run `vpn-setup` to import it again.
   The VLESS server in use is the `proxy` outbound; `systemctl restart vless` applies
   an edit.
+- ssh from outside (the router's port forward) works while WireGuard is on: `vpn-setup`
+  gives `vpnconfig` a routing rule that sends sshd's replies (TCP from port 22) the
+  normal way, not into the tunnel. A re-import drops it; `vpn-setup` adds it again.
 - A new machine: install sing-box (`tools-check`), then run `vpn-setup` once (sudo). It
   writes the `vless` service (sing-box as you, with network rights only), a polkit rule
   that lets you start and stop it without a password, and imports the WireGuard
