@@ -11,6 +11,9 @@
       "claude-fable-5-1" (dict "effortLevel" "high")) $s }}
 {{- $s = setValueAtPath "enableWorkflows" false $s }}
 {{- $s = setValueAtPath "agentPushNotifEnabled" true $s }}
+{{- /* Compact at 300k, not at about 967k (Opus 1M's default): long autonomous runs
+       grew sessions to 460k, and every reply re-reads the whole context. */ -}}
+{{- $s = setValueAtPath "autoCompactWindow" 300000 $s }}
 {{- $s = setValueAtPath "statusLine" (dict
       "type" "command"
       "command" "bash ~/.claude/statusline-command.sh") $s }}
