@@ -20,6 +20,31 @@
 {{- /* A claude started by hand connects to the nvim (claudecode.nvim) that has its
        folder open, when there's exactly one; otherwise /ide. */ -}}
 {{- $s = setValueAtPath "env.CLAUDE_CODE_AUTO_CONNECT_IDE" "1" $s }}
+{{- /* Plugins: the same set on every machine (docs/plugins.md in the claude toolkit).
+       On everywhere: milestone-flow, mason-lsp, playwright. The rest are off here and
+       on per project (frontend-design in apartment, plugin-dev in the toolkit) or for
+       one session (`claude-with <plugin>`). Claude Code fetches a plugin that's on here
+       but missing. Only these keys: a plugin added on one machine keeps its entry. */ -}}
+{{- $plugins := dict
+      "milestone-flow@personal" true
+      "mason-lsp@personal" true
+      "playwright@claude-plugins-official" true
+      "frontend-design@claude-plugins-official" false
+      "plugin-dev@claude-plugins-official" false
+      "context7@claude-plugins-official" false
+      "claude-code-setup@claude-plugins-official" false
+      "claude-md-management@claude-plugins-official" false
+      "session-report@claude-plugins-official" false
+      "superpowers@claude-plugins-official" false }}
+{{- range $id, $on := $plugins }}
+{{-   $s = setValueAtPath (list "enabledPlugins" $id) $on $s }}
+{{- end }}
+{{- /* The `personal` marketplace (milestone-flow, mason-lsp): a clone of the toolkit
+       that follows its main branch, made by `make marketplace` there. Only the source:
+       Claude Code keeps its own fields (autoUpdate) next to it. */ -}}
+{{- $s = setValueAtPath "extraKnownMarketplaces.personal.source" (dict
+      "source" "directory"
+      "path" (joinPath .chezmoi.homeDir ".local/share/claude-plugins/personal")) $s }}
 {{- /* Desktops: polybar's claude glyph spins while a session works; busy-hook.sh marks
        it (see there). `|| :` keeps the exit code 0. These hooks own their events. */ -}}
 {{- if .desktop }}
