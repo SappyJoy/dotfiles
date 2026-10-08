@@ -60,7 +60,7 @@ local function on_note()
 end
 
 return {
-  { 'folke/which-key.nvim', opts = { spec = { { '<leader>n', group = 'notes' } } } },
+  { 'folke/which-key.nvim', opts = { spec = { { '<leader>n', group = 'notes' }, { '<leader>p', group = 'project notes' } } } },
   {
     'obsidian-nvim/obsidian.nvim',
     version = '*',
