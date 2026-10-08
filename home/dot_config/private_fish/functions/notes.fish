@@ -77,10 +77,11 @@ function notes --description "This repo's notes in the browser (Quartz)"
         # allowed for these commands only
         env -C $quartz npm_config_allow_git=all npm ci --no-audit --no-fund --loglevel=error
         or return 1
-        set -l log (env -C $quartz npm_config_allow_git=all node quartz/bootstrap-cli.mjs plugin install | tee /dev/stderr)
         # it ends with "Installed N plugin(s)", and ", M failed" if some couldn't be
         # cloned or built, but its status is 0 either way
-        if not string match -q -- '*Installed*' $log; or string match -q -- '*failed*' $log
+        set -l log $quartz/.notes-install.log
+        env -C $quartz npm_config_allow_git=all node quartz/bootstrap-cli.mjs plugin install | tee $log
+        if not string match -q -- '*Installed*' <$log; or string match -q -- '*failed*' <$log
             echo 'notes: some plugins failed to install; run notes again to retry' >&2
             return 1
         end

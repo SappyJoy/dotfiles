@@ -107,8 +107,10 @@ check "then the plugins, git dependencies allowed" grep -qF "plugin install in $
 check "a plugin that fails: says so" has 'notes: some plugins failed to install; run notes again to retry'
 check "  … status 1, no server" has 'status 1' && [ -z "$(state alpha pid)" ]
 rm "$tmp/plugin-fails"
-out=$(notes)
+notes >"$tmp/retry.log"
+out=$(cat "$tmp/retry.log")
 check "the next run retries the install" [ "$(grep -c 'plugin install' "$tmp/calls")" = 2 ]
+check "  … its output, into a file, whole" sh -c "grep -q 'installing Quartz' '$tmp/retry.log' && grep -q 'Installed 20' '$tmp/retry.log' && grep -q 'notes: http://localhost' '$tmp/retry.log'"
 check "the config, written in with the repo's name" grep -qF 'pageTitle: "alpha"' "$quartz/quartz.config.yaml"
 check "  … and nothing else changed" \
     sh -c "sed 's/{{repo}}/alpha/g' '$config/quartz.config.yaml' | cmp -s - '$quartz/quartz.config.yaml'"
