@@ -8,7 +8,7 @@
 ## Git workflow
 - Before starting a feature or fix, check that the working tree is clean. If it isn't, stop and ask me what to do with the changes (commit, stash, discard, or carry them over). Never decide on my behalf.
 - Then create a branch from the main branch: `feat/<name>`, `fix/<name>`, etc.
-- Commit as the work progresses, one logical change per commit (a module, a feature slice, a fix) — normal-sized commits, not micro-commits and not one big commit at the end. Each commit should build and pass tests.
+- Commit as the work progresses, one logical change per commit (a module, a feature slice, a fix) — normal-sized commits, not micro-commits and not one big commit at the end. Each commit should build and pass quick tests of what it touches; run the full test suites once, on the last commit before the merge.
 - Use Conventional Commits: `type(scope): summary`, with types like `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`.
 - When the feature is done, don't merge. Tell me what it changes for me, without listing commits or git commands (I follow the changes in lazygit), and ask me whether to merge.
 - In a project that uses milestone-flow (ROADMAP.md and .agent/milestones/), merge a finished milestone yourself unless it is a 🚦 gate; at a gate, stop with REVIEW.md. Uncommitted edits to INBOX.md or REVIEW.md there are my notes or my review reply, not a dirty working tree.

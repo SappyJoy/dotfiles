@@ -79,6 +79,30 @@ ok = (sorted(on) == ["PostToolUse", "UserPromptSubmit"]
 sys.exit(not ok)' "$out"
 out=$(modify dot_claude/modify_settings.json '{}' false)
 check "claude settings: no hooks elsewhere" hasnt '"hooks"'
+# Plugins: the same set on every machine, from the toolkit's marketplace clone; a
+# plugin added on one machine, and Claude Code's own marketplace fields, stay
+out=$(modify dot_claude/modify_settings.json '{"enabledPlugins": {"own@x": true, "frontend-design@claude-plugins-official": true},
+  "extraKnownMarketplaces": {"personal": {"source": {"source": "directory", "path": "/old"}, "autoUpdate": false},
+                             "other": {"source": {"source": "github", "repo": "a/b"}}}}')
+check "claude settings: plugins on everywhere, the rest off, the machine's own kept" python3 -c '
+import json, sys
+on = json.loads(sys.argv[1])["enabledPlugins"]
+everywhere = {"milestone-flow@personal", "mason-lsp@personal", "playwright@claude-plugins-official"}
+off = {"frontend-design", "plugin-dev", "context7", "claude-code-setup", "claude-md-management",
+       "session-report", "superpowers"}
+sys.exit(on != {**{p: True for p in everywhere}, **{p + "@claude-plugins-official": False for p in off},
+                "own@x": True})' "$out"
+check "claude settings: the personal marketplace is the clone on main, other fields kept" python3 -c '
+import json, os, sys
+m = json.loads(sys.argv[1])["extraKnownMarketplaces"]
+clone = os.path.expanduser("~/.local/share/claude-plugins/personal")
+sys.exit(m != {"personal": {"source": {"source": "directory", "path": clone}, "autoUpdate": False},
+               "other": {"source": {"source": "github", "repo": "a/b"}}})' "$out"
+out=$(modify dot_claude/modify_settings.json '')
+check "claude settings: a new machine gets the plugins and the marketplace" python3 -c '
+import json, sys
+s = json.loads(sys.argv[1])
+sys.exit(not (s["enabledPlugins"]["milestone-flow@personal"] and "personal" in s["extraKnownMarketplaces"]))' "$out"
 
 # Per machine: arch uses pacman, so its mise config has only the settings (per-project
 # versions), and it gets no mise external, no scripts and no apt list.

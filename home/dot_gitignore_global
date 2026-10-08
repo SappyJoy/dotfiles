@@ -6,3 +6,6 @@ patches
 .aider*
 
 **/.claude/settings.local.json
+
+# playwright (a Claude Code plugin, on everywhere) saves page snapshots and console logs here
+.playwright-mcp/
