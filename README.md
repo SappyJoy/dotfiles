@@ -160,7 +160,7 @@ In order of preference:
    live file on stdin and prints the new one. `~/.ssh/config` keeps its own hosts;
    the script keeps the dotfiles' Include block at its end. Claude Code's
    `settings.json` keeps each machine's theme; a modify-template (no script, no jq)
-   sets the keys every machine shares, like the status line.
+   sets the keys every machine shares, like the status line and which plugins are on.
 5. **State a script writes** stays untracked and is included by a tracked config:
    `theme-switcher` writes `tmux/theme.conf` and `i3/colors` (both skip a missing
    include). dunst reads drop-ins from `dunstrc.d/`: `theme-switcher` writes the dark
