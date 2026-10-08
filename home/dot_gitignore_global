@@ -4,3 +4,5 @@ compile_commands.json
 .clangd
 patches
 .aider*
+
+**/.claude/settings.local.json
