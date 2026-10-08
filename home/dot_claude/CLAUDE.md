@@ -11,7 +11,7 @@
 - Commit as the work progresses, one logical change per commit (a module, a feature slice, a fix) — normal-sized commits, not micro-commits and not one big commit at the end. Each commit should build and pass tests.
 - Use Conventional Commits: `type(scope): summary`, with types like `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`.
 - When the feature is done, don't merge. Tell me what it changes for me, without listing commits or git commands (I follow the changes in lazygit), and ask me whether to merge.
-- In a project that uses milestone-flow (ROADMAP.md and .agent/milestones/), merge a finished milestone yourself unless it is a 🚦 gate; at a gate, stop with REVIEW.md. Uncommitted edits to INBOX.md there are my notes, not a dirty working tree.
+- In a project that uses milestone-flow (ROADMAP.md and .agent/milestones/), merge a finished milestone yourself unless it is a 🚦 gate; at a gate, stop with REVIEW.md. Uncommitted edits to INBOX.md or REVIEW.md there are my notes or my review reply, not a dirty working tree.
 - After merging a branch, delete it (`git branch -d <branch>`).
 - Never push, force-push, or rewrite history without asking.
 
