@@ -198,6 +198,7 @@ over with `chezmoi merge`.
   - `sh tests/render.sh`: the templates that read the tool list
   - `sh tests/ssh-config.sh`: the `~/.ssh/config` block and the override order
   - `sh tests/dots.sh`: the fish function `dots` in a scratch home
+  - `sh tests/claude-with.sh`: the fish function `claude-with`, with a stub `claude`
   - `sh tests/dunst-place.sh`: the notification offset for a few desks
   - `sh tests/lock.sh`: the lock script (dunst paused, xss-lock's sleep lock)
   - `sh tests/brightness.sh`: levels, the bus cache, parallel writes, merged presses
