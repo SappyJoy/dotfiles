@@ -3,7 +3,8 @@
 # marketplace; options after the plugin go to claude.
 function claude-with --description 'claude with one more plugin on, for this session'
     set -l id $argv[1]
-    if test -z "$id"
+    # An option first (`--resume`, `-h`) isn't a plugin
+    if test -z "$id"; or string match -q -- '-*' $id
         echo 'usage: claude-with <plugin>[@marketplace] [claude options]' >&2
         return 2
     end
