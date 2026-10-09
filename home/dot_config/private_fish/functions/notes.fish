@@ -9,7 +9,8 @@
 #
 # The first run clones Quartz into ~/.local/share/quartz and installs it with its
 # plugins: several minutes, and it needs GitHub, where each plugin is a repo. The
-# config is ~/.config/quartz/quartz.config.yaml; a server reads it when it starts.
+# config is ~/.config/quartz/quartz.config.yaml; a server reads it when it starts,
+# and listens on this machine only (localhost.cjs, beside it).
 # To reinstall (another release), remove the install.
 # A server's log, port and pages are in ~/.cache/notes/<repo>-<hash>/.
 # NOTES_QUARTZ_REPO clones Quartz from elsewhere (tests).
@@ -31,8 +32,9 @@ function notes --description "This repo's notes in the browser (Quartz)"
         return 1
     end
     set -l notes $root/notes
-    if not test -d $notes
-        echo "notes: $root has no notes/" >&2
+    # without it Quartz has no front page, and would never answer
+    if not test -e $notes/index.md
+        echo "notes: $root has no notes/index.md" >&2
         return 1
     end
     set -l hash (echo -n $root | md5sum | string sub -l 8)
@@ -68,9 +70,8 @@ function notes --description "This repo's notes in the browser (Quartz)"
             or return 1
         end
     end
-    # the site's title is the repo's name
+    # the site's title is the repo's name (status 1 if the config has a title of its own)
     string replace -a '{{repo}}' (path basename -- $root) <$config/quartz.config.yaml >$quartz/quartz.config.yaml
-    or return 1
     if not test -e $quartz/.notes-installed
         # in Quartz's folder, so mise takes the node its .node-version pins; npm 11 and
         # later refuse git dependencies, which Quartz and its plugins have, so they are
@@ -96,7 +97,7 @@ function notes --description "This repo's notes in the browser (Quartz)"
             set port (math $port + 2)
         end
         echo "notes: serving $notes"
-        env -C $quartz nohup node quartz/bootstrap-cli.mjs \
+        env -C $quartz nohup node --require $config/localhost.cjs quartz/bootstrap-cli.mjs \
             build --serve -d $notes -o $state/public --port $port --wsPort (math $port + 1) </dev/null >$state/log 2>&1 &
         set pid $last_pid
         disown $pid

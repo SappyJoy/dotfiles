@@ -3,8 +3,8 @@
 # in a scratch home: the first run's install, one server per repo, its port, the page
 # a note opens, stop. Quartz is a stub (its plugin commands print what Quartz prints;
 # its server is python's http.server under Quartz's command line), so is npm, and
-# xdg-open records the address it gets.
-# Run: sh tests/notes.sh   (fish, git, python3, curl, ss; offline)
+# xdg-open records the address it gets. The real node checks localhost.cjs.
+# Run: sh tests/notes.sh   (fish, git, node, python3, curl, ss; offline)
 
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
@@ -28,7 +28,8 @@ hasnt() { ! has "$1"; }
 unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
 export HOME="$tmp/home"
 mkdir -p "$tmp/bin" "$HOME/.config/quartz"
-cp "$config"/quartz.config.yaml "$HOME/.config/quartz/"
+cp "$config"/quartz.config.yaml "$config"/localhost.cjs "$HOME/.config/quartz/"
+realnode=$(node -p process.execPath) # not a shim, which would find the stub
 
 # stubs: npm makes node_modules where it runs; node's plugin install reports a failed
 # plugin while $T/plugin-fails exists; node's build serves -o on --port (after a
@@ -80,7 +81,13 @@ repo() { # repo NAME: a git repo with notes
     printf '# %s\n' "$1" >notes/index.md
 }
 notes() { fish --no-config -c "source '$fn'; notes \$argv" "$@" 2>&1 </dev/null; }
-opened() { tail -n 1 "$tmp/opened" 2>/dev/null; }
+opens() { # opens URL: xdg-open got URL last (notes starts it in the background)
+    for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+        [ "$(tail -n 1 "$tmp/opened" 2>/dev/null)" = "$1" ] && return 0
+        sleep 0.1
+    done
+    return 1
+}
 state() { cat "$HOME"/.cache/notes/"$1"-*/"$2" 2>/dev/null; }
 quartz=$HOME/.local/share/quartz
 
@@ -89,10 +96,10 @@ out=$(notes; echo "status $?")
 check "outside a repo: says so" has 'notes: not in a git repo'
 check "outside a repo: status 1" has 'status 1'
 
-mkdir -p "$tmp/bare" && cd "$tmp/bare" && git init -q
+mkdir -p "$tmp/bare/notes" && cd "$tmp/bare" && git init -q
 out=$(notes; echo "status $?")
-check "a repo without notes/: says so" has "notes: $tmp/bare has no notes/"
-check "a repo without notes/: no install" [ ! -e "$quartz" ]
+check "a repo without notes/index.md: says so" has "notes: $tmp/bare has no notes/index.md"
+check "  … no install" [ ! -e "$quartz" ]
 
 repo alpha
 touch "$tmp/plugin-fails"
@@ -102,10 +109,11 @@ check "  … and where it goes" has "notes: installing Quartz v5.0.0 and its plu
 check "first run: the release, cloned" [ "$(git -C "$quartz" describe --tags 2>/dev/null)" = v5.0.0 ]
 check "first run: npm ci in Quartz's folder, git dependencies allowed" \
     grep -qF "npm ci --no-audit --no-fund --loglevel=error in $quartz allow-git=all" "$tmp/calls"
-check "  … only there: no npm config in the home" [ ! -e "$HOME/.npmrc" ] && [ ! -e "$HOME/.config/npm" ]
+check "  … only there: no npm config in the home" [ ! -e "$HOME/.npmrc" -a ! -e "$HOME/.config/npm" ]
 check "then the plugins, git dependencies allowed" grep -qF "plugin install in $quartz allow-git=all" "$tmp/calls"
 check "a plugin that fails: says so" has 'notes: some plugins failed to install; run notes again to retry'
-check "  … status 1, no server" has 'status 1' && [ -z "$(state alpha pid)" ]
+check "  … status 1" has 'status 1'
+check "  … no server" [ -z "$(state alpha pid)" ]
 rm "$tmp/plugin-fails"
 notes >"$tmp/retry.log"
 out=$(cat "$tmp/retry.log")
@@ -116,41 +124,56 @@ check "  … and nothing else changed" \
     sh -c "sed 's/{{repo}}/alpha/g' '$config/quartz.config.yaml' | cmp -s - '$quartz/quartz.config.yaml'"
 check "Quartz serves alpha's notes" grep -qF "build --serve -d $tmp/alpha/notes -o $HOME/.cache/notes/alpha-" "$tmp/calls"
 check "  … from its folder" sh -c "grep -F 'build --serve' '$tmp/calls' | grep -qF 'in $quartz '"
+check "  … on this machine only" grep -qF "node --require $HOME/.config/quartz/localhost.cjs quartz/bootstrap-cli.mjs build" "$tmp/calls"
+check "localhost.cjs: a port alone listens on 127.0.0.1" [ "$("$realnode" --require "$config/localhost.cjs" -e '
+const net = require("net")
+const servers = [net.createServer().listen(0), net.createServer().listen(0, undefined, undefined, () => {}),
+    net.createServer().listen(0, () => {}), net.createServer().listen(0, "::1")]
+Promise.all(servers.map((s) => new Promise((r) => s.on("listening", r)))).then(() => {
+    console.log(servers.map((s) => s.address().address).join(" "))
+    process.exit()
+})')" = '127.0.0.1 127.0.0.1 127.0.0.1 ::1' ]
 port=$(state alpha port)
-check "opens the index" [ "$(opened)" = "http://localhost:$port/" ]
+check "opens the index" opens "http://localhost:$port/"
 check "and prints it" has "notes: http://localhost:$port/"
 check "the server serves alpha's notes" [ "$(curl -s "http://localhost:$port/")" = "notes of $tmp/alpha/notes" ]
-check "its port comes from the repo (8100-8499, even)" [ "$port" -ge 8100 ] && [ "$port" -le 8499 ] && [ $((port % 2)) -eq 0 ]
+check "its port comes from the repo (8100-8499, even)" [ "$port" -ge 8100 -a "$port" -le 8499 -a $((port % 2)) -eq 0 ]
 
 pid=$(state alpha pid)
 cd "$tmp/alpha/src" || exit 1
+rm -f "$tmp/opened"
 out=$(notes)
 check "again, from a subfolder: no install" hasnt 'installing'
 check "  … and the same server" [ "$(state alpha pid)" = "$pid" ]
-check "  … opened again" [ "$(opened)" = "http://localhost:$port/" ]
+check "  … opened again" opens "http://localhost:$port/"
 
 echo '# Edited config' >>"$HOME/.config/quartz/quartz.config.yaml"
 notes >/dev/null
 check "a changed config is written in" grep -qF '# Edited config' "$quartz/quartz.config.yaml"
 check "the install ran once" [ "$(grep -c 'plugin install' "$tmp/calls")" = 2 ]
+sed -i 's/{{repo}}/Fixed/' "$HOME/.config/quartz/quartz.config.yaml"
+out=$(notes; echo "status $?")
+check "a config with a title of its own: kept" grep -qF 'pageTitle: "Fixed"' "$quartz/quartz.config.yaml"
+check "  … and notes goes on" has 'status 0'
+cp "$config/quartz.config.yaml" "$HOME/.config/quartz/"
 
 printf '# M1 Shell & keys\n' >"$tmp/alpha/notes/journal/M1 Shell & keys.md"
 printf '# Ёлка 50%%?\n' >"$tmp/alpha/notes/Ёлка 50%?.md"
 printf '# Decisions\n' >"$tmp/alpha/notes/decisions/index.md"
 cd "$tmp" || exit 1
 notes "alpha/notes/journal/M1 Shell & keys.md" >/dev/null
-check "a note opens its page (Quartz's slug)" [ "$(opened)" = "http://localhost:$port/journal/M1-Shell--and--keys" ]
+check "a note opens its page (Quartz's slug)" opens "http://localhost:$port/journal/M1-Shell--and--keys"
 notes "alpha/notes/Ёлка 50%?.md" >/dev/null
-check "  … with what Quartz drops or spells out" [ "$(opened)" = "http://localhost:$port/Ёлка-50-percent" ]
+check "  … with what Quartz drops or spells out" opens "http://localhost:$port/Ёлка-50-percent"
 notes alpha/notes/decisions/index.md >/dev/null
-check "a folder's index opens the folder" [ "$(opened)" = "http://localhost:$port/decisions/" ]
+check "a folder's index opens the folder" opens "http://localhost:$port/decisions/"
 notes alpha/notes/index.md >/dev/null
-check "the index opens /" [ "$(opened)" = "http://localhost:$port/" ]
+check "the index opens /" opens "http://localhost:$port/"
 
 repo beta
 notes >/dev/null
 bport=$(state beta port)
-check "a second repo: its own port" [ -n "$bport" ] && [ "$bport" != "$port" ]
+check "a second repo: its own port" [ -n "$bport" -a "$bport" != "$port" ]
 check "  … and title" grep -qF 'pageTitle: "beta"' "$quartz/quartz.config.yaml"
 check "  … both serve, each its notes" sh -c "curl -s localhost:$port/ | grep -q alpha/notes && curl -s localhost:$bport/ | grep -q beta/notes"
 
