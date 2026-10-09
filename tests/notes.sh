@@ -178,8 +178,10 @@ check "  … and title" grep -qF 'pageTitle: "beta"' "$quartz/quartz.config.yaml
 check "  … both serve, each its notes" sh -c "curl -s localhost:$port/ | grep -q alpha/notes && curl -s localhost:$bport/ | grep -q beta/notes"
 
 cd "$tmp/alpha" || exit 1
+mv notes/index.md notes/index.away
 out=$(notes stop)
-check "stop: says so" has "notes: stopped the server for $tmp/alpha/notes"
+mv notes/index.away notes/index.md
+check "stop: says so, even without index.md" has "notes: stopped the server for $tmp/alpha/notes"
 sleep 0.5
 check "stop: the server is gone" sh -c "! curl -s localhost:$port/ >/dev/null"
 out=$(notes stop)
@@ -195,6 +197,12 @@ sleep 1
 notes >/dev/null
 check "port taken: the next pair" [ "$(state alpha port)" = $((port + 2)) ]
 notes stop >/dev/null
+
+mv "$HOME/.config/quartz/quartz.config.yaml" "$tmp/config.away"
+out=$(notes; echo "status $?")
+mv "$tmp/config.away" "$HOME/.config/quartz/quartz.config.yaml"
+check "no config to read: status 1" has 'status 1'
+check "  … no server" [ -z "$(state alpha pid)" ]
 
 repo broken
 touch notes/BROKEN

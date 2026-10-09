@@ -33,7 +33,7 @@ function notes --description "This repo's notes in the browser (Quartz)"
     end
     set -l notes $root/notes
     # without it Quartz has no front page, and would never answer
-    if not test -e $notes/index.md
+    if not test -e $notes/index.md; and test "$argv[1]" != stop
         echo "notes: $root has no notes/index.md" >&2
         return 1
     end
@@ -70,8 +70,11 @@ function notes --description "This repo's notes in the browser (Quartz)"
             or return 1
         end
     end
-    # the site's title is the repo's name (status 1 if the config has a title of its own)
+    # the site's title is the repo's name; status 1 if the config has a title of its
+    # own, and nothing written if it can't be read
     string replace -a '{{repo}}' (path basename -- $root) <$config/quartz.config.yaml >$quartz/quartz.config.yaml
+    or test -s $quartz/quartz.config.yaml
+    or return 1
     if not test -e $quartz/.notes-installed
         # in Quartz's folder, so mise takes the node its .node-version pins; npm 11 and
         # later refuse git dependencies, which Quartz and its plugins have, so they are
