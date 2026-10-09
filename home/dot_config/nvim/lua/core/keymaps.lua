@@ -5,6 +5,7 @@
 --   <leader>o  org                     <leader>j  notebook
 --   <leader>w  windows                 <leader>a  AI (Claude Code)
 --   <leader>t  tests                   <leader>e  explorer, - oil
+--   <leader>p  project notes (project_notes.lua)
 -- Moving around is mostly jumps (flash, search, the picker), arrows for small moves:
 -- extra keys go on arrows, not on QWERTY's hjkl.
 local map = vim.keymap.set

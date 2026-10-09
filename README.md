@@ -72,6 +72,16 @@ them can be regenerated (API keys, ssh hosts), but it's tedious.
 | Tools missing or outdated | `tools-check` (`--missing`: only what needs action) |
 | After upgrading tools on arch | `tools-check --record`, then `dots` |
 
+### Project notes
+
+A repo with `notes/` (small linked notes Claude keeps, milestone-flow): `notes` in it
+serves them in the browser, to this machine only, with the link graph, backlinks,
+previews and search, and reloads when a note changes; `notes stop` stops that repo's
+server. In nvim, the
+`<leader>p` keys (the cheatsheet lists them). The first `notes` installs Quartz with
+its plugins into `~/.local/share/quartz`: several minutes, from GitHub, about 2.8 GB.
+Its config is `~/.config/quartz/quartz.config.yaml`.
+
 ### ssh
 
 - `~/.ssh/config` is each machine's own file: add that machine's hosts there. chezmoi
@@ -224,6 +234,11 @@ over with `chezmoi merge`.
     (and the files it must leave alone)
   - `sh tests/nvim-notebook.sh`: nvim's notebooks in a scratch tmux: a uv project's
     kernel, saved outputs back, running cells, outputs saved
+  - `sh tests/notes.sh`: the fish function `notes` in a scratch home, with a stub
+    Quartz: the first install, a server per repo, its port, the page a note opens,
+    listening on localhost only
+  - `sh tests/nvim-notes.sh`: nvim's project notes in a scratch tmux and home: the
+    `<leader>p` keys, Enter on `[[links]]`
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 

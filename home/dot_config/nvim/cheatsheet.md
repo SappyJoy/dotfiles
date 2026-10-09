@@ -122,6 +122,15 @@ which-key lists the rest. Vim's own commands: `<leader>sh` searches the help.
 - Org: `<leader>oa` agenda, `<leader>oc` capture (task, note, prompt into
   ~/orgfiles), `<leader>oh` every heading and TODO, `<leader>of` the org files
 
+## Project notes (a repo's notes/, kept by Claude)
+
+- `<leader>pi` the index, `<leader>pf` find a note, `<leader>pg` grep the notes,
+  `<leader>pb` the notes linking here, `<leader>pn` a new note, `<leader>pj` the
+  latest journal note, `<leader>po` this note in the browser
+- `Enter` on a `[[link]]` follows it (to a new note if there is none)
+- In the shell: `notes` serves the repo's notes in the browser (graph, backlinks,
+  previews, search); `notes stop` stops it
+
 ## Notebooks
 
 - An `.ipynb` opens as Python with `# %%` cells (markdown cells are comments), starts
