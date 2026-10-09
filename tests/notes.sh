@@ -38,12 +38,12 @@ cp "$config"/quartz.config.yaml "$config"/localhost.cjs "$HOME/.config/quartz/"
 # arguments on its command line; a notes/ with BROKEN in it makes it fail
 cat >"$tmp/bin/npm" <<'EOF'
 #!/bin/sh
-echo "npm $* in $(pwd) allow-git=${npm_config_allow_git:-}" >>"$T/calls"
+echo "npm $* in $(pwd) allow-git=${npm_config_allow_git:-} sharp-ignore-libvips=${SHARP_IGNORE_GLOBAL_LIBVIPS:-}" >>"$T/calls"
 mkdir -p node_modules
 EOF
 cat >"$tmp/bin/node" <<'EOF'
 #!/bin/sh
-echo "node $* in $(pwd) allow-git=${npm_config_allow_git:-}" >>"$T/calls"
+echo "node $* in $(pwd) allow-git=${npm_config_allow_git:-} sharp-ignore-libvips=${SHARP_IGNORE_GLOBAL_LIBVIPS:-}" >>"$T/calls"
 case "$2 $3" in
 "plugin install")
     if [ -e "$T/plugin-fails" ]; then echo '⚠ Installed 19 plugin(s), 1 failed'; else echo '✓ Installed 20 plugin(s)'; fi
@@ -108,10 +108,10 @@ out=$(notes; echo "status $?")
 check "first run: says what the install takes" has 'it takes several minutes and needs GitHub'
 check "  … and where it goes" has "notes: installing Quartz v5.0.0 and its plugins into $quartz"
 check "first run: the release, cloned" [ "$(git -C "$quartz" describe --tags 2>/dev/null)" = v5.0.0 ]
-check "first run: npm ci in Quartz's folder, git dependencies allowed" \
-    grep -qF "npm ci --no-audit --no-fund --loglevel=error in $quartz allow-git=all" "$tmp/calls"
+check "first run: npm ci in Quartz's folder, git dependencies allowed, the system libvips ignored" \
+    grep -qF "npm ci --no-audit --no-fund --loglevel=error in $quartz allow-git=all sharp-ignore-libvips=1" "$tmp/calls"
 check "  … only there: no npm config in the home" [ ! -e "$HOME/.npmrc" -a ! -e "$HOME/.config/npm" ]
-check "then the plugins, git dependencies allowed" grep -qF "plugin install in $quartz allow-git=all" "$tmp/calls"
+check "then the plugins, git dependencies allowed, the system libvips ignored" grep -qF "plugin install in $quartz allow-git=all sharp-ignore-libvips=1" "$tmp/calls"
 check "a plugin that fails: says so" has 'notes: some plugins failed to install; run notes again to retry'
 check "  … status 1" has 'status 1'
 check "  … no server" [ -z "$(state alpha pid)" ]

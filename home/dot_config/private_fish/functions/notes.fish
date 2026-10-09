@@ -78,13 +78,14 @@ function notes --description "This repo's notes in the browser (Quartz)"
     if not test -e $quartz/.notes-installed
         # in Quartz's folder, so mise takes the node its .node-version pins; npm 11 and
         # later refuse git dependencies, which Quartz and its plugins have, so they are
-        # allowed for these commands only
-        env -C $quartz npm_config_allow_git=all npm ci --no-audit --no-fund --loglevel=error
+        # allowed for these commands only; and sharp takes its own libvips, as with a
+        # system one (arch's, for ueberzugpp) it builds from source and fails
+        env -C $quartz npm_config_allow_git=all SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm ci --no-audit --no-fund --loglevel=error
         or return 1
         # it ends with "Installed N plugin(s)", and ", M failed" if some couldn't be
         # cloned or built, but its status is 0 either way
         set -l log $quartz/.notes-install.log
-        env -C $quartz npm_config_allow_git=all node quartz/bootstrap-cli.mjs plugin install | tee $log
+        env -C $quartz npm_config_allow_git=all SHARP_IGNORE_GLOBAL_LIBVIPS=1 node quartz/bootstrap-cli.mjs plugin install | tee $log
         if not string match -q -- '*Installed*' <$log; or string match -q -- '*failed*' <$log
             echo 'notes: some plugins failed to install; run notes again to retry' >&2
             return 1
