@@ -60,16 +60,20 @@ function M.backlinks()
   if not dir then
     return
   end
-  local _, name = this_note(dir)
+  local file, name = this_note(dir)
   if not name then
     return vim.notify 'Not a project note'
   end
-  -- [[name]], [[folder/name]], [[name.md]], [[name#heading]], [[name|text]], and
+  -- [[name]], [[its/folder/name]], [[name.md]], [[name#heading]], [[name|text]], and
   -- [[name\|text]] in a table
-  local escaped = name:gsub('[%^%$%(%)%%%.%[%]%*%+%-%?{}|\\]', '\\%0')
+  local function escape(s)
+    return (s:gsub('[%^%$%(%)%%%.%[%]%*%+%-%?{}|\\]', '\\%0'))
+  end
+  local folder = vim.fs.dirname(file:sub(#dir + 2))
+  local prefix = folder == '.' and '' or '(' .. escape(folder .. '/') .. ')?'
   require('telescope.builtin').grep_string {
     cwd = dir,
-    search = '\\[\\[([^\\]|#]*/)?' .. escaped .. '(\\.md)?(\\\\?[#|][^\\]]*)?\\]\\]',
+    search = '\\[\\[' .. prefix .. escape(name) .. '(\\.md)?(\\\\?[#|][^\\]]*)?\\]\\]',
     use_regex = true,
     prompt_title = 'Notes linking to ' .. name,
   }
@@ -116,10 +120,9 @@ function M.browser()
   if opening then
     return vim.notify 'Still opening the notes: the first time, Quartz installs, for several minutes'
   end
-  opening = true
   local file = this_note(dir)
   vim.notify 'Opening the notes in the browser…'
-  vim.system({ 'fish', '-c', 'notes $argv', file }, { cwd = dir, text = true }, function(done)
+  local started, err = pcall(vim.system, { 'fish', '-c', 'notes $argv', file }, { cwd = dir, text = true }, function(done)
     opening = false
     -- its address, or what went wrong
     local out = vim.trim((done.stdout or '') .. (done.code == 0 and '' or '\n' .. (done.stderr or '')))
@@ -127,6 +130,10 @@ function M.browser()
       vim.notify(out:match '[^\n]*$', done.code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR)
     end)
   end)
+  opening = started
+  if not started then
+    vim.notify(err, vim.log.levels.ERROR)
+  end
 end
 
 -- the [[link]] under the cursor: its name (empty within the note) and heading
@@ -156,7 +163,9 @@ function M.follow()
     local best
     for path, kind in vim.fs.dir(dir, { depth = math.huge }) do
       local rel = path:match '^(.*)%.md$'
-      if kind == 'file' and rel and (rel == name or vim.endswith(rel, '/' .. name)) and (not best or #rel < #best) then
+      -- a name anywhere, a folder/name from notes/, as Quartz resolves them
+      local found = rel and (rel == name or (not name:find '/' and vim.endswith(rel, '/' .. name)))
+      if kind == 'file' and found and (not best or #rel < #best) then
         best = rel
       end
     end

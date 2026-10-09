@@ -48,7 +48,7 @@ Its reason: [[decisions/Use fish#Why]].
 Not written yet: [[Ghost]].
 EOF
 printf '# Shell\n\nfish. Why: [[Use fish]]. Back: [[index]].\n' >notes/Shell.md
-printf '# Editor\n\nnvim, with [[Shell keys]].\n' >notes/Editor.md
+printf '# Editor\n\nnvim, with [[Shell keys]]. Not here: [[nowhere/Shell]].\n' >notes/Editor.md
 printf '# Shell keys\n\n| Key | In |\n|---|---|\n| Ctrl+R | [[Shell\\|the shell]] |\n\n[[Editor]]\n' >"notes/Shell keys.md"
 printf '# Use fish\n\nFor [[Shell]]. Short: [[#Why]], [[Use fish#Why|why]].\n\n## Why not\n\nbash, zsh.\n\n## Why\n\nAbbreviations.\n' >"notes/decisions/Use fish.md"
 for m in 'M1 First' 'M9 Ninth' 'M10 Tenth'; do printf '# %s\n\n[[index]]\n' "$m" >"notes/journal/$m.md"; done
@@ -109,6 +109,10 @@ keys ':e notes/Shell\ keys.md' Enter
 on 'Shell\\|'
 keys Enter
 check "Enter on [[Shell\\|…]] in a table: Shell.md" [ "$(file)" = "$repo/notes/Shell.md" ]
+keys ':e notes/Editor.md' Enter
+on 'nowhere/Shell'
+keys Enter
+check "Enter on [[nowhere/Shell]]: no such note, as in Quartz" [ "$(file)" = "$repo/notes/nowhere/Shell.md" ]
 keys ' pi'
 on 'Parts'
 keys Enter
@@ -144,9 +148,17 @@ keys ' pb'
 sleep 1
 check "<leader>pb: the notes linking here" shows 'Notes linking to Shell'
 check "  … the index, the decision, a table" sh -c "tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'index.md' && tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'decisions/Use fish.md' && tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'Shell keys.md'"
-check "  … not a note linking to Shell keys" sh -c "! tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'Editor.md'"
+check "  … not a link to Shell keys or to nowhere/Shell" sh -c "! tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'Editor.md'"
 keys Escape Escape
 
+keys ":lua vim.env.PATH = '$tmp/nothing'" Enter
+keys ' po'
+check "<leader>po without fish: says so" shows 'ENOENT'
+keys ':lua vim.env.PATH = "'"$PATH"'"' Enter
+keys ' po'
+check "  … and runs once fish is there" sh -c "sleep 0.3; [ -e '$tmp/fish-runs' ]"
+sleep 2
+rm -f "$tmp/fish-runs"
 keys ' po'
 keys ' po'
 check "<leader>po again while it opens: says so" shows 'Still opening the notes'
