@@ -25,11 +25,12 @@ check() { # check NAME CONDITION...
 has() { printf '%s\n' "$out" | grep -qF -- "$1"; }
 hasnt() { ! has "$1"; }
 
+# not a shim, which would find the stub; looked up before HOME moves, which mise needs
+realnode=$(node -p process.execPath)
 unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
 export HOME="$tmp/home"
 mkdir -p "$tmp/bin" "$HOME/.config/quartz"
 cp "$config"/quartz.config.yaml "$config"/localhost.cjs "$HOME/.config/quartz/"
-realnode=$(node -p process.execPath) # not a shim, which would find the stub
 
 # stubs: npm makes node_modules where it runs; node's plugin install reports a failed
 # plugin while $T/plugin-fails exists; node's build serves -o on --port (after a
