@@ -64,11 +64,12 @@ function M.backlinks()
   if not name then
     return vim.notify 'Not a project note'
   end
-  -- [[name]], [[folder/name]], [[name.md]], [[name#heading]], [[name|text]]
+  -- [[name]], [[folder/name]], [[name.md]], [[name#heading]], [[name|text]], and
+  -- [[name\|text]] in a table
   local escaped = name:gsub('[%^%$%(%)%%%.%[%]%*%+%-%?{}|\\]', '\\%0')
   require('telescope.builtin').grep_string {
     cwd = dir,
-    search = '\\[\\[([^\\]|#]*/)?' .. escaped .. '(\\.md)?([#|][^\\]]*)?\\]\\]',
+    search = '\\[\\[([^\\]|#]*/)?' .. escaped .. '(\\.md)?(\\\\?[#|][^\\]]*)?\\]\\]',
     use_regex = true,
     prompt_title = 'Notes linking to ' .. name,
   }
@@ -106,22 +107,29 @@ function M.journal()
 end
 
 -- this note's page (else the index) in the browser, through the fish function notes
+local opening = false
 function M.browser()
   local dir = notes_dir()
   if not dir then
     return
   end
+  if opening then
+    return vim.notify 'Still opening the notes: the first time, Quartz installs, for several minutes'
+  end
+  opening = true
   local file = this_note(dir)
   vim.notify 'Opening the notes in the browser…'
   vim.system({ 'fish', '-c', 'notes $argv', file }, { cwd = dir, text = true }, function(done)
-    local out = vim.trim((done.stdout or '') .. '\n' .. (done.stderr or ''))
+    opening = false
+    -- its address, or what went wrong
+    local out = vim.trim((done.stdout or '') .. (done.code == 0 and '' or '\n' .. (done.stderr or '')))
     vim.schedule(function()
       vim.notify(out:match '[^\n]*$', done.code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR)
     end)
   end)
 end
 
--- the [[link]] under the cursor: its name and heading
+-- the [[link]] under the cursor: its name (empty within the note) and heading
 local function link_under_cursor()
   local line, col, from = vim.api.nvim_get_current_line(), vim.fn.col '.', 1
   while true do
@@ -130,7 +138,8 @@ local function link_under_cursor()
       return
     end
     if col >= first and col <= last then
-      local name, heading = target:match '^([^|#]*)#?([^|]*)'
+      -- in a table, the pipe is escaped: [[name\|text]]
+      local name, heading = (target:gsub('\\|', '|')):match '^([^|#]*)#?([^|]*)'
       return name:gsub('%.md$', ''), heading
     end
     from = last + 1
@@ -143,16 +152,21 @@ function M.follow()
   if not (dir and name) then
     return
   end
-  local best
-  for path, kind in vim.fs.dir(dir, { depth = math.huge }) do
-    local rel = path:match '^(.*)%.md$'
-    if kind == 'file' and rel and (rel == name or vim.endswith(rel, '/' .. name)) and (not best or #rel < #best) then
-      best = rel
+  if name ~= '' then
+    local best
+    for path, kind in vim.fs.dir(dir, { depth = math.huge }) do
+      local rel = path:match '^(.*)%.md$'
+      if kind == 'file' and rel and (rel == name or vim.endswith(rel, '/' .. name)) and (not best or #rel < #best) then
+        best = rel
+      end
+    end
+    local path = dir .. '/' .. (best or name) .. '.md'
+    if path ~= vim.api.nvim_buf_get_name(0) then
+      edit(path)
     end
   end
-  edit(dir .. '/' .. (best or name) .. '.md')
   if heading ~= '' then
-    vim.fn.search('\\V\\^#\\+ ' .. vim.fn.escape(heading, '\\'), 'cw')
+    vim.fn.search('\\V\\^#\\+ ' .. vim.fn.escape(heading, '\\') .. '\\$', 'cw')
   end
 end
 

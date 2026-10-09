@@ -28,6 +28,9 @@ for d in lazy mason site; do ln -s "$data/$d" "$XDG_DATA_HOME/nvim/$d"; done
 cat >"$tmp/bin/fish" <<EOF
 #!/bin/sh
 printf '%s\n' "\$@" >"$tmp/fish-args"
+echo run >>"$tmp/fish-runs"
+sleep 1.5
+echo 'npm warn something' >&2
 echo 'notes: http://localhost:8123/Shell'
 EOF
 chmod +x "$tmp/bin/fish"
@@ -46,8 +49,8 @@ Not written yet: [[Ghost]].
 EOF
 printf '# Shell\n\nfish. Why: [[Use fish]]. Back: [[index]].\n' >notes/Shell.md
 printf '# Editor\n\nnvim, with [[Shell keys]].\n' >notes/Editor.md
-printf '# Shell keys\n\nCtrl+R. [[Editor]]\n' >"notes/Shell keys.md"
-printf '# Use fish\n\nFor [[Shell]].\n\n## Options\n\nbash, zsh.\n\n## Why\n\nAbbreviations.\n' >"notes/decisions/Use fish.md"
+printf '# Shell keys\n\n| Key | In |\n|---|---|\n| Ctrl+R | [[Shell\\|the shell]] |\n\n[[Editor]]\n' >"notes/Shell keys.md"
+printf '# Use fish\n\nFor [[Shell]]. Short: [[#Why]], [[Use fish#Why|why]].\n\n## Why not\n\nbash, zsh.\n\n## Why\n\nAbbreviations.\n' >"notes/decisions/Use fish.md"
 for m in 'M1 First' 'M9 Ninth' 'M10 Tenth'; do printf '# %s\n\n[[index]]\n' "$m" >"notes/journal/$m.md"; done
 git add . && git -c user.email=t@t -c user.name=t commit -qm notes
 mkdir -p "$tmp/other" && git -C "$tmp/other" init -q && printf 'x\n' >"$tmp/other/a.txt"
@@ -91,7 +94,21 @@ keys ' pi'
 on 'decisions/Use'
 keys Enter
 check "Enter on [[decisions/Use fish#Why]]: the note …" [ "$(file)" = "$repo/notes/decisions/Use fish.md" ]
-check "  … at its heading" [ "$(probe "vim.fn.getline('.')")" = '## Why' ]
+check "  … at its heading (not one that starts the same)" [ "$(probe "vim.fn.getline('.')")" = '## Why' ]
+on '#Why]]'
+keys Enter
+check "Enter on [[#Why]]: this note's heading" [ "$(probe "vim.fn.getline('.')")" = '## Why' ]
+check "  … in this note" [ "$(file)" = "$repo/notes/decisions/Use fish.md" ]
+keys ':call setline(1, "# Use fish!") | let v:errmsg = ""' Enter
+on 'fish#Why'
+keys Enter
+check "Enter on a link to this changed note: its heading" [ "$(probe "vim.fn.getline('.')")" = '## Why' ]
+check "  … no error" [ -z "$(probe vim.v.errmsg)" ]
+keys u
+keys ':e notes/Shell\ keys.md' Enter
+on 'Shell\\|'
+keys Enter
+check "Enter on [[Shell\\|…]] in a table: Shell.md" [ "$(file)" = "$repo/notes/Shell.md" ]
 keys ' pi'
 on 'Parts'
 keys Enter
@@ -126,13 +143,16 @@ keys Enter
 keys ' pb'
 sleep 1
 check "<leader>pb: the notes linking here" shows 'Notes linking to Shell'
-check "  … the index and the decision" sh -c "tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'index.md' && tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'decisions/Use fish.md'"
+check "  … the index, the decision, a table" sh -c "tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'index.md' && tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'decisions/Use fish.md' && tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'Shell keys.md'"
 check "  … not a note linking to Shell keys" sh -c "! tmux -L nvim-notes capture-pane -p -t 0 | grep -q 'Editor.md'"
 keys Escape Escape
 
 keys ' po'
-sleep 1
+keys ' po'
+check "<leader>po again while it opens: says so" shows 'Still opening the notes'
+sleep 1.5
 check "<leader>po: notes FILE for this note" [ "$(tr '\n' ' ' <"$tmp/fish-args" 2>/dev/null)" = "-c notes \$argv $repo/notes/Shell.md " ]
+check "  … once" [ "$(wc -l <"$tmp/fish-runs")" = 1 ]
 check "  … and says where it opened" shows 'http://localhost:8123/Shell'
 
 keys ' pn'
