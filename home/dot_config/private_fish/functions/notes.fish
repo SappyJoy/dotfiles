@@ -1,16 +1,16 @@
 # A repo's notes/ in the browser: one shared Quartz serves them with the link graph,
-# backlinks, hover previews, search and live reload. Each repo gets its own server,
-# port and output folder, so several can be open at once; the server keeps running
-# in the background until `notes stop` (or a reboot).
+# backlinks, hover previews, search and live reload, on every network interface.
+# Each repo gets its own server, port and output folder, so several can be open at
+# once; the server keeps running in the background until `notes stop` (or a reboot).
 #
 #   notes          start this repo's server, or reuse it, and open the index
 #   notes FILE     the same, and open FILE's page (nvim's <leader>po)
+#   notes -p PORT  start it on PORT (--port), not 10010
 #   notes stop     stop this repo's server
 #
 # The first run clones Quartz into ~/.local/share/quartz and installs it with its
 # plugins: several minutes, and it needs GitHub, where each plugin is a repo. The
-# config is ~/.config/quartz/quartz.config.yaml; a server reads it when it starts,
-# and listens on this machine only (localhost.cjs, beside it).
+# config is ~/.config/quartz/quartz.config.yaml; a server reads it when it starts.
 # To reinstall (another release), remove the install.
 # A server's log, port and pages are in ~/.cache/notes/<repo>-<hash>/.
 # NOTES_QUARTZ_REPO clones Quartz from elsewhere (tests).
@@ -19,6 +19,8 @@ function notes --description "This repo's notes in the browser (Quartz)"
     set -l quartz (set -q XDG_DATA_HOME; and echo $XDG_DATA_HOME; or echo ~/.local/share)/quartz
     set -l config (set -q XDG_CONFIG_HOME; and echo $XDG_CONFIG_HOME; or echo ~/.config)/quartz
     set -l cache (set -q XDG_CACHE_HOME; and echo $XDG_CACHE_HOME; or echo ~/.cache)/notes
+    argparse 'p/port=!_validate_int --min 1 --max 65534' -- $argv
+    or return 1
 
     set -l file
     set -l dir .
@@ -94,14 +96,15 @@ function notes --description "This repo's notes in the browser (Quartz)"
     end
 
     if test $running = false
-        # a port from the repo's hash, so its pages keep their address; the next free
-        # pair if taken (the page, and its live-reload socket one above)
-        set -l port (math "8100 + 2 * (0x"(string sub -l 4 $hash)" % 200)")
+        # 10010, or the port asked for; the next free pair if taken (the page, and its
+        # live-reload socket one above)
+        set -l port 10010
+        set -q _flag_port; and set port $_flag_port
         while ss -Hltn "( sport = :$port or sport = :$(math $port + 1) )" | string length -q
             set port (math $port + 2)
         end
         echo "notes: serving $notes"
-        env -C $quartz nohup node --require $config/localhost.cjs quartz/bootstrap-cli.mjs \
+        env -C $quartz nohup node quartz/bootstrap-cli.mjs \
             build --serve -d $notes -o $state/public --port $port --wsPort (math $port + 1) </dev/null >$state/log 2>&1 &
         set pid $last_pid
         disown $pid

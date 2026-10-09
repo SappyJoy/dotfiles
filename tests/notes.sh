@@ -3,7 +3,7 @@
 # in a scratch home: the first run's install, one server per repo, its port, the page
 # a note opens, stop. Quartz is a stub (its plugin commands print what Quartz prints;
 # its server is python's http.server under Quartz's command line), so is npm, and
-# xdg-open records the address it gets. The real node checks localhost.cjs.
+# xdg-open records the address it gets.
 # Run: sh tests/notes.sh   (fish, git, node, python3, curl, ss; offline)
 
 set -u
@@ -25,12 +25,14 @@ check() { # check NAME CONDITION...
 has() { printf '%s\n' "$out" | grep -qF -- "$1"; }
 hasnt() { ! has "$1"; }
 
-# not a shim, which would find the stub; looked up before HOME moves, which mise needs
-realnode=$(node -p process.execPath)
 unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
 export HOME="$tmp/home"
 mkdir -p "$tmp/bin" "$HOME/.config/quartz"
-cp "$config"/quartz.config.yaml "$config"/localhost.cjs "$HOME/.config/quartz/"
+cp "$config"/quartz.config.yaml "$HOME/.config/quartz/"
+# the first port: 10010, unless this machine serves there already (its own notes,
+# say), then the next free pair, as notes picks it
+first=10010
+while ss -Hltn "( sport = :$first or sport = :$((first + 1)) )" | grep -q .; do first=$((first + 2)); done
 
 # stubs: npm makes node_modules where it runs; node's plugin install reports a failed
 # plugin while $T/plugin-fails exists; node's build serves -o on --port (after a
@@ -81,7 +83,8 @@ repo() { # repo NAME: a git repo with notes
     mkdir -p "$tmp/$1/notes/journal" "$tmp/$1/notes/decisions" "$tmp/$1/src" && cd "$tmp/$1" && git init -q
     printf '# %s\n' "$1" >notes/index.md
 }
-notes() { fish --no-config -c "source '$fn'; notes \$argv" "$@" 2>&1 </dev/null; }
+# -- keeps fish from reading notes' flags as its own (-p is fish's --profile)
+notes() { fish --no-config -c "source '$fn'; notes \$argv" -- "$@" 2>&1 </dev/null; }
 opens() { # opens URL: xdg-open got URL last (notes starts it in the background)
     for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
         [ "$(tail -n 1 "$tmp/opened" 2>/dev/null)" = "$1" ] && return 0
@@ -125,20 +128,12 @@ check "  … and nothing else changed" \
     sh -c "sed 's/{{repo}}/alpha/g' '$config/quartz.config.yaml' | cmp -s - '$quartz/quartz.config.yaml'"
 check "Quartz serves alpha's notes" grep -qF "build --serve -d $tmp/alpha/notes -o $HOME/.cache/notes/alpha-" "$tmp/calls"
 check "  … from its folder" sh -c "grep -F 'build --serve' '$tmp/calls' | grep -qF 'in $quartz '"
-check "  … on this machine only" grep -qF "node --require $HOME/.config/quartz/localhost.cjs quartz/bootstrap-cli.mjs build" "$tmp/calls"
-check "localhost.cjs: a port alone listens on 127.0.0.1" [ "$("$realnode" --require "$config/localhost.cjs" -e '
-const net = require("net")
-const servers = [net.createServer().listen(0), net.createServer().listen(0, undefined, undefined, () => {}),
-    net.createServer().listen(0, () => {}), net.createServer().listen(0, "::1")]
-Promise.all(servers.map((s) => new Promise((r) => s.on("listening", r)))).then(() => {
-    console.log(servers.map((s) => s.address().address).join(" "))
-    process.exit()
-})')" = '127.0.0.1 127.0.0.1 127.0.0.1 ::1' ]
+check "  … on every interface: nothing preloaded" grep -qF "node quartz/bootstrap-cli.mjs build --serve -d $tmp/alpha/notes" "$tmp/calls"
 port=$(state alpha port)
 check "opens the index" opens "http://localhost:$port/"
 check "and prints it" has "notes: http://localhost:$port/"
 check "the server serves alpha's notes" [ "$(curl -s "http://localhost:$port/")" = "notes of $tmp/alpha/notes" ]
-check "its port comes from the repo (8100-8499, even)" [ "$port" -ge 8100 -a "$port" -le 8499 -a $((port % 2)) -eq 0 ]
+check "its port: 10010" [ "$port" = "$first" ]
 
 pid=$(state alpha pid)
 cd "$tmp/alpha/src" || exit 1
@@ -177,6 +172,7 @@ bport=$(state beta port)
 check "a second repo: its own port" [ -n "$bport" -a "$bport" != "$port" ]
 check "  … and title" grep -qF 'pageTitle: "beta"' "$quartz/quartz.config.yaml"
 check "  … both serve, each its notes" sh -c "curl -s localhost:$port/ | grep -q alpha/notes && curl -s localhost:$bport/ | grep -q beta/notes"
+(cd "$tmp/beta" && notes stop >/dev/null)
 
 cd "$tmp/alpha" || exit 1
 mv notes/index.md notes/index.away
@@ -198,6 +194,18 @@ sleep 1
 notes >/dev/null
 check "port taken: the next pair" [ "$(state alpha port)" = $((port + 2)) ]
 notes stop >/dev/null
+kill "$squatter"; squatter=
+
+out=$(notes -p $((first + 40)))
+check "-p PORT: that port" [ "$(state alpha port)" = $((first + 40)) ]
+check "  … printed" has "notes: http://localhost:$((first + 40))/"
+notes stop >/dev/null
+notes --port $((first + 42)) >/dev/null
+check "--port PORT: the same" [ "$(state alpha port)" = $((first + 42)) ]
+notes stop >/dev/null
+out=$(notes -p nope; echo "status $?")
+check "a port that isn't one: status 1" has 'status 1'
+check "  … no server" [ -z "$(state alpha pid)" ]
 
 mv "$HOME/.config/quartz/quartz.config.yaml" "$tmp/config.away"
 out=$(notes; echo "status $?")

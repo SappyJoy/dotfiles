@@ -2,8 +2,8 @@
 #
 # Quartz for project notes. The fish function `notes` writes this file into its shared
 # install (~/.local/share/quartz) when it starts a server, with {{repo}} replaced by
-# the repo's name; Quartz reads it once, at start. Local only: served to this machine
-# alone (localhost.cjs), no analytics, feeds or social images; dates from git;
+# the repo's name; Quartz reads it once, at start. No analytics, feeds or social
+# images; dates from git;
 # wikilinks resolved like obsidian.nvim's (the shortest unique name); #word is text,
 # not a tag. A note's `# Title` is its file name, so a content page shows that heading
 # and not a second title. Of the plugins Quartz installs, the ones listed here run.
