@@ -1,10 +1,13 @@
 # A repo's notes/ in the browser: one shared Quartz serves them with the link graph,
-# backlinks, hover previews, search and live reload, on every network interface.
+# backlinks, hover previews, search and live reload, on every network interface. The
+# repo's tracked Markdown and images are served next to them, at their paths from the
+# root, so a note links [[docs/guide]]; each run brings them up to date
+# (~/.config/quartz/notes-content.py writes the folder Quartz serves).
 # Each repo gets its own server, port and output folder, so several can be open at
 # once; the server keeps running in the background until `notes stop` (or a reboot).
 #
 #   notes          start this repo's server, or reuse it, and open the index
-#   notes FILE     the same, and open FILE's page (nvim's <leader>po)
+#   notes FILE     the same, and open FILE's page, a note's or a doc's (nvim's <leader>po)
 #   notes -p PORT  start it on PORT (--port), not 10010
 #   notes stop     stop this repo's server
 #
@@ -48,7 +51,7 @@ function notes --description "This repo's notes in the browser (Quartz)"
     set -l running false
     if test -n "$pid"; and test -r /proc/$pid/cmdline
         set -l args (string split0 </proc/$pid/cmdline)
-        contains -- quartz/bootstrap-cli.mjs $args; and contains -- $notes $args; and set running true
+        contains -- quartz/bootstrap-cli.mjs $args; and contains -- $state/content $args; and set running true
     end
 
     if test "$argv[1]" = stop
@@ -95,6 +98,9 @@ function notes --description "This repo's notes in the browser (Quartz)"
         touch $quartz/.notes-installed
     end
 
+    python3 $config/notes-content.py $root $state/content
+    or return 1
+
     if test $running = false
         # 10010, or the port asked for; the next free pair if taken (the page, and its
         # live-reload socket one above)
@@ -105,7 +111,7 @@ function notes --description "This repo's notes in the browser (Quartz)"
         end
         echo "notes: serving $notes"
         env -C $quartz nohup node quartz/bootstrap-cli.mjs \
-            build --serve -d $notes -o $state/public --port $port --wsPort (math $port + 1) </dev/null >$state/log 2>&1 &
+            build --serve -d $state/content -o $state/public --port $port --wsPort (math $port + 1) </dev/null >$state/log 2>&1 &
         set pid $last_pid
         disown $pid
         echo $pid >$state/pid
@@ -128,10 +134,13 @@ function notes --description "This repo's notes in the browser (Quartz)"
         end
     end
 
-    # FILE's page: its path in notes/ as Quartz slugs it; index.md is its folder
+    # FILE's page: its path in notes/, or a doc's from the root, as Quartz slugs it;
+    # index.md is its folder
     set -l page ''
-    if test -n "$file"; and string match -q -- "$notes/*.md" $file
-        set page (string replace -- "$notes/" '' $file | string replace -r '\.md$' '' \
+    if test -n "$file"; and string match -q -- "$root/*.md" $file
+        set -l from $root/
+        string match -q -- "$notes/*" $file; and set from $notes/
+        set page (string replace -- $from '' $file | string replace -r '\.md$' '' \
             | string replace -r '(^|/)index$' '$1' | string replace -a -- ' ' - \
             | string replace -a -- '&' -and- | string replace -a -- '%' -percent \
             | string replace -ar '[?#]' '')
