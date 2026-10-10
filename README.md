@@ -77,8 +77,12 @@ them can be regenerated (API keys, ssh hosts), but it's tedious.
 A repo with `notes/` (small linked notes Claude keeps, milestone-flow): `notes` in it
 serves them in the browser, on port 10010 of every network interface (`notes -p PORT`
 for another), with the link graph, backlinks, previews and search, and reloads when a
-note changes; `notes stop` stops that repo's server. In nvim, the
-`<leader>p` keys (the cheatsheet lists them). The first `notes` installs Quartz with
+note changes; `notes stop` stops that repo's server. The repo's own docs (README,
+`docs/`, any tracked Markdown and images but `.agent/` and Claude's instruction files)
+are served with them at their paths, so a note links `[[docs/guide]]`. In nvim, the
+`<leader>p` keys (the cheatsheet lists them); Enter follows a link to a note or a doc,
+and `<leader>mp` in a note pastes an image into `notes/assets/` as `![[name.png]]`,
+which snacks draws in the note. The first `notes` installs Quartz with
 its plugins into `~/.local/share/quartz`: several minutes, from GitHub, about 2.8 GB.
 Its config is `~/.config/quartz/quartz.config.yaml`.
 
@@ -238,7 +242,7 @@ over with `chezmoi merge`.
     Quartz: the first install, a server per repo, its port and `-p`, the page a note
     opens
   - `sh tests/nvim-notes.sh`: nvim's project notes in a scratch tmux and home: the
-    `<leader>p` keys, Enter on `[[links]]`
+    `<leader>p` keys, Enter on `[[links]]` to notes and docs, images in notes
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 

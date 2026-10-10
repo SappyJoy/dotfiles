@@ -2,7 +2,9 @@
 -- Claude keeps (milestone-flow). <leader>p keys open, find and grep them, list the
 -- notes that link to this one, make a new one, and show them in the browser (the fish
 -- function `notes`). In a note, Enter follows a [[link]] as Quartz and obsidian.nvim
--- resolve it: the shortest path that ends in its name; to a new note if none does.
+-- resolve it: the shortest path that ends in its name; else to the repo's doc at that
+-- path from the root ([[docs/guide]], which `notes` serves too); else to a new note.
+-- An image in a note is embedded by its name, ![[map.png]], and kept in notes/assets/.
 local M = {}
 
 -- the notes/ of the repo the buffer's file (else the cwd) is in, if it has notes
@@ -23,6 +25,45 @@ local function this_note(dir, buf)
   if vim.startswith(file, dir .. '/') and file:sub(-3) == '.md' then
     return file, vim.fn.fnamemodify(file, ':t:r')
   end
+end
+
+-- a file of the repo that `notes` serves as a doc: not in .agent/ or notes/, and not
+-- Claude's instructions
+local function is_doc(root, file)
+  local rel = vim.startswith(file, root .. '/') and file:sub(#root + 2)
+  return rel
+    and not rel:find '^%.agent/'
+    and not rel:find '^notes/'
+    and not rel:find '%.%./'
+    and not vim.tbl_contains({ 'CLAUDE.md', 'CLAUDE.local.md', 'AGENTS.md' }, vim.fs.basename(rel))
+    and vim.fn.filereadable(file) == 1
+end
+
+-- the shortest path in dir that ends in name, without .md if ext is, as Quartz finds it
+local function shortest(dir, name, ext)
+  local best
+  for path, kind in vim.fs.dir(dir, { depth = math.huge }) do
+    local rel = ext and path:match('^(.*)' .. vim.pesc(ext) .. '$') or path
+    -- a name anywhere, a folder/name from notes/, as Quartz resolves them
+    local found = rel and (rel == name or (not name:find '/' and vim.endswith(rel, '/' .. name)))
+    if kind == 'file' and found and (not best or #rel < #best) then
+      best = rel
+    end
+  end
+  return best
+end
+
+-- the image a note embeds as ![[src]], found in notes/ by its name
+function M.asset(file, src)
+  local dir = notes_dir(file, true)
+  local best = dir and vim.startswith(file, dir .. '/') and shortest(dir, src)
+  return best and dir .. '/' .. best or nil
+end
+
+-- where an image pasted into a note goes
+function M.paste_dir(file)
+  local dir = notes_dir(file, true)
+  return dir and vim.startswith(file, dir .. '/') and dir .. '/assets' or nil
 end
 
 local function edit(path)
@@ -110,7 +151,7 @@ function M.journal()
   end
 end
 
--- this note's page (else the index) in the browser, through the fish function notes
+-- this note's or doc's page (else the index) in the browser, through the fish function notes
 local opening = false
 function M.browser()
   local dir = notes_dir()
@@ -121,6 +162,10 @@ function M.browser()
     return vim.notify 'Still opening the notes: the first time, Quartz installs, for several minutes'
   end
   local file = this_note(dir)
+  local doc = vim.api.nvim_buf_get_name(0)
+  if not file and doc:sub(-3) == '.md' and is_doc(vim.fs.dirname(dir), doc) then
+    file = doc
+  end
   vim.notify 'Opening the notes in the browser…'
   local started, err = pcall(vim.system, { 'fish', '-c', 'notes $argv', file }, { cwd = dir, text = true }, function(done)
     opening = false
@@ -160,16 +205,17 @@ function M.follow()
     return
   end
   if name ~= '' then
-    local best
-    for path, kind in vim.fs.dir(dir, { depth = math.huge }) do
-      local rel = path:match '^(.*)%.md$'
-      -- a name anywhere, a folder/name from notes/, as Quartz resolves them
-      local found = rel and (rel == name or (not name:find '/' and vim.endswith(rel, '/' .. name)))
-      if kind == 'file' and found and (not best or #rel < #best) then
-        best = rel
+    local best = shortest(dir, name, '.md')
+    local root = vim.fs.dirname(dir)
+    local path = dir .. '/' .. (best or name) .. '.md'
+    if not best then
+      for _, doc in ipairs { root .. '/' .. name .. '.md', root .. '/' .. name } do
+        if is_doc(root, doc) then
+          path = doc
+          break
+        end
       end
     end
-    local path = dir .. '/' .. (best or name) .. '.md'
     if path ~= vim.api.nvim_buf_get_name(0) then
       edit(path)
     end

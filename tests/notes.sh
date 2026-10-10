@@ -1,7 +1,7 @@
 #!/bin/sh
 # Tests for the fish function notes (home/dot_config/private_fish/functions/notes.fish)
 # in a scratch home: the first run's install, one server per repo, its port, the page
-# a note opens, stop. Quartz is a stub (its plugin commands print what Quartz prints;
+# a note opens, stop, the repo's docs served next to the notes. Quartz is a stub (its plugin commands print what Quartz prints;
 # its server is python's http.server under Quartz's command line), so is npm, and
 # xdg-open records the address it gets.
 # Run: sh tests/notes.sh   (fish, git, node, python3, curl, ss; offline)
@@ -28,7 +28,7 @@ hasnt() { ! has "$1"; }
 unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
 export HOME="$tmp/home"
 mkdir -p "$tmp/bin" "$HOME/.config/quartz"
-cp "$config"/quartz.config.yaml "$HOME/.config/quartz/"
+cp "$config"/quartz.config.yaml "$config"/notes-content.py "$HOME/.config/quartz/"
 # the first port: 10010, unless this machine serves there already (its own notes,
 # say), then the next free pair, as notes picks it
 first=10010
@@ -126,13 +126,15 @@ check "  … its output, into a file, whole" sh -c "grep -q 'installing Quartz' 
 check "the config, written in with the repo's name" grep -qF 'pageTitle: "alpha"' "$quartz/quartz.config.yaml"
 check "  … and nothing else changed" \
     sh -c "sed 's/{{repo}}/alpha/g' '$config/quartz.config.yaml' | cmp -s - '$quartz/quartz.config.yaml'"
-check "Quartz serves alpha's notes" grep -qF "build --serve -d $tmp/alpha/notes -o $HOME/.cache/notes/alpha-" "$tmp/calls"
+content=$(echo "$HOME"/.cache/notes/alpha-*)/content
+check "Quartz serves alpha's notes, from its content folder" grep -qF "build --serve -d $content -o $HOME/.cache/notes/alpha-" "$tmp/calls"
+check "  … where the index is a link to the note" [ "$(readlink "$content/index.md")" = "$tmp/alpha/notes/index.md" ]
 check "  … from its folder" sh -c "grep -F 'build --serve' '$tmp/calls' | grep -qF 'in $quartz '"
-check "  … on every interface: nothing preloaded" grep -qF "node quartz/bootstrap-cli.mjs build --serve -d $tmp/alpha/notes" "$tmp/calls"
+check "  … on every interface: nothing preloaded" grep -qF "node quartz/bootstrap-cli.mjs build --serve -d $content" "$tmp/calls"
 port=$(state alpha port)
 check "opens the index" opens "http://localhost:$port/"
 check "and prints it" has "notes: http://localhost:$port/"
-check "the server serves alpha's notes" [ "$(curl -s "http://localhost:$port/")" = "notes of $tmp/alpha/notes" ]
+check "the server serves alpha's notes" [ "$(curl -s "http://localhost:$port/")" = "notes of $content" ]
 check "its port: 10010" [ "$port" = "$first" ]
 
 pid=$(state alpha pid)
@@ -171,7 +173,7 @@ notes >/dev/null
 bport=$(state beta port)
 check "a second repo: its own port" [ -n "$bport" -a "$bport" != "$port" ]
 check "  … and title" grep -qF 'pageTitle: "beta"' "$quartz/quartz.config.yaml"
-check "  … both serve, each its notes" sh -c "curl -s localhost:$port/ | grep -q alpha/notes && curl -s localhost:$bport/ | grep -q beta/notes"
+check "  … both serve, each its notes" sh -c "curl -s localhost:$port/ | grep -q /alpha- && curl -s localhost:$bport/ | grep -q /beta-"
 (cd "$tmp/beta" && notes stop >/dev/null)
 
 cd "$tmp/alpha" || exit 1
@@ -212,6 +214,44 @@ out=$(notes; echo "status $?")
 mv "$tmp/config.away" "$HOME/.config/quartz/quartz.config.yaml"
 check "no config to read: status 1" has 'status 1'
 check "  … no server" [ -z "$(state alpha pid)" ]
+
+# the repo's docs, next to the notes
+cd "$tmp/alpha" || exit 1
+mkdir -p docs/img .agent
+printf '# Readme\n\nThe [guide](docs/guide.md) and [Arch](https://archlinux.org).\n' >README.md
+printf '# Guide\n\n![shot](img/c.png), [up](../README.md#install), [here](#top).\n\n```md\n[kept](img/c.png)\n```\n' >docs/guide.md
+printf 'png' >docs/img/c.png
+printf -- '---\nname: gate\ndescription: a review: `later`: merge\n---\n\n# Gate\n' >docs/skill.md
+printf 'rules\n' >CLAUDE.md
+printf 'plan\n' >.agent/plan.md
+printf '# Not the index\n' >index.md
+git add README.md docs CLAUDE.md .agent index.md
+printf '# Draft\n' >docs/draft.md
+notes >/dev/null
+check "docs: a tracked doc, at its path from the root" [ -f "$content/README.md" ]
+check "  … its relative links from the root" grep -qF '[guide](docs/guide.md)' "$content/README.md"
+check "  … a doc in a folder: its links rewritten" \
+    grep -qF '![shot](docs/img/c.png), [up](README.md#install), [here](#top).' "$content/docs/guide.md"
+check "  … but not in code" grep -qF '[kept](img/c.png)' "$content/docs/guide.md"
+check "  … URLs kept" grep -qF '[Arch](https://archlinux.org)' "$content/README.md"
+check "docs: frontmatter, which YAML may refuse and stop Quartz, shown as code" \
+    sh -c "head -4 '$content/docs/skill.md' | tr '\\n' '|' | grep -qF '\`\`\`yaml|name: gate|description: a review: \`later\`: merge|\`\`\`|'"
+check "docs: an image, a link to it" [ "$(readlink "$content/docs/img/c.png")" = "$tmp/alpha/docs/img/c.png" ]
+check "docs: no CLAUDE.md, no .agent/, nothing untracked" \
+    sh -c "[ ! -e '$content/CLAUDE.md' ] && [ ! -e '$content/.agent' ] && [ ! -e '$content/docs/draft.md' ]"
+check "docs: a note's path wins over a doc's" [ "$(readlink "$content/index.md")" = "$tmp/alpha/notes/index.md" ]
+rm -f "$tmp/opened"
+notes "$tmp/alpha/docs/guide.md" >/dev/null
+check "a doc opens its page" opens "http://localhost:$port/docs/guide"
+git rm -qf docs/guide.md
+printf '# Fresh\n' >notes/Fresh.md
+before=$(stat -c %Y "$content/README.md")
+sleep 1
+notes >/dev/null
+check "again: a doc gone is gone" [ ! -e "$content/docs/guide.md" ]
+check "  … a new note is there" [ "$(readlink "$content/Fresh.md")" = "$tmp/alpha/notes/Fresh.md" ]
+check "  … a doc that didn't change isn't written again" [ "$(stat -c %Y "$content/README.md")" = "$before" ]
+notes stop >/dev/null
 
 repo broken
 touch notes/BROKEN
