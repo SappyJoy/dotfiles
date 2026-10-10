@@ -17,9 +17,10 @@ def mounted(volume, result):
     try:
         volume.mount_finish(result)
     except GLib.Error as e:
-        print(f"phone-automount: {volume.get_name()}: {e.message}", file=sys.stderr)
-        return
-    path = volume.get_mount().get_root().get_path()
+        if not e.matches(Gio.io_error_quark(), Gio.IOErrorEnum.ALREADY_MOUNTED):
+            print(f"phone-automount: {volume.get_name()}: {e.message}", file=sys.stderr)
+            return
+    path = volume.get_activation_root().get_path()
     if os.path.islink(LINK):
         os.remove(LINK)
     if path and not os.path.lexists(LINK):
@@ -28,7 +29,7 @@ def mounted(volume, result):
 
 def added(monitor, volume):
     root = volume.get_activation_root()
-    if root and root.get_uri_scheme() == "mtp" and not volume.get_mount():
+    if root and root.get_uri_scheme() == "mtp":
         volume.mount(Gio.MountMountFlags.NONE, None, None, mounted)
 
 
