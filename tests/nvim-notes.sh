@@ -1,7 +1,8 @@
 #!/bin/sh
 # nvim's project notes (lua/project_notes.lua) in a real UI (a scratch tmux server), with
 # this branch's config in a scratch home: the <leader>p keys on a scratch repo's
-# notes/, Enter on [[links]], and a repo without notes. The plugins are the installed
+# notes/, Enter on [[links]] to notes and to the repo's docs, images in notes, and a
+# repo without notes. The plugins are the installed
 # ones (linked in, read only); `fish` is a stub that records what <leader>po runs.
 # Run: sh tests/nvim-notes.sh
 #   NVIM=path/to/nvim (default: nvim on PATH)
@@ -46,7 +47,13 @@ Parts: [[Shell]] and [[Editor]].
 Why fish: [[Use fish|the decision]].
 Its reason: [[decisions/Use fish#Why]].
 Not written yet: [[Ghost]].
+Docs: [[docs/guide]] and [[README]]. Not served: [[CLAUDE]].
 EOF
+mkdir -p docs notes/assets
+printf '# Guide\n' >docs/guide.md
+printf '# Readme\n' >README.md
+printf '# Claude\n' >CLAUDE.md
+printf 'png' >notes/assets/map.png
 printf '# Shell\n\nfish. Why: [[Use fish]]. Back: [[index]].\n' >notes/Shell.md
 printf '# Editor\n\nnvim, with [[Shell keys]]. Not here: [[nowhere/Shell]].\n' >notes/Editor.md
 printf '# Shell keys\n\n| Key | In |\n|---|---|\n| Ctrl+R | [[Shell\\|the shell]] |\n\n[[Editor]]\n' >"notes/Shell keys.md"
@@ -122,6 +129,29 @@ keys Enter
 check "Enter on a link to no note: a new note …" [ "$(file)" = "$repo/notes/Ghost.md" ]
 check "  … titled" [ "$(probe "vim.fn.getline(1)")" = '# Ghost' ]
 check "  … not written until saved" [ ! -e "$repo/notes/Ghost.md" ]
+keys ' pi'
+on 'docs/guide'
+keys Enter
+check "Enter on [[docs/guide]]: the doc, by its path from the root" [ "$(file)" = "$repo/docs/guide.md" ]
+keys ' pi'
+on 'README'
+keys Enter
+check "Enter on [[README]]: the repo's README" [ "$(file)" = "$repo/README.md" ]
+keys ' pi'
+on 'CLAUDE'
+keys Enter
+check "Enter on [[CLAUDE]]: not a doc, a new note" [ "$(file)" = "$repo/notes/CLAUDE.md" ]
+keys ' pi'
+check "an embed in a note: the image in notes/" \
+    [ "$(probe "require('project_notes').asset('$repo/notes/journal/M1 First.md', 'map.png')")" = "$repo/notes/assets/map.png" ]
+check "  … snacks draws it from there" \
+    [ "$(probe "Snacks.image.config.resolve('$repo/notes/index.md', 'map.png')")" = "$repo/notes/assets/map.png" ]
+check "  … not for a doc" [ "$(probe "Snacks.image.config.resolve('$repo/docs/guide.md', 'map.png')")" = nil ]
+check "a pasted image in a note: to notes/assets/" \
+    [ "$(probe "require('project_notes').paste_dir('$repo/notes/journal/M1 First.md')")" = "$repo/notes/assets" ]
+check "  … embedded by its name" \
+    [ "$(probe "require('img-clip.config').get_opt('template')")" = '![[$FILE_NAME]]' ]
+check "  … elsewhere, as before" [ "$(probe "require('project_notes').paste_dir('$repo/docs/guide.md')")" = nil ]
 
 keys ' pj'
 check "<leader>pj: the latest journal note (M10, not M9)" [ "$(file)" = "$repo/notes/journal/M10 Tenth.md" ]
@@ -166,6 +196,11 @@ sleep 1.5
 check "<leader>po: notes FILE for this note" [ "$(tr '\n' ' ' <"$tmp/fish-args" 2>/dev/null)" = "-c notes \$argv $repo/notes/Shell.md " ]
 check "  … once" [ "$(wc -l <"$tmp/fish-runs")" = 1 ]
 check "  … and says where it opened" shows 'http://localhost:8123/Shell'
+sleep 1
+keys ':e docs/guide.md' Enter
+keys ' po'
+sleep 2
+check "<leader>po in a doc: notes FILE for the doc" [ "$(tr '\n' ' ' <"$tmp/fish-args" 2>/dev/null)" = "-c notes \$argv $repo/docs/guide.md " ]
 
 keys ' pn'
 keys 'Idea' Enter
