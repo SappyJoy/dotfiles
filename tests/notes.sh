@@ -221,6 +221,7 @@ mkdir -p docs/img .agent
 printf '# Readme\n\nThe [guide](docs/guide.md) and [Arch](https://archlinux.org).\n' >README.md
 printf '# Guide\n\n![shot](img/c.png), [up](../README.md#install), [here](#top).\n\n```md\n[kept](img/c.png)\n```\n' >docs/guide.md
 printf 'png' >docs/img/c.png
+printf -- '---\nname: gate\ndescription: a review: `later`: merge\n---\n\n# Gate\n' >docs/skill.md
 printf 'rules\n' >CLAUDE.md
 printf 'plan\n' >.agent/plan.md
 printf '# Not the index\n' >index.md
@@ -233,6 +234,8 @@ check "  … a doc in a folder: its links rewritten" \
     grep -qF '![shot](docs/img/c.png), [up](README.md#install), [here](#top).' "$content/docs/guide.md"
 check "  … but not in code" grep -qF '[kept](img/c.png)' "$content/docs/guide.md"
 check "  … URLs kept" grep -qF '[Arch](https://archlinux.org)' "$content/README.md"
+check "docs: frontmatter, which YAML may refuse and stop Quartz, shown as code" \
+    sh -c "head -4 '$content/docs/skill.md' | tr '\\n' '|' | grep -qF '\`\`\`yaml|name: gate|description: a review: \`later\`: merge|\`\`\`|'"
 check "docs: an image, a link to it" [ "$(readlink "$content/docs/img/c.png")" = "$tmp/alpha/docs/img/c.png" ]
 check "docs: no CLAUDE.md, no .agent/, nothing untracked" \
     sh -c "[ ! -e '$content/CLAUDE.md' ] && [ ! -e '$content/.agent' ] && [ ! -e '$content/docs/draft.md' ]"

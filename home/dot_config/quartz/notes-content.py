@@ -7,7 +7,8 @@ and image of REPO at its path from the repo's root, so a note links a doc as
 [[docs/guide]]. Left out: .agent/, Claude's instruction files, hidden folders, and a
 doc whose path a note already takes. Images are links; Markdown docs are copies whose
 relative links are rewritten to paths from the root, because Quartz resolves a link with
-a folder from the root, not from the page. Run again, it brings CONTENT up to date and
+a folder from the root, not from the page; and their frontmatter is shown as a code
+block, since one that strict YAML refuses would stop Quartz's build. Run again, it brings CONTENT up to date and
 touches only what changed, so a running Quartz rebuilds no more than it must.
 """
 
@@ -24,6 +25,7 @@ NOT_DOC_NAMES = {"CLAUDE.md", "CLAUDE.local.md", "AGENTS.md"}
 # [text](path) and ![alt](path), the part up to the path, and the path
 LINK = re.compile(r"(!?\[[^\]]*\]\()([^)\s]+)")
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+FRONTMATTER = re.compile(r"\A---\n(.*?\n)---\n", re.S)
 
 
 def from_root(doc: str, target: str) -> str:
@@ -36,6 +38,7 @@ def from_root(doc: str, target: str) -> str:
 
 
 def rewrite(doc: str, text: str) -> str:
+    text = FRONTMATTER.sub(lambda m: f"```yaml\n{m.group(1)}```\n", text, count=1)
     out, fence = [], ""
     for line in text.splitlines(keepends=True):
         match = FENCE.match(line)
