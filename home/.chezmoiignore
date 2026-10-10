@@ -34,6 +34,7 @@
 .config/sing-box/**
 .config/wireguard/**
 .local/bin/brightness
+.local/bin/phone-automount
 .local/share/dbus-1/services/org.knopwob.dunst.service
 .local/share/dbus-1/services/org.xfce.Thunar.FileManager1.service
 .local/lib/film_snap/**
