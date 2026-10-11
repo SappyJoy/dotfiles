@@ -7,6 +7,8 @@
 # - WireGuard: NetworkManager imports ~/.config/wireguard/vpnconfig.conf when it has no
 #   "vpnconfig" connection yet (NetworkManager may ask for your password once), and
 #   gives it a routing rule so ssh from outside still works while the tunnel is on
+# - WireGuard for Claude only: a second connection, "vpnclaude", made from the same
+#   profile; it carries just Anthropic's addresses and is the one up after boot
 # The profiles come with chezmoi, encrypted: ~/.config/sing-box/config.json and
 # ~/.config/wireguard/vpnconfig.conf. toggle-vless and toggle-wireguard switch them.
 set -eu
@@ -74,6 +76,23 @@ elif [ -f "$wireguard" ]; then
     nmcli connection import type wireguard file "$wireguard"
 else
     echo "missing $wireguard: no WireGuard profile to import"
+fi
+
+# Claude only: the same tunnel as a second connection that routes just Anthropic's
+# range (api.anthropic.com, claude.ai), so Claude Code works while the full tunnel is
+# off and nothing else uses it. It takes the device name vpnconfig: the two share a
+# key, and NetworkManager runs one connection per device. It comes up at boot; the
+# full tunnel no longer does. The tracked profile escapes its colons (\:).
+if nmcli -g NAME connection show | grep -qx vpnclaude; then
+    echo "ok      WireGuard: NetworkManager has vpnclaude"
+elif [ -f "$wireguard" ]; then
+    sed -e '/^DNS/d' -e 's|^AllowedIPs.*|AllowedIPs = 160.79.104.0/23|' -e 's|\\:|:|g' \
+        "$wireguard" >"$tmp/vpnclaude.conf"
+    nmcli connection import type wireguard file "$tmp/vpnclaude.conf"
+    nmcli connection modify vpnclaude connection.interface-name vpnconfig
+    # the import started it on a device of its own
+    nmcli connection down vpnclaude >/dev/null 2>&1 || :
+    nmcli connection modify vpnconfig connection.autoconnect no
 fi
 
 # While WireGuard is on, sshd's replies (TCP from port 22) take the normal routes: a

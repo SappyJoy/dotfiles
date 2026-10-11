@@ -106,9 +106,14 @@ VLESS (sing-box's tunnel, no window or tray). `toggle-wireguard` ($mod+Shift+v) 
 `toggle-vless` ($mod+Shift+t), or a click on the bar; turning one on turns the other
 off.
 
+- WireGuard "off" means Claude only: a second connection, `vpnclaude`, on the same
+  device carries just Anthropic's range (`160.79.104.0/23`: `api.anthropic.com`,
+  `claude.ai`), so Claude Code always works and nothing else uses the tunnel. It is the
+  state after boot and after VLESS stops; the bar shows it dim.
 - The profiles are encrypted here: `~/.config/wireguard/vpnconfig.conf` (wg-quick
   format) and `~/.config/sing-box/config.json`. Edit with `vd`; after a WireGuard
-  change, `nmcli connection delete vpnconfig` and run `vpn-setup` to import it again.
+  change, `nmcli connection delete vpnconfig vpnclaude` and run `vpn-setup` to import
+  both again.
   The VLESS server in use is the `proxy` outbound; `systemctl restart vless` applies
   an edit.
 - ssh from outside (the router's port forward) works while WireGuard is on: `vpn-setup`
