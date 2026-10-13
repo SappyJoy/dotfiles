@@ -5,3 +5,4 @@
 
 160.79.104.0/23  # Anthropic: api.anthropic.com, claude.ai, platform.claude.com
 openrouter.ai    # 403 without the tunnel; the API is on the same name
+api.moonshot.ai  # asked for 2026-10-13; direct it answers 401 without a key, so not proven
