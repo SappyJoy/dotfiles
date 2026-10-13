@@ -49,7 +49,7 @@ printf '#!/bin/sh\n' >"$tmp/bin/sing-box"
 chmod +x "$tmp/bin/"*
 printf '#!/bin/sh\nexec sh "%s" "$@"\n' "$bin/executable_vpn-hosts" >"$tmp/bin/vpn-hosts"
 chmod +x "$tmp/bin/vpn-hosts"
-cp "$here/../home/dot_config/private_wireguard/claude-only.list" "$tmp/.config/wireguard/"
+printf '160.79.104.0/23  # Anthropic\nopenrouter.ai\n' >"$tmp/.config/wireguard/claude-only.list"
 # a profile shaped like the tracked one: escaped colons, a DNS line, both families
 cat >"$tmp/.config/wireguard/vpnconfig.conf" <<'EOF'
 [Interface]

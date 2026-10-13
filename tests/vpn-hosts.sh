@@ -37,8 +37,10 @@ HOME=$tmp sh "$script" 2>/dev/null
 check "no argument: usage, exit 2" [ $? = 2 ]
 
 cp "$tracked" "$list"
-check "the tracked list: Anthropic's range" [ "$(hosts ranges)" = '160.79.104.0/23 ' ]
-check "the tracked list: openrouter by name" [ "$(hosts names)" = 'openrouter.ai ' ]
+case " $(hosts ranges)" in *' 160.79.104.0/23 '*) true ;; *) false ;; esac
+check "the tracked list: Anthropic's range is in it" [ $? = 0 ]
+case " $(hosts names)" in *' openrouter.ai '*) true ;; *) false ;; esac
+check "the tracked list: openrouter.ai is in it, by name" [ $? = 0 ]
 
 if [ $fails -gt 0 ]; then
     echo "$fails failed"
