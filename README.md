@@ -107,9 +107,15 @@ VLESS (sing-box's tunnel, no window or tray). `toggle-wireguard` ($mod+Shift+v) 
 off.
 
 - WireGuard "off" means Claude only: a second connection, `vpnclaude`, on the same
-  device carries just Anthropic's range (`160.79.104.0/23`: `api.anthropic.com`,
-  `claude.ai`), so Claude Code always works and nothing else uses the tunnel. It is the
-  state after boot and after VLESS stops; the bar shows it dim.
+  device carries just what `~/.config/wireguard/claude-only.list` names, so Claude
+  Code always works and nothing else uses the tunnel. It is the state after boot and
+  after VLESS stops; the bar shows it dim.
+- The list holds address ranges (Anthropic's `160.79.104.0/23`) and names
+  (`openrouter.ai`, for sites on shared addresses). Add a line, then run `vpn-setup`
+  (sudo). Ranges become routes. For names, NetworkManager runs dnsmasq as the
+  machine's resolver (`sudo pacman -S dnsmasq`): each address it answers for a listed
+  name goes into an nftables set, and packets to the set go into the tunnel.
+  `curl --interface vpnconfig URL` tries a site through the tunnel in either state.
 - The profiles are encrypted here: `~/.config/wireguard/vpnconfig.conf` (wg-quick
   format) and `~/.config/sing-box/config.json`. Edit with `vd`; after a WireGuard
   change, `nmcli connection delete vpnconfig vpnclaude` and run `vpn-setup` to import
@@ -223,6 +229,8 @@ over with `chezmoi merge`.
   - `sh tests/brightness.sh`: levels, the bus cache, parallel writes, merged presses
   - `sh tests/toggle-wireguard.sh`: which tunnel each press of the two toggles leaves up
   - `sh tests/vpn-hosts.sh`: the list of what always uses WireGuard, as `vpn-hosts` reads it
+  - `sh tests/vpn-setup.sh`: the Claude-only connection and the system files `vpn-setup`
+    writes, with sudo into a scratch root (unshare, nft)
   - `sh tests/nvim-old-aside.sh`: the move of the old nvim config in a scratch home,
     and a chezmoi round trip (old config, then the new one, without a TTY)
   - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match

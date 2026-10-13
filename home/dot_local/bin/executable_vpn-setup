@@ -1,6 +1,7 @@
 #!/bin/sh
-# One-time VPN setup on a personal desktop; safe to run again (it changes only what
-# differs, and asks for sudo for the two system files):
+# VPN setup on a personal desktop, run once and after each change to
+# ~/.config/wireguard/claude-only.list; safe to run again (it changes only what
+# differs, and asks for sudo for the system files):
 # - /etc/systemd/system/vless.service: sing-box's tunnel, run as you, with network
 #   rights only (the package's own sing-box.service stays off)
 # - /etc/polkit-1/rules.d/50-vless.rules: you start and stop vless without a password
@@ -8,7 +9,11 @@
 #   "vpnconfig" connection yet (NetworkManager may ask for your password once), and
 #   gives it a routing rule so ssh from outside still works while the tunnel is on
 # - WireGuard for Claude only: a second connection, "vpnclaude", made from the same
-#   profile; it carries just Anthropic's addresses and is the one up after boot
+#   profile; it carries just what claude-only.list names (vpn-hosts) and is the one up
+#   after boot. Its address ranges are routes; its names go through dnsmasq, which
+#   becomes the machine's resolver (/etc/NetworkManager/conf.d/dns-dnsmasq.conf,
+#   dnsmasq.d/tunnel-names.conf) and fills an nftables set (/etc/tunnel-names.nft,
+#   tunnel-names.service)
 # The profiles come with chezmoi, encrypted: ~/.config/sing-box/config.json and
 # ~/.config/wireguard/vpnconfig.conf. toggle-vless and toggle-wireguard switch them.
 set -eu
@@ -16,6 +21,9 @@ set -eu
 user=$(id -un)
 config=$HOME/.config/sing-box/config.json
 wireguard=$HOME/.config/wireguard/vpnconfig.conf
+# packets to a listed name get this mark, and vpnclaude routes the mark by this table
+mark=0x14e9
+table=5353
 
 bin=$(command -v sing-box) || { echo "sing-box is missing: see tools-check sing-box" >&2; exit 1; }
 # mise's shim needs mise's environment; the service runs the binary itself (after a
@@ -56,12 +64,13 @@ polkit.addRule(function (action, subject) {
 });
 EOF
 
-# install SOURCE TARGET: copy with sudo when the target differs
+# install SOURCE TARGET: copy with sudo when the target differs (and set $changed)
+changed=
 install_file() {
     if sudo cmp -s "$1" "$2"; then
         echo "ok      $2"
     else
-        sudo install -D -m 644 "$1" "$2" && echo "written $2"
+        sudo install -D -m 644 "$1" "$2" && echo "written $2" && changed=1
     fi
 }
 install_file "$tmp/vless.service" /etc/systemd/system/vless.service
@@ -78,21 +87,102 @@ else
     echo "missing $wireguard: no WireGuard profile to import"
 fi
 
-# Claude only: the same tunnel as a second connection that routes just Anthropic's
-# range (api.anthropic.com, claude.ai), so Claude Code works while the full tunnel is
-# off and nothing else uses it. It takes the device name vpnconfig: the two share a
-# key, and NetworkManager runs one connection per device. It comes up at boot; the
-# full tunnel no longer does. The tracked profile escapes its colons (\:).
+# Names in the list: dnsmasq, run by NetworkManager as the machine's resolver, puts
+# every address it answers for a listed name into an nftables set; packets to the set
+# get the mark that vpnclaude's rule sends into the tunnel, and the tunnel's address
+# as their source. The set fills as names are looked up and lasts until a reboot.
+if ! command -v dnsmasq >/dev/null; then
+    echo "missing dnsmasq: names in the list stay direct (sudo pacman -S dnsmasq)"
+else
+    cat >"$tmp/tunnel-names.nft" <<EOF
+# Written by vpn-setup: the addresses of the names that go through WireGuard. dnsmasq
+# fills the set; vpnclaude routes the mark into the tunnel.
+table inet tunnel_names
+delete table inet tunnel_names
+table inet tunnel_names {
+    set v4 {
+        type ipv4_addr
+    }
+    chain output {
+        type route hook output priority mangle
+        ip daddr @v4 meta mark set $mark
+    }
+    chain postrouting {
+        type nat hook postrouting priority srcnat
+        meta mark $mark oifname "vpnconfig" masquerade
+    }
+}
+EOF
+    cat >"$tmp/tunnel-names.service" <<EOF
+# Written by vpn-setup: the nftables set must exist before dnsmasq answers.
+[Unit]
+Description=nftables set of the names that go through WireGuard
+Before=NetworkManager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/nft -f /etc/tunnel-names.nft
+ExecStop=/usr/bin/nft delete table inet tunnel_names
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    {
+        echo "# Written by vpn-setup from ~/.config/wireguard/claude-only.list (vpn-hosts names)."
+        for name in $(vpn-hosts names); do
+            echo "nftset=/$name/4#inet#tunnel_names#v4"
+        done
+    } >"$tmp/tunnel-names.conf"
+    cat >"$tmp/dns-dnsmasq.conf" <<EOF
+# Written by vpn-setup: dnsmasq as the local resolver, so that it can note the
+# addresses of the names in dnsmasq.d/tunnel-names.conf.
+[main]
+dns=dnsmasq
+EOF
+    # a line dnsmasq rejects would leave the machine without DNS
+    dnsmasq --test --conf-file="$tmp/tunnel-names.conf" 2>/dev/null ||
+        { echo "dnsmasq rejects a name in the list: nothing changed" >&2; exit 1; }
+    changed=
+    install_file "$tmp/tunnel-names.nft" /etc/tunnel-names.nft
+    install_file "$tmp/tunnel-names.service" /etc/systemd/system/tunnel-names.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable -q --now tunnel-names.service
+    install_file "$tmp/tunnel-names.conf" /etc/NetworkManager/dnsmasq.d/tunnel-names.conf
+    install_file "$tmp/dns-dnsmasq.conf" /etc/NetworkManager/conf.d/dns-dnsmasq.conf
+    if [ -n "$changed" ]; then
+        sudo nmcli general reload conf
+        sudo nmcli general reload dns-full
+    fi
+fi
+
+# Claude only: the same tunnel as a second connection that carries just the list, so
+# Claude Code works while the full tunnel is off and nothing else uses it. It takes
+# the device name vpnconfig: the two share a key, and NetworkManager runs one
+# connection per device. It comes up at boot; the full tunnel no longer does. Its
+# peer accepts any address, and its routes say what goes in: the ranges below, and
+# table $table for marked packets and for a socket bound to the device
+# (curl --interface vpnconfig). The tracked profile escapes its colons (\:).
 if nmcli -g NAME connection show | grep -qx vpnclaude; then
     echo "ok      WireGuard: NetworkManager has vpnclaude"
 elif [ -f "$wireguard" ]; then
-    sed -e '/^DNS/d' -e 's|^AllowedIPs.*|AllowedIPs = 160.79.104.0/23|' -e 's|\\:|:|g' \
-        "$wireguard" >"$tmp/vpnclaude.conf"
+    sed -e '/^DNS/d' -e 's|^AllowedIPs.*|AllowedIPs = 0.0.0.0/0|' -e 's|\\:|:|g' \
+        -e '/^\[Interface\]/a Table = off' "$wireguard" >"$tmp/vpnclaude.conf"
     nmcli connection import type wireguard file "$tmp/vpnclaude.conf"
-    nmcli connection modify vpnclaude connection.interface-name vpnconfig
+    nmcli connection modify vpnclaude connection.interface-name vpnconfig \
+        wireguard.peer-routes no wireguard.ip4-auto-default-route false \
+        ipv4.routing-rules "priority 20000 fwmark $mark table $table, priority 20001 oif vpnconfig table $table"
     # the import started it on a device of its own
     nmcli connection down vpnclaude >/dev/null 2>&1 || :
     nmcli connection modify vpnconfig connection.autoconnect no
+fi
+if nmcli -g NAME connection show | grep -qx vpnclaude; then
+    ranges=$(vpn-hosts ranges | tr '\n' ',')
+    nmcli connection modify vpnclaude ipv4.routes "${ranges}0.0.0.0/0 table=$table"
+    if [ "$(nmcli -g GENERAL.CONNECTION device show vpnconfig 2>/dev/null)" = vpnclaude ]; then
+        nmcli device reapply vpnconfig >/dev/null
+    fi
+    echo "ok      WireGuard: Claude only carries $(vpn-hosts ranges | wc -l) ranges and $(vpn-hosts names | wc -l) names"
 fi
 
 # While WireGuard is on, sshd's replies (TCP from port 22) take the normal routes: a
