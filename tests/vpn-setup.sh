@@ -46,8 +46,9 @@ EOF
 printf '#!/bin/sh\necho "systemctl $*" >>"$T/calls"\n' >"$tmp/bin/systemctl"
 printf '#!/bin/sh\necho "dnsmasq $*" >>"$T/calls"\n[ -z "${REJECT:-}" ]\n' >"$tmp/bin/dnsmasq"
 printf '#!/bin/sh\n' >"$tmp/bin/sing-box"
-ln -s "$bin/executable_vpn-hosts" "$tmp/bin/vpn-hosts"
 chmod +x "$tmp/bin/"*
+printf '#!/bin/sh\nexec sh "%s" "$@"\n' "$bin/executable_vpn-hosts" >"$tmp/bin/vpn-hosts"
+chmod +x "$tmp/bin/vpn-hosts"
 cp "$here/../home/dot_config/private_wireguard/claude-only.list" "$tmp/.config/wireguard/"
 # a profile shaped like the tracked one: escaped colons, a DNS line, both families
 cat >"$tmp/.config/wireguard/vpnconfig.conf" <<'EOF'
