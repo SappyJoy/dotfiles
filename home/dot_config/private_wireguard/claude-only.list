@@ -1,0 +1,7 @@
+# What always goes through WireGuard, also while the tunnel is in Claude only.
+# One entry per line: an address range (a.b.c.d/n) or a name, which covers its
+# subdomains too. A site on shared addresses (Cloudflare) goes in by name.
+# After a change: vpn-setup (sudo). `vpn-hosts ranges|names` prints what it reads.
+
+160.79.104.0/23  # Anthropic: api.anthropic.com, claude.ai, platform.claude.com
+openrouter.ai    # 403 without the tunnel; the API is on the same name

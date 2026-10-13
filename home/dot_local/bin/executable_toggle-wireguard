@@ -1,11 +1,16 @@
 #!/bin/sh
-# WireGuard on/off: NetworkManager's connection "vpnconfig" (imported by vpn-setup).
-# Turning it on stops VLESS first: one tunnel at a time. $mod+Shift+v and a click on
-# the bar run this.
+# WireGuard, everything or Claude only: NetworkManager's connections "vpnconfig" (the
+# full tunnel) and "vpnclaude" (only Anthropic's addresses), both made by vpn-setup on
+# the device vpnconfig, so bringing one up replaces the other. The full tunnel stops
+# VLESS first: one tunnel at a time. $mod+Shift+v and a click on the bar run this.
 conn=vpnconfig
 
 if [ "$(nmcli -g GENERAL.STATE connection show "$conn" 2>/dev/null)" = activated ]; then
-    nmcli connection down "$conn" >/dev/null && notify-send -t 1500 WireGuard off
+    if nmcli connection up vpnclaude >/dev/null; then
+        notify-send -t 1500 WireGuard 'Claude only'
+    else
+        notify-send -u critical WireGuard "still on: no Claude-only profile (run vpn-setup)"
+    fi
 else
     systemctl is-active -q vless && systemctl stop vless
     if nmcli connection up "$conn" >/dev/null; then

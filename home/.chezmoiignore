@@ -31,6 +31,7 @@
 .local/bin/toggle-vless
 .local/bin/toggle-wireguard
 .local/bin/vpn-setup
+.local/bin/vpn-hosts
 .config/sing-box/**
 .config/wireguard/**
 .local/bin/brightness
