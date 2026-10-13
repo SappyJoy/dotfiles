@@ -222,6 +222,7 @@ over with `chezmoi merge`.
   - `sh tests/lock.sh`: the lock script (dunst paused, xss-lock's sleep lock)
   - `sh tests/brightness.sh`: levels, the bus cache, parallel writes, merged presses
   - `sh tests/toggle-wireguard.sh`: which tunnel each press of the two toggles leaves up
+  - `sh tests/vpn-hosts.sh`: the list of what always uses WireGuard, as `vpn-hosts` reads it
   - `sh tests/nvim-old-aside.sh`: the move of the old nvim config in a scratch home,
     and a chezmoi round trip (old config, then the new one, without a TTY)
   - `sh tests/guest.sh [IMAGE]`: guest install, a visit, remove; the home must match
