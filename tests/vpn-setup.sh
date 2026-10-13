@@ -85,7 +85,13 @@ check "names: openrouter.ai fills the set" grep -qx 'nftset=/openrouter.ai/4#ine
 check "names: dnsmasq checked the file first" [ "$(line 'dnsmasq --test')" -lt "$(line '/etc/tunnel-names.nft')" ]
 check "names: dnsmasq is the resolver" grep -qx 'dns=dnsmasq' "$etc/NetworkManager/conf.d/dns-dnsmasq.conf"
 check "names: the set exists before dnsmasq restarts" [ "$(line 'systemctl enable -q --now tunnel-names.service')" -lt "$(line 'nmcli general reload dns-full')" ]
-check "nftables: the file loads, twice" unshare -rn sh -c "nft -f $etc/tunnel-names.nft && nft -f $etc/tunnel-names.nft"
+# loaded twice with an address learned in between, as a reload of the running table
+table=$(unshare -rn sh -c "nft -f $etc/tunnel-names.nft && nft add element inet tunnel_names v4 '{ 192.0.2.7 }' && nft -f $etc/tunnel-names.nft && nft list table inet tunnel_names")
+check "nftables: the file loads, twice" [ -n "$table" ]
+check "nftables: a reload keeps the set's addresses" [ "$(printf '%s\n' "$table" | grep -c '192.0.2.7')" = 1 ]
+check "nftables: a reload doesn't double the rules" [ "$(printf '%s\n' "$table" | grep -c 'meta mark set')" = 1 ]
+check "nftables: new connections fit the tunnel, both ways" [ "$(printf '%s\n' "$table" | grep -c 'maxseg size set 1380')" = 2 ]
+check "nftables: the unit can reload the file" grep -qx 'ExecReload=/usr/bin/nft -f /etc/tunnel-names.nft' "$etc/systemd/system/tunnel-names.service"
 check "nftables: marks the set's addresses" grep -q 'ip daddr @v4 meta mark set 0x14e9' "$etc/tunnel-names.nft"
 check "nftables: the unit loads that file" grep -qx 'ExecStart=/usr/bin/nft -f /etc/tunnel-names.nft' "$etc/systemd/system/tunnel-names.service"
 
@@ -94,7 +100,13 @@ setup
 check "second run: nothing written" [ -z "$(printf '%s\n' "$log" | grep '^written')" ]
 check "second run: no import" hasnt 'connection import'
 check "second run: DNS left alone" hasnt 'general reload'
+check "second run: the rules left alone" hasnt 'systemctl reload'
 check "running: the routes are applied at once" has 'nmcli device reapply vpnconfig'
+
+echo '# an older version' >>"$etc/tunnel-names.nft"
+setup
+check "changed rules: loaded into the running table" has 'systemctl reload tunnel-names.service'
+check "changed rules: DNS left alone" hasnt 'general reload'
 
 echo 'example.org' >>"$tmp/.config/wireguard/claude-only.list"
 echo '10.1.0.0/16' >>"$tmp/.config/wireguard/claude-only.list"
