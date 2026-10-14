@@ -32,6 +32,7 @@
 .local/bin/toggle-wireguard
 .local/bin/vpn-setup
 .local/bin/vpn-hosts
+.local/bin/vpn-status
 .config/sing-box/**
 .config/wireguard/**
 .local/bin/brightness

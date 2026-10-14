@@ -104,7 +104,7 @@ Its config is `~/.config/quartz/quartz.config.yaml`.
 Two tunnels, one at a time: WireGuard (NetworkManager's connection `vpnconfig`) and
 VLESS (sing-box's tunnel, no window or tray). `toggle-wireguard` ($mod+Shift+v) and
 `toggle-vless` ($mod+Shift+t), or a click on the bar; turning one on turns the other
-off.
+off. `vpn-status` says which one is up and whether it carries what it should.
 
 - WireGuard "off" means Claude only: a second connection, `vpnclaude`, on the same
   device carries just what `~/.config/wireguard/claude-only.list` names, so Claude
@@ -229,6 +229,7 @@ over with `chezmoi merge`.
   - `sh tests/brightness.sh`: levels, the bus cache, parallel writes, merged presses
   - `sh tests/toggle-wireguard.sh`: which tunnel each press of the two toggles leaves up
   - `sh tests/vpn-hosts.sh`: the list of what always uses WireGuard, as `vpn-hosts` reads it
+  - `sh tests/vpn-status.sh`: the verdict of `vpn-status` in each tunnel state
   - `sh tests/vpn-setup.sh`: the Claude-only connection and the system files `vpn-setup`
     writes, with sudo into a scratch root (unshare, nft)
   - `sh tests/nvim-old-aside.sh`: the move of the old nvim config in a scratch home,

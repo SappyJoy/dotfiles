@@ -1,0 +1,45 @@
+#!/bin/sh
+# Which tunnel is up and whether it carries what it should; the last line says "ok"
+# (exit 0) or what is broken (exit 1). Probes: the route to Anthropic's range, and
+# the address two Cloudflare sites see: openrouter.ai, a name in claude-only.list,
+# and www.cloudflare.com, which is not listed. In Claude only the two differ; in a
+# full tunnel both see the tunnel's server.
+anthropic=160.79.104.1
+listed=openrouter.ai
+direct=www.cloudflare.com
+
+active() { [ "$(nmcli -g GENERAL.STATE connection show "$1" 2>/dev/null)" = activated ]; }
+exit_ip() { # the address and country a Cloudflare site sees, empty without an answer
+    curl -s -m 8 "https://$1/cdn-cgi/trace" |
+        awk -F= '$1 == "ip" { ip = $2 } $1 == "loc" { loc = $2 } END { if (ip) print ip, loc }'
+}
+fail() { echo "BROKEN: $*"; exit 1; }
+
+if systemctl is-active -q vless; then
+    state=VLESS dev=vless
+elif active vpnconfig; then
+    state=WireGuard dev=vpnconfig
+elif active vpnclaude; then
+    state='Claude only' dev=vpnconfig
+else
+    echo 'VPN: off'
+    fail 'no tunnel is up'
+fi
+route=$(ip route get "$anthropic" | awk '{ for (i = 1; i < NF; i++) if ($i == "dev") print $(i + 1) }')
+l=$(exit_ip "$listed")
+d=$(exit_ip "$direct")
+
+echo "VPN: $state"
+echo "Anthropic: dev ${route:-?}"
+echo "$listed: ${l:-no answer}"
+echo "$direct: ${d:-no answer}"
+
+[ "$route" = "$dev" ] || fail "Anthropic goes through ${route:-nothing}, not $dev"
+[ -n "$l" ] || fail "no answer from $listed"
+[ -n "$d" ] || fail "no answer from $direct"
+if [ "$state" = 'Claude only' ]; then
+    [ "${l%% *}" != "${d%% *}" ] || fail "$listed goes direct"
+else
+    [ "${l%% *}" = "${d%% *}" ] || fail "$direct goes direct"
+fi
+echo ok
