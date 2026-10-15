@@ -5,7 +5,9 @@
 # tool (so again after a permission prompt), and `off` when Claude stops or fails,
 # waits for the user, or the session ends. Esc runs no hook: the idle notification
 # (after about a minute) turns the glyph off then. The marker holds the claude
-# process's PID, so the bar ignores a session that died without `off`.
+# process's PID, so the bar ignores a session that died without `off`. Every `off`
+# also goes to notify-hook.sh, which tells the user when the event is a notification
+# (a session waits for them); the marker goes first, as the hook may be cut off.
 dir=${XDG_RUNTIME_DIR:-/tmp}/claude-busy
 
 # Silent, and always exit 0: a command hook costs no tokens, but UserPromptSubmit adds
@@ -14,14 +16,17 @@ exec >/dev/null 2>&1
 
 # Subagents run inside their parent's turn, which counts already; skipping theirs
 # keeps a background agent from marking a finished turn busy again
-id=$(jq -r 'select(.agent_id == null) | .session_id // empty')
-[ -n "$id" ] || exit 0
-marker=$dir/$id
+input=$(cat)
+id=$(printf '%s' "$input" | jq -r 'select(.agent_id == null) | .session_id // empty')
 
 if [ "$1" != on ]; then
-    rm -f "$marker"
+    [ -z "$id" ] || rm -f "$dir/$id"
+    printf '%s' "$input" | sh "${0%/*}/notify-hook.sh"
     exit 0
 fi
+
+[ -n "$id" ] || exit 0
+marker=$dir/$id
 
 # The claude process: this hook's parent, or the parent of the `sh -c` that ran it
 pid=$PPID

@@ -40,6 +40,7 @@
 .local/share/dbus-1/services/org.xfce.Thunar.FileManager1.service
 .local/lib/film_snap/**
 .claude/busy-hook.sh
+.claude/notify-hook.sh
 {{- end }}
 
 {{ if ne .chezmoi.osRelease.id "arch" -}}
