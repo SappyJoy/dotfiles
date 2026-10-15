@@ -1,8 +1,9 @@
 -- The recording of a review's demo (milestone-flow, M20), played in a tab: `asciinema play`
 -- in a terminal. A review in REVIEW.md may have .agent/review/M<n>/*.cast next to it; `p`
--- on the board and in the picker plays it. Space pauses it, Ctrl+C stops it, and
--- `Ctrl+\ Ctrl+N` then `q` closes the tab. A recording is as big as the terminal it was
--- made in (the review says which): in a smaller window it comes out garbled.
+-- on the board and in the picker plays it, and a row that has one is marked ▶. Space
+-- pauses it, Ctrl+C stops it, and `Ctrl+\ Ctrl+N` then `q` closes the tab. A recording is
+-- as big as the terminal it was made in (the review says which): in a smaller window it
+-- comes out garbled.
 local M = {}
 
 -- the project's .agent/review/M<n>/*.cast for a review row of the board
@@ -50,14 +51,16 @@ function M.play(path)
   vim.cmd.startinsert()
 end
 
--- p on a review row: its recording, or a choice between several
+-- a review that has a recording: the board and the picker mark its row with ▶
+function M.playable(row)
+  return row ~= nil and row.kind == 'review' and #M.recordings(row) > 0
+end
+
+-- p on a row: the recording of a review, or a choice between several; else it says so
 function M.play_review(row)
-  if not (row and row.kind == 'review') then
-    return vim.notify('Only a review has a recording', vim.log.levels.INFO)
-  end
-  local casts = M.recordings(row)
+  local casts = M.playable(row) and M.recordings(row) or {}
   if #casts == 0 then
-    return vim.notify(row.title .. ' has no recording (.agent/review/' .. (row.title:match '^M%d+') .. '/*.cast)', vim.log.levels.INFO)
+    return vim.notify('Nothing to play on this row', vim.log.levels.INFO)
   end
   if #casts == 1 then
     return M.play(casts[1])

@@ -204,9 +204,10 @@ projects. It refreshes by itself.
 - `Enter` opens what is under the cursor: a session in a tab (`claude attach`; type
   in it, `Ctrl+\ Ctrl+N` then `Ctrl+U` / `Ctrl+D` scroll it, `q` or `Ctrl+Z`
   detaches, the session goes on), a review or the roadmap as a file
-- `p` on a review plays the recording of its demo in a tab (`asciinema play`; Space
-  pauses, `Ctrl+C` stops, `Ctrl+\ Ctrl+N` then `q` closes); the same key in the picker
-  (`Alt+p` while typing). In a shell: `asciinema play FILE.cast`
+- `p` plays the recording of a review's demo in a tab (`asciinema play`; Space pauses,
+  `Ctrl+C` stops, `Ctrl+\ Ctrl+N` then `q` closes). A row that has one shows a `▶`
+  after its icon, here and in the picker (`p`, `Alt+p` while typing); on any other
+  row `p` says there is nothing to play. In a shell: `asciinema play FILE.cast`
 - `t` ticks a Waiting on you line, `c` comments on a review, `i` adds an Inbox note
   to the project, `s` starts a background session there, `Tab` shows all of a
   project's lines, `r` refreshes, `q` closes

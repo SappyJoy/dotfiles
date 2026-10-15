@@ -66,7 +66,11 @@ local function draw(buf, board)
   end
   local cursor = vim.api.nvim_win_get_cursor(win)[1]
   local was = row_key(rows[buf] and rows[buf][cursor])
-  local out = render.render(board, { width = vim.api.nvim_win_get_width(win) - 1, expanded = expanded })
+  local out = render.render(board, {
+    width = vim.api.nvim_win_get_width(win) - 1,
+    expanded = expanded,
+    playable = require('control_board.demo').playable,
+  })
   rows[buf] = out.rows
   vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, out.lines)

@@ -1,6 +1,7 @@
 -- <leader>aw: the board's rows (needs you, sessions, projects) in a Telescope picker.
 -- Search them; the preview shows a session's last messages, a review, a roadmap.
--- Enter does what Enter does on the board; p (Alt+p while typing) plays a review's recording.
+-- Enter does what Enter does on the board; p (Alt+p while typing) plays a review's recording
+-- (a row with one is marked ▶).
 local data = require 'control_board.data'
 local pickers = require 'telescope.pickers'
 local finders = require 'telescope.finders'
@@ -15,11 +16,12 @@ local M = {}
 local ICON = { answer = '❓', review = '🚦', waiting = '☐', tour = '🧭', session = '⏳', project = '▪' }
 local SESSION_ICON = { answer = '❓', working = '⏳', idle = '·' }
 
--- every row of the board, as { icon, project, title, detail, row }
+-- every row of the board, as { icon, play, project, title, detail, row }
 local function entries(board)
   local found = {}
   local function add(icon, project, title, detail, row)
-    table.insert(found, { icon = icon, project = project, title = title, detail = detail, row = row })
+    local play = require('control_board.demo').playable(row) and '▶' or ''
+    table.insert(found, { icon = icon, play = play, project = project, title = title, detail = detail, row = row })
   end
   for _, need in ipairs(board.needs) do
     add(ICON[need.kind], need.project, need.title, need.detail, need)
@@ -80,7 +82,7 @@ function M.pick()
   end
   local display = entry_display.create {
     separator = ' ',
-    items = { { width = 2 }, { width = 18 }, { width = 28 }, { remaining = true } },
+    items = { { width = 2 }, { width = 1 }, { width = 18 }, { width = 28 }, { remaining = true } },
   }
   pickers
     .new({}, {
@@ -92,7 +94,7 @@ function M.pick()
             value = e,
             ordinal = table.concat({ e.project, e.title, e.detail }, ' '),
             display = function()
-              return display { e.icon, e.project, e.title, { e.detail, 'Comment' } }
+              return display { e.icon, { e.play, 'DiagnosticOk' }, e.project, e.title, { e.detail, 'Comment' } }
             end,
           }
         end,

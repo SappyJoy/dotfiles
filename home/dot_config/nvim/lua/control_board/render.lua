@@ -1,6 +1,7 @@
 -- The board as text: the collector's data (data.lua) in, lines out, with highlight spans
 -- and which row of the data each line stands for. Knows nothing about windows.
--- Input: render(data, opts); opts = { width, expanded = { [project] = true } }.
+-- Input: render(data, opts); opts = { width, expanded = { [project] = true },
+--          playable = function(row) -> true for a row that has a recording to play }.
 -- Output: { lines = {...}, spans = { {lnum, from, to, group} },
 --           rows = { [lnum] = row } } (the data's own rows: needs, sessions, projects);
 --           lnum is 1-based, spans' columns are 0-based bytes.
@@ -9,9 +10,10 @@ local M = {}
 local WINDOW = { five_hour = 5 * 3600, seven_day = 7 * 86400 }
 local BAR = 18
 local PROJECT, TITLE, TAG, AGE = 16, 24, 8, 4
+local PLAY = '▶' -- in its own column after the icon: a review with a recording, which `p` plays
 local ICON = { answer = '❓', review = '🚦', waiting = '☐', tour = '🧭', working = '⏳', idle = '·' }
 local STATE = { answer = 'needs you', working = 'working', idle = 'idle' }
-local FOOTER = ' ⏎ open  t tick  c comment  p play  i inbox note  s new session  Tab more  r refresh  q close'
+local FOOTER = ' ⏎ open  t tick  c comment  p play ▶  i inbox note  s new session  Tab more  r refresh  q close'
 
 local function width_of(s)
   return vim.fn.strdisplaywidth(s)
@@ -127,8 +129,10 @@ function M.render(data, opts)
   end
   local function add_row(row, icon, icon_group, project, title, detail, tag, since)
     local b = builder(#lines + 1, spans)
-    local text_w = w - 1 - 3 - PROJECT - 1 - TITLE - 1 - TAG - 1 - AGE - 1
+    local text_w = w - 1 - 3 - 2 - PROJECT - 1 - TITLE - 1 - TAG - 1 - AGE - 1
     b.add(' ' .. fit(icon, 2) .. ' ', icon_group)
+    local play = opts.playable and opts.playable(row)
+    b.add((play and PLAY or ' ') .. ' ', play and 'ControlBoardWork' or nil)
     b.add(fit(project, PROJECT) .. ' ', 'ControlBoardProject')
     b.add(fit(title, TITLE) .. ' ')
     b.add(fit(detail, text_w) .. ' ', 'ControlBoardDim')
