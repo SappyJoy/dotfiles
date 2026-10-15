@@ -5,6 +5,7 @@
 -- project's Inbox. The facts come from milestone-flow's board.py (data.lua), the text
 -- from render.lua, the session tabs from session.lua, the picker (<leader>aw) from
 -- picker.lua. <leader>ac starts a background session in this project and attaches it.
+-- notify.lua tells you in nvim when a session waits (<leader>an opens the newest notice).
 local data = require 'control_board.data'
 local render = require 'control_board.render'
 
@@ -454,6 +455,15 @@ if vim.fn.executable 'claude' == 1 then
   vim.keymap.set('n', '<leader>ab', M.open, { desc = 'Control board' })
   vim.keymap.set('n', '<leader>aw', M.pick, { desc = 'Pick a session, review or project' })
   vim.keymap.set('n', '<leader>ac', M.new_session, { desc = 'New Claude session here (background)' })
+  local notify = require 'control_board.notify'
+  vim.keymap.set('n', '<leader>an', notify.open_latest, { desc = 'Open what the last Claude notification was about' })
+  -- after the first page is drawn (it asks for the data itself); a headless nvim has no UI
+  vim.api.nvim_create_autocmd('UIEnter', {
+    once = true,
+    callback = function()
+      vim.defer_fn(notify.start, 2000)
+    end,
+  })
 end
 
 return M

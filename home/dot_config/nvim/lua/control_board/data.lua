@@ -9,6 +9,7 @@ local SCRIPT = '/plugins/milestone-flow/scripts/board.py'
 
 local last
 local watchers = {}
+local listeners = {} -- fn(data) after every refresh, with no polling of their own
 local timer
 local running = false
 local callbacks = {} -- done functions of the run that is on
@@ -68,6 +69,9 @@ function M.refresh(done)
       for _, fn in pairs(watchers) do
         fn(data)
       end
+      for _, fn in ipairs(listeners) do
+        fn(data)
+      end
       for _, fn in ipairs(waiting) do
         fn(data)
       end
@@ -89,6 +93,12 @@ local function stop_timer()
     timer:close()
     timer = nil
   end
+end
+
+-- fn(data) runs after every refresh, whoever asked for it. It starts no polling: the
+-- caller refreshes when it wants to hear.
+function M.listen(fn)
+  table.insert(listeners, fn)
 end
 
 -- fn(data) runs after each refresh, which happens every few seconds while anyone
