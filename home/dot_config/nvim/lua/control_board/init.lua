@@ -53,7 +53,7 @@ local function board_buffer()
 end
 
 local function row_key(row)
-  return row and (row.kind .. '\0' .. (row.id or row.project_path or row.project or '') .. '\0' .. (row.title or row.name or ''))
+  return row and (row.kind .. '\0' .. (row.id or row.project_path or row.path or row.project or '') .. '\0' .. (row.title or row.name or ''))
 end
 
 local function draw(buf, board)
@@ -92,7 +92,7 @@ local function edit(path, line)
   vim.cmd('tab drop ' .. vim.fn.fnameescape(path))
   if not vim.bo.modified then
     vim.bo.autoread = true
-    vim.cmd.checktime() -- Claude may have changed it since it was loaded
+    vim.cmd.checktime(vim.api.nvim_get_current_buf()) -- Claude may have changed it since it was loaded
   end
   if line then
     pcall(vim.api.nvim_win_set_cursor, 0, { line, 0 })
@@ -140,7 +140,8 @@ end
 -- A file's lines changed and saved: fn gets the lines as they are on disk now (Claude
 -- may have rewritten the file since the board was drawn) and returns the new ones, or
 -- nothing to leave the file alone. A buffer with unsaved changes in the file stops it;
--- one without is reloaded, so it doesn't go stale.
+-- one without is reloaded, so it doesn't go stale. The files are LF without a BOM, as
+-- Claude and nvim write them; a CRLF file would come back as LF.
 local function change_file(path, fn)
   local held = buffer_of(path)
   if held and vim.bo[held].modified then
@@ -156,7 +157,7 @@ local function change_file(path, fn)
   if not changed then
     return false
   end
-  if vim.fn.writefile(changed, path) ~= 0 then
+  if not pcall(vim.fn.writefile, changed, path) then -- it raises when the folder isn't writable
     vim.notify('Could not write ' .. path, vim.log.levels.ERROR)
     return false
   end

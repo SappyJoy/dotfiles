@@ -128,6 +128,11 @@ needs.append(waiting("Try the demo", 13))
 if len(sys.argv) > 3:  # another project, in another folder, with the same name
     other = "$tmp/other/proj"
     needs.append(dict(waiting("Other thing", 5), project_path=other, path=other + "/ROADMAP.md"))
+projects = [{"name": "proj", "path": p,
+    "current": {"id": "M3", "gate": True, "title": "Third", "status": "review"},
+    "done": 2, "total": 4, "reviews": [], "waiting": []}]
+if len(sys.argv) > 3:
+    projects.append(dict(projects[0], path=other))
 json.dump({
     "now": now,
     "accounts": [
@@ -136,9 +141,7 @@ json.dump({
          "five_hour": {"pct": 34, "resets_at": now + 3 * 3600},
          "seven_day": {"pct": 61, "resets_at": now + 3 * 86400}}],
     "needs": needs, "sessions": sessions,
-    "projects": [{"name": "proj", "path": p,
-        "current": {"id": "M3", "gate": True, "title": "Third", "status": "review"},
-        "done": 2, "total": 4, "reviews": [], "waiting": []}],
+    "projects": projects,
     "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "waiting": 2,
         "working": 1, "sessions": 4}}, sys.stdout)
 EOS
@@ -269,6 +272,14 @@ sleep 1
 check "i with unsaved changes to INBOX.md in nvim: the file stays as it is" [ "$(grep -c 'blocked note' "$proj/INBOX.md")" = 0 ]
 check "  … and it says why" shows "unsaved changes"
 keys ':bwipeout! INBOX.md' Enter
+# a file that can't be written
+chmod 444 "$proj/INBOX.md"
+on 'M3 Third'
+keys i
+keys 'no room' Enter
+sleep 1
+check "i when INBOX.md can't be written: it says so" shows "Could not write"
+chmod 644 "$proj/INBOX.md"
 keys ':bwipeout ROADMAP.md' Enter
 # the review moved down in REVIEW.md: c finds its heading
 sed -i '1i Preface' "$proj/REVIEW.md"
@@ -306,7 +317,7 @@ check "Enter on a background session in Sessions: its tab" shows "ATTACHED def67
 normal
 keys ':tabclose' Enter
 sleep 1
-check "  … closing its tab ends the claude attach" sh -c "! kill -0 \$(cat '$tmp/attach.pid.def67890') 2>/dev/null"
+check "  … closing its tab ends the claude attach" sh -c "[ -s '$tmp/attach.pid.def67890' ] && ! kill -0 \$(cat '$tmp/attach.pid.def67890') 2>/dev/null"
 
 # ---- the picker -------------------------------------------------------------------
 keys ':tabonly' Enter
@@ -344,6 +355,10 @@ start
 keys b
 check "Two projects of one name: each has its own waiting line" shows "Other thing"
 check "  … and its own count of the others" shows "+ 1 more"
+on 'Third · review'
+before=$(probe 'vim.api.nvim_win_get_cursor(0)[1]')
+sleep 7
+check "A refresh keeps the cursor on its project when two have one name" [ "$(probe 'vim.api.nvim_win_get_cursor(0)[1]')" = "$before" ]
 keys q
 board "Fixed parser" answer
 
@@ -352,7 +367,7 @@ touch "$tmp/board-fails"
 : >"$tmp/board-calls"
 start
 sleep 3
-check "board.py fails: the first page runs it once" [ "$(wc -c <"$tmp/board-calls")" -le 2 ]
+check "board.py fails: the first page runs it once" [ "$(wc -c <"$tmp/board-calls")" -eq 1 ]
 check "  … and still shows the line, without counts" shows "Control board"
 rm -f "$tmp/board-fails"
 
