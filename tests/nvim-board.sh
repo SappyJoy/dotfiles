@@ -163,7 +163,11 @@ board "Fix parser" answer
 
 start() { # start ARGS...
     tm kill-server 2>/dev/null
-    tm new-session -d -x 160 -y 70 -c "$proj" "$nvim $*"
+    # a server that is still going down (nvim has just quit, the machine is busy) refuses the new session: ask again
+    for _ in 1 2 3 4 5 6; do
+        tm new-session -d -x 160 -y 70 -c "$proj" "$nvim $*" 2>/dev/null && break
+        sleep 1
+    done
     sleep 4 # past VeryLazy, and the first run of the collector
 }
 keys() { tm send-keys -t 0 "$@"; sleep 0.6; }
@@ -199,7 +203,9 @@ check "  … a window with no data" shows "no data yet"
 check "  … Needs you, Sessions, Projects" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Sessions (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Projects ──'"
 check "  … a session that asks, a review, a waiting line" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Which parser' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 Third' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Log in to npm'"
 check "  … a project with its milestone and progress" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 🚦 Third · review.*2 of 4 done'"
-check "  … the board's keys" shows "⏎ open  t tick  c comment  p play"
+check "  … the board's keys, and what p plays" shows "⏎ open  t tick  c comment  p play ▶"
+check "  … the review has a recording: a ▶ after its icon" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▶ proj *M3 Third'"
+check "  … and no other row has one (the key hint does)" sh -c "[ \$(tmux -L nvim-board capture-pane -p -t 0 | grep -c '▶') = 2 ]"
 keys q
 check "q: back to the first page" shows "Find file"
 
@@ -338,6 +344,8 @@ keys ' aw'
 sleep 2
 check "<leader>aw: a picker over the board's rows" shows "Claude: needs you, sessions, projects"
 check "  … sessions, a review, a project" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Write docs' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 Third'"
+check "  … the review has the same ▶ for its recording" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▶ *proj *M3 Third'"
+check "  … and a session has none" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep 'Write docs' | grep -q '▶'"
 keys 'docs'
 sleep 1
 check "  … a preview of the session" shows "TAIL OF def67890"
@@ -366,12 +374,20 @@ check "  … and the board is there" shows "Plan ──"
 
 on 'Fix parser'
 keys p
-check "p on a session: it says only a review has one" shows "Only a review has a recording"
+check "p on a session: it says there is nothing to play" shows "Nothing to play on this row"
+sleep 4 # the notice goes away
+check "  … and the notice is gone" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Nothing to play'"
 mv "$proj/.agent/review/M3" "$proj/.agent/review/held"
+keys r
+sleep 1.5
+check "a review whose recording is gone loses its ▶" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep -q '▶ proj'"
 on 'M3 Third'
 keys p
-check "p on a review with no recording: it says so" shows "M3 Third has no recording"
+check "p on it: the same notice" shows "Nothing to play on this row"
 mv "$proj/.agent/review/held" "$proj/.agent/review/M3"
+keys r
+sleep 1.5
+check "the ▶ is back with the recording" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▶ proj *M3 Third'"
 printf '{"version": 2, "width": 100, "height": 28}\n' >"$proj/.agent/review/M3/second.cast"
 on 'M3 Third'
 keys p
