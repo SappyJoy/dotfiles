@@ -285,21 +285,21 @@ end
 
 -- A board taller than its window used to shift under the cursor on every j (the config's
 -- scrolloff is 10), repainting all of itself each time. Now the cursor goes down the
--- window and the board turns a page of half a window when the cursor leaves it.
--- 'scrolljump' is global, so it is set only while the board is the current buffer.
+-- window and the board turns a page of half a window when the cursor leaves it. Both
+-- options are set globally, so only while the board is the current buffer (a window-local
+-- scrolloff would stay with the window when another buffer comes into it).
 local function turn_pages(buf)
   local before
   local function on()
-    before = before or vim.o.scrolljump
-    vim.o.scrolljump = -50 -- a negative number is a percentage of the window's height
+    before = before or { vim.go.scrolloff, vim.go.scrolljump }
+    vim.go.scrolloff, vim.go.scrolljump = 0, -50 -- a negative scrolljump is a percentage of the window
   end
   local function off()
     if before then
-      vim.o.scrolljump = before
+      vim.go.scrolloff, vim.go.scrolljump = before[1], before[2]
       before = nil
     end
   end
-  vim.wo.scrolloff = 0
   on()
   vim.api.nvim_create_autocmd('BufEnter', { buffer = buf, callback = on })
   vim.api.nvim_create_autocmd({ 'BufLeave', 'BufWipeout' }, { buffer = buf, callback = off })
