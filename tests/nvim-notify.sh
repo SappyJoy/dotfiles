@@ -119,7 +119,8 @@ board "[('abc12345', 'Fix parser', 'working', ''), ('def67890', 'Write docs', 'i
 refresh
 check "a session that goes idle: a notification with the project's name" shows "Write docs is idle"
 check "  … titled with the project" shows "proj"
-check "a session that starts asking: its question, on one line" shows "Pick a DB needs an answer: Which database? and more"
+check "a session that starts asking: its question" shows "Which database? and more"
+check "  … on its own line, under the words that say it needs an answer" shows "Pick a DB needs an answer"
 check "a review that appears: a notification" shows "M5 Fifth is ready for your review"
 check "  … and a key to open it" shows "<leader>an opens it"
 check "a question that turned into work: no notification" sh -c "! tmux -L nvim-notify capture-pane -p -t 0 | grep -q 'Fix parser'"

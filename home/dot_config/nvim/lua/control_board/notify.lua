@@ -52,7 +52,7 @@ function M.changes(prev, board)
       local detail = shorten(s.detail or '')
       table.insert(found, {
         project = s.project,
-        text = s.name .. ' needs an answer' .. (detail ~= '' and (': ' .. detail) or ''),
+        text = s.name .. ' needs an answer' .. (detail ~= '' and ('\n' .. detail) or ''),
         level = vim.log.levels.WARN,
         row = { kind = 'answer', session = s.id },
         tab = s.short,
