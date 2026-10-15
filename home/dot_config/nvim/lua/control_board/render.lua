@@ -173,7 +173,7 @@ function M.render(data, opts)
     if need.kind == 'tour' then -- a nudge, not a demand: the quiet colour
       add_row(need, ICON.tour, 'ControlBoardWait', need.project, need.title, need.detail, '', since)
     elseif need.kind ~= 'waiting' then
-      add_row(need, ICON[need.kind], 'ControlBoardAsk', need.project, need.title, need.detail, '', since)
+      add_row(need, ICON[need.kind] or '·', 'ControlBoardAsk', need.project, need.title, need.detail, '', since)
     elseif opts.expanded and opts.expanded[need.project_path] then
       add_row(need, ICON.waiting, 'ControlBoardWait', need.project, need.title, need.detail, '', since)
     elseif not shown[need.project_path] then

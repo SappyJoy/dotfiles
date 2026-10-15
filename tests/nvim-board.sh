@@ -514,7 +514,9 @@ keys ' aw'
 sleep 2
 keys 'Tour due'
 sleep 1
-check "<leader>aw: the picker lists it, and does not break on its kind" shows "Tour due"
+check "<leader>aw: the picker lists it (the row's own words, not only what was typed)" shows "last tour 9d ago"
+check "  … its preview says how to start one" shows "then run /milestone-flow:tour"
+check "  … and there is no error on the screen" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'attempt to'"
 keys Escape
 keys Escape
 keys q
