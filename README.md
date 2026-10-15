@@ -89,8 +89,7 @@ Its config is `~/.config/quartz/quartz.config.yaml`.
 ### Claude control board
 
 `cb` in a shell opens nvim on the board: plan usage (5h and 7d per account), what
-waits for you (a session's question, a review, a Waiting on you line, a project's
-weekly guided tour, `/milestone-flow:tour`, when it is due), the sessions
+waits for you (a session's question, a review, a Waiting on you line), the sessions
 and the milestone-flow projects, refreshed every few seconds. `Enter` opens a session
 in a nvim tab (`claude attach`; the session runs on when the tab closes), a review or
 a roadmap; `p` on a review plays the recording of its demo (`asciinema play`, in a
