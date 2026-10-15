@@ -61,6 +61,11 @@ return {
         },
         sections = {
           { section = 'header', align = 'left' },
+          -- the control board's key, with the counts of what waits for you
+          function()
+            local item = require('control_board').start_item()
+            return item and { item, padding = 1 }
+          end,
           { section = 'keys', gap = 1, padding = 1 },
           { section = 'startup' },
           {

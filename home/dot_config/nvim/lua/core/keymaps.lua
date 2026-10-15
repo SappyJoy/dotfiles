@@ -3,7 +3,7 @@
 --   <leader>d  diff (diffview)         <leader>x  lists (trouble)
 --   <leader>c  code                    <leader>n  notes (obsidian)
 --   <leader>o  org                     <leader>j  notebook
---   <leader>w  windows                 <leader>a  AI (Claude Code)
+--   <leader>w  windows                 <leader>a  AI (Claude Code, control board)
 --   <leader>t  tests                   <leader>e  explorer, - oil
 --   <leader>p  project notes (project_notes.lua)
 -- Moving around is mostly jumps (flash, search, the picker), arrows for small moves:
