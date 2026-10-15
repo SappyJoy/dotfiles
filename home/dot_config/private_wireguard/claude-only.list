@@ -6,3 +6,13 @@
 160.79.104.0/23  # Anthropic: api.anthropic.com, claude.ai, platform.claude.com
 openrouter.ai    # 403 without the tunnel; the API is on the same name
 api.moonshot.ai  # asked for 2026-10-13; direct it answers 401 without a key, so not proven
+# YouTube in a browser, seen 2026-10-15: no connection without the tunnel, and the ISP's
+# resolver answers NXDOMAIN for youtube.com. jnn-pa.googleapis.com works direct.
+youtube.com                # www, m, music, s
+googlevideo.com            # the video itself
+youtubei.googleapis.com    # the player's API
+ytimg.com                  # thumbnails (i.ytimg.com)
+yt3.ggpht.com              # avatars
+yt4.ggpht.com
+yt3.googleusercontent.com  # channel art
+youtube-nocookie.com       # embeds on other sites
