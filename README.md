@@ -86,6 +86,18 @@ which snacks draws in the note. The first `notes` installs Quartz with
 its plugins into `~/.local/share/quartz`: several minutes, from GitHub, about 2.8 GB.
 Its config is `~/.config/quartz/quartz.config.yaml`.
 
+### Claude control board
+
+`cb` in a shell opens nvim on the board: plan usage (5h and 7d per account), what
+waits for you (a session's question, a review, a Waiting on you line), the sessions
+and the milestone-flow projects, refreshed every few seconds. `Enter` opens a session
+in a nvim tab (`claude attach`; the session runs on when the tab closes), a review or
+a roadmap; `t` ticks, `c` comments on a review, `i` adds an Inbox note, `s` starts a
+session. In nvim: `b` on the first page, `<leader>ab` the board, `<leader>aw` a
+picker over the same rows, `<leader>ac` (`cl` in a shell) a new background session
+here. It needs milestone-flow's `board.py` (from the personal marketplace's clone);
+the cheatsheet has the keys.
+
 ### ssh
 
 - `~/.ssh/config` is each machine's own file: add that machine's hosts there. chezmoi
@@ -259,6 +271,9 @@ over with `chezmoi merge`.
     opens
   - `sh tests/nvim-notes.sh`: nvim's project notes in a scratch tmux and home: the
     `<leader>p` keys, Enter on `[[links]]` to notes and docs, images in notes
+  - `sh tests/nvim-board.sh`: nvim's control board in a scratch tmux and home, with a
+    stub collector and a stub `claude`: the first page's line, the board and its keys,
+    session tabs, the picker, `cb` and `cl`
   - `sh tests/sandbox.sh [IMAGE]`: a fresh machine to try by hand, the same install
     as fresh-machine, then a shell in it (default `ubuntu:26.04`)
 
