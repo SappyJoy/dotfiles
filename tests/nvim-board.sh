@@ -32,7 +32,10 @@ for d in lazy mason site; do ln -s "$data/$d" "$XDG_DATA_HOME/nvim/$d"; done
 
 # the stubs
 cat >"$tmp/bin/board.py" <<EOS
-import sys
+import os, sys
+open("$tmp/board-calls", "a").write("x")
+if os.path.exists("$tmp/board-fails"):
+    sys.exit("boom")
 if sys.argv[1] == "--tail":
     print("TAIL OF " + sys.argv[2])
 else:
@@ -43,7 +46,7 @@ cat >"$tmp/bin/claude" <<EOS
 echo "\${CLAUDE_CONFIG_DIR:-unset} \$PWD \$*" >>"$tmp/claude-calls"
 case \$1 in
     --bg) echo "backgrounded · feed1234" ;;
-    attach) echo "ATTACHED \$2"; exec cat ;;
+    attach) echo \$\$ >"$tmp/attach.pid.\$2"; echo "ATTACHED \$2"; exec cat ;;
 esac
 EOS
 cat >"$tmp/bin/tmux" <<EOS
@@ -122,6 +125,9 @@ needs.append({"kind": "review", "project": "proj", "title": "M3 Third", "detail"
     "since": now - 7200, "project_path": p, "path": p + "/REVIEW.md", "line": 1})
 needs.append(waiting("Log in to npm: \`npm login\` — M4 needs it", 12))
 needs.append(waiting("Try the demo", 13))
+if len(sys.argv) > 3:  # another project, in another folder, with the same name
+    other = "$tmp/other/proj"
+    needs.append(dict(waiting("Other thing", 5), project_path=other, path=other + "/ROADMAP.md"))
 json.dump({
     "now": now,
     "accounts": [
@@ -193,7 +199,8 @@ keys hello
 check "  … what you type reaches the session" shows "hello"
 normal
 check "  … Normal mode keeps the screen" shows "ATTACHED abc12345"
-keys ':ControlBoard' Enter
+keys ' ab'
+check "<leader>ab from a session tab: back to the board, no error" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Plan ──' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Invalid window'"
 on 'Fix parser'
 keys Enter
 sleep 1
@@ -239,6 +246,41 @@ sleep 1
 check "i: a line in the project's INBOX.md" [ "$(tail -1 "$proj/INBOX.md")" = '- try dark mode' ]
 check "  … the others stay" grep -qx -- '- first' "$proj/INBOX.md"
 
+# Claude rewrote ROADMAP.md while nvim held it: the tick lands on the new text, no prompt
+keys ':tabedit ROADMAP.md' Enter
+sed -i 's/^M3 is in review\./M3 changed outside./' "$proj/ROADMAP.md"
+keys ':ControlBoard' Enter
+on 'Log in to npm'
+keys Tab
+on 'Try the demo'
+keys t
+sleep 1
+check "t after ROADMAP.md changed on disk: ticked, and the outside change stays" sh -c "grep -q '^- \[x\] Try the demo' '$proj/ROADMAP.md' && grep -q 'M3 changed outside' '$proj/ROADMAP.md'"
+check "  … nvim doesn't stop to ask" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Do you really want'"
+# unsaved edits in nvim stop a change to the same file
+keys ':tabedit INBOX.md' Enter
+keys 'Gotyped'
+keys Escape
+keys ':ControlBoard' Enter
+on 'M3 Third'
+keys i
+keys 'blocked note' Enter
+sleep 1
+check "i with unsaved changes to INBOX.md in nvim: the file stays as it is" [ "$(grep -c 'blocked note' "$proj/INBOX.md")" = 0 ]
+check "  … and it says why" shows "unsaved changes"
+keys ':bwipeout! INBOX.md' Enter
+keys ':bwipeout ROADMAP.md' Enter
+# the review moved down in REVIEW.md: c finds its heading
+sed -i '1i Preface' "$proj/REVIEW.md"
+keys ':ControlBoard' Enter
+on 'M3 Third'
+keys c
+keys 'Third time'
+keys Escape
+keys ':w' Enter
+check "c after the review moved down: the same Your reply section" sh -c "[ \"\$(grep -c '^## Your reply' '$proj/REVIEW.md')\" = 1 ] && grep -q 'Third time' '$proj/REVIEW.md' && [ \"\$(head -1 '$proj/REVIEW.md')\" = Preface ]"
+keys ':tabclose' Enter
+
 on 'M3 Third'
 keys s
 sleep 2
@@ -262,7 +304,9 @@ keys Enter
 sleep 1
 check "Enter on a background session in Sessions: its tab" shows "ATTACHED def67890"
 normal
-keys q
+keys ':tabclose' Enter
+sleep 1
+check "  … closing its tab ends the claude attach" sh -c "! kill -0 \$(cat '$tmp/attach.pid.def67890') 2>/dev/null"
 
 # ---- the picker -------------------------------------------------------------------
 keys ':tabonly' Enter
@@ -288,7 +332,29 @@ check "  … once: :ControlBoard goes to it" [ "$(probe "vim.fn.tabpagenr '\$'")
 board "Fixed parser" answer
 sleep 7
 check "The board refreshes by itself" shows "Fixed parser"
+keys ':tabnew' Enter
+board "Redrawn away" answer
+sleep 7
+keys ':tabprevious' Enter
+check "A board in another tab is redrawn while you are away" shows "Redrawn away"
 keys q
+
+board "Fixed parser" answer dup
+start
+keys b
+check "Two projects of one name: each has its own waiting line" shows "Other thing"
+check "  … and its own count of the others" shows "+ 1 more"
+keys q
+board "Fixed parser" answer
+
+# a collector that fails: the first page asks once, not again and again
+touch "$tmp/board-fails"
+: >"$tmp/board-calls"
+start
+sleep 3
+check "board.py fails: the first page runs it once" [ "$(wc -c <"$tmp/board-calls")" -le 2 ]
+check "  … and still shows the line, without counts" shows "Control board"
+rm -f "$tmp/board-fails"
 
 start src.txt
 keys ' ac'

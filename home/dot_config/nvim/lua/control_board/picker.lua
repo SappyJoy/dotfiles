@@ -59,7 +59,8 @@ local previewer = previewers.new_buffer_previewer {
       return
     end
     local path = row.kind == 'project' and row.path .. '/ROADMAP.md' or row.path
-    show(bufnr, vim.fn.readfile(path), 'markdown')
+    local read, lines = pcall(vim.fn.readfile, path)
+    show(bufnr, read and lines or { path .. ' is gone' }, 'markdown')
     if row.line then
       pcall(vim.api.nvim_win_set_cursor, self.state.winid, { row.line, 0 })
     end

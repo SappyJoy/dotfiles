@@ -53,12 +53,12 @@ local function board_buffer()
 end
 
 local function row_key(row)
-  return row and (row.kind .. '\0' .. (row.id or row.project or '') .. '\0' .. (row.title or row.name or ''))
+  return row and (row.kind .. '\0' .. (row.id or row.project_path or row.project or '') .. '\0' .. (row.title or row.name or ''))
 end
 
 local function draw(buf, board)
-  local win = vim.fn.bufwinid(buf)
-  if win == -1 or not board then
+  local win = vim.fn.win_findbuf(buf)[1] -- in any tab
+  if not win or not board then
     return
   end
   local cursor = vim.api.nvim_win_get_cursor(win)[1]
@@ -90,6 +90,10 @@ end
 
 local function edit(path, line)
   vim.cmd('tab drop ' .. vim.fn.fnameescape(path))
+  if not vim.bo.modified then
+    vim.bo.autoread = true
+    vim.cmd.checktime() -- Claude may have changed it since it was loaded
+  end
   if line then
     pcall(vim.api.nvim_win_set_cursor, 0, { line, 0 })
     vim.cmd 'normal! zz'
@@ -124,31 +128,58 @@ function M.open_row(row)
   end
 end
 
--- a file's lines changed through its buffer, then saved
+local function buffer_of(path)
+  local full = vim.fs.normalize(path)
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.fs.normalize(vim.api.nvim_buf_get_name(buf)) == full then
+      return buf
+    end
+  end
+end
+
+-- A file's lines changed and saved: fn gets the lines as they are on disk now (Claude
+-- may have rewritten the file since the board was drawn) and returns the new ones, or
+-- nothing to leave the file alone. A buffer with unsaved changes in the file stops it;
+-- one without is reloaded, so it doesn't go stale.
 local function change_file(path, fn)
-  local buf = vim.fn.bufadd(path)
-  vim.fn.bufload(buf)
-  local ok = fn(buf)
-  if ok then
-    vim.api.nvim_buf_call(buf, function()
-      vim.cmd 'silent write'
+  local held = buffer_of(path)
+  if held and vim.bo[held].modified then
+    vim.notify(vim.fs.basename(path) .. ' has unsaved changes in nvim: save or discard them first', vim.log.levels.WARN)
+    return false
+  end
+  local read, lines = pcall(vim.fn.readfile, path)
+  if not read then
+    vim.notify('Could not read ' .. path, vim.log.levels.ERROR)
+    return false
+  end
+  local changed = fn(lines)
+  if not changed then
+    return false
+  end
+  if vim.fn.writefile(changed, path) ~= 0 then
+    vim.notify('Could not write ' .. path, vim.log.levels.ERROR)
+    return false
+  end
+  if held then
+    vim.api.nvim_buf_call(held, function()
+      vim.cmd 'silent! edit'
     end)
   end
-  return ok
+  return true
 end
 
 local function tick(row)
   if row.kind ~= 'waiting' then
     return vim.notify('Only a Waiting on you line can be ticked', vim.log.levels.INFO)
   end
-  local done = change_file(row.path, function(buf)
-    local line = vim.api.nvim_buf_get_lines(buf, row.line - 1, row.line, false)[1]
-    if line ~= '- [ ] ' .. row.title then
-      vim.notify('ROADMAP.md changed since the board was drawn; refresh with r', vim.log.levels.WARN)
-      return false
+  local done = change_file(row.path, function(lines)
+    if lines[row.line] ~= '- [ ] ' .. row.title then
+      vim.notify('ROADMAP.md changed since the board was drawn; refreshing', vim.log.levels.WARN)
+      data.refresh()
+      return nil
     end
-    vim.api.nvim_buf_set_lines(buf, row.line - 1, row.line, false, { '- [x] ' .. row.title })
-    return true
+    lines[row.line] = '- [x] ' .. row.title
+    return lines
   end)
   if done then
     vim.notify('Ticked in ' .. row.project .. "'s ROADMAP.md")
@@ -163,18 +194,30 @@ local function comment(row)
   end
   edit(row.path)
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local heading = '^# Review: ' .. (row.title:match '^M%d+' or '') .. ' '
+  local first = row.line
+  if not (lines[first] or ''):match(heading) then -- the file changed since the board was drawn
+    first = nil
+    for i, line in ipairs(lines) do
+      first = first or (line:match(heading) and i or nil)
+    end
+    if not first then
+      data.refresh()
+      return vim.notify('That review is gone from REVIEW.md; refreshing', vim.log.levels.WARN)
+    end
+  end
   local last = #lines
-  for i = row.line + 1, #lines do
+  for i = first + 1, #lines do
     if lines[i]:match '^# Review: ' then
       last = i - 1
       break
     end
   end
-  while last > row.line and lines[last] == '' do
+  while last > first and lines[last] == '' do
     last = last - 1
   end
   local reply
-  for i = row.line, last do
+  for i = first, last do
     reply = lines[i] == '## Your reply' and i or reply
   end
   if not reply then
@@ -213,23 +256,28 @@ local function inbox_note(row)
       if vim.fn.filereadable(file) == 0 then
         return vim.notify(vim.fs.basename(path) .. ' has no INBOX.md', vim.log.levels.WARN)
       end
-      change_file(file, function(buf)
-        local count = vim.api.nvim_buf_line_count(buf)
-        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-        while count > 1 and lines[count] == '' do
-          count = count - 1
+      local done = change_file(file, function(lines)
+        local last = #lines
+        while last > 0 and lines[last] == '' do
+          last = last - 1
         end
-        vim.api.nvim_buf_set_lines(buf, count, vim.api.nvim_buf_line_count(buf), false, { '- ' .. text })
-        return true
+        local out = vim.list_slice(lines, 1, last)
+        if last > 0 and not out[last]:match '^%s*%-' then
+          table.insert(out, '') -- the first note of an Inbox that has only its intro
+        end
+        table.insert(out, '- ' .. text)
+        return out
       end)
-      vim.notify('Added to ' .. vim.fs.basename(path) .. "'s Inbox")
+      if done then
+        vim.notify('Added to ' .. vim.fs.basename(path) .. "'s Inbox")
+      end
     end)
   end)
 end
 
 local function toggle(row)
   if row and row.kind == 'waiting' then
-    expanded[row.project] = not expanded[row.project] or nil
+    expanded[row.project_path] = not expanded[row.project_path] or nil
     draw(vim.api.nvim_get_current_buf(), data.last())
   end
 end
@@ -293,8 +341,10 @@ function M.open()
   define_highlights()
   local existing = board_buffer()
   if existing then
-    local win = vim.fn.bufwinid(existing)
-    vim.api.nvim_set_current_win(win)
+    local win = vim.fn.win_findbuf(existing)[1] -- in any tab
+    if win then
+      vim.api.nvim_set_current_win(win)
+    end
     return data.refresh()
   end
   fresh_tab()
@@ -321,9 +371,11 @@ function M.open()
     once = true,
     callback = unwatch,
   })
-  vim.api.nvim_create_autocmd('VimResized', {
-    buffer = buf,
+  vim.api.nvim_create_autocmd('VimResized', { -- not buffer-local: the board may be in another tab
     callback = function()
+      if not vim.api.nvim_buf_is_valid(buf) then
+        return true
+      end
       draw(buf, data.last())
     end,
   })
@@ -360,8 +412,10 @@ function M.start_item()
   local board = data.last()
   local counts = board and board.counts
   if not board then
-    data.refresh(function()
-      Snacks.dashboard.update()
+    data.refresh(function(fresh)
+      if fresh then -- a failed run would only make the page ask again, and again
+        Snacks.dashboard.update()
+      end
     end)
   end
   local line = 'Control board'

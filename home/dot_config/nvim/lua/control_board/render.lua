@@ -162,17 +162,17 @@ function M.render(data, opts)
   -- the first waiting line of a project stands for its others, until it is expanded
   local waiting, shown = {}, {}
   for _, need in ipairs(data.needs) do
-    waiting[need.project] = (waiting[need.project] or 0) + (need.kind == 'waiting' and 1 or 0)
+    waiting[need.project_path] = (waiting[need.project_path] or 0) + (need.kind == 'waiting' and 1 or 0)
   end
   for _, need in ipairs(data.needs) do
     local since = need.since and age(now - need.since) or ''
     if need.kind ~= 'waiting' then
       add_row(need, ICON[need.kind], 'ControlBoardAsk', need.project, need.title, need.detail, '', since)
-    elseif opts.expanded and opts.expanded[need.project] then
+    elseif opts.expanded and opts.expanded[need.project_path] then
       add_row(need, ICON.waiting, 'ControlBoardWait', need.project, need.title, need.detail, '', since)
-    elseif not shown[need.project] then
-      shown[need.project] = true
-      local more = waiting[need.project] - 1
+    elseif not shown[need.project_path] then
+      shown[need.project_path] = true
+      local more = waiting[need.project_path] - 1
       local tag = more > 0 and '+ ' .. more .. ' more' or ''
       add_row(need, ICON.waiting, 'ControlBoardWait', need.project, need.title, need.detail, tag, since)
     end
