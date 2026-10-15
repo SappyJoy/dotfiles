@@ -185,7 +185,7 @@ Claude runs in tmux, connected to this nvim: it sees the file and the selection,
 shows its edits here as diffs and reads the errors. A `claude` started by hand in
 this folder connects too.
 
-- `<leader>ac` / `<leader>aC`: Claude (personal / team) in a pane to the right,
+- `<leader>at` / `<leader>aC`: Claude (personal / team) in a pane to the right,
   connected; again: jumps to it. `Ctrl+\` back
 - `<leader>as`: send the selection (or this file; in oil or the tree, the file under
   the cursor) as `@file#L10-20`, then jump to Claude to ask
@@ -194,6 +194,21 @@ this folder connects too.
   accept-edits mode) is written at once: review it with `<leader>H`
 - In Claude: `Ctrl+G` writes the prompt in nvim (`:wq` hands it back), `/ide` picks
   another nvim, `/export` saves the conversation
+
+## Control board (all your Claude sessions, in nvim)
+
+`cb` in a shell opens nvim on the board; `b` on the first page, `<leader>ab` here.
+Plan usage (5h and 7d, a tick for the pace), what needs you, the sessions, the
+projects. It refreshes by itself.
+
+- `Enter` opens what is under the cursor: a session in a tab (`claude attach`; type
+  in it, `Ctrl+\ Ctrl+N` then `Ctrl+U` / `Ctrl+D` scroll it, `q` or `Ctrl+Z`
+  detaches, the session goes on), a review or the roadmap as a file
+- `t` ticks a Waiting on you line, `c` comments on a review, `i` adds an Inbox note
+  to the project, `s` starts a background session there, `Tab` shows all of a
+  project's lines, `r` refreshes, `q` closes
+- `<leader>aw`: the same rows in a picker, with previews; `<leader>ac` (and `cl` in a
+  shell): a new background session here, attached
 
 ## Files
 

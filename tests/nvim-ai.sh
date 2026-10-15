@@ -131,13 +131,13 @@ port=$(basename "${lock:-none}" .lock)
 check "the server runs, its lock file in CLAUDE_CONFIG_DIR" [ -n "$lock" ]
 check "  names nvim's folder" grep -q "\"$PWD\"" "$lock"
 
-keys ' ac'
+keys ' at'
 sleep 1
-check "<leader>ac: Claude in a new pane, focused" [ "$(active)" = "$(tagged claude)" ]
+check "<leader>at: Claude in a new pane, focused" [ "$(active)" = "$(tagged claude)" ]
 check "  the personal account, the port, nvim's folder" \
     [ "$(sed -n 1p "$tmp/started")" = "claude $port $PWD" ]
 tm select-pane -t "$nv"
-keys ' ac'
+keys ' at'
 check "  again: jumps to it, no second pane" [ "$(active)" = "$(tagged claude)" -a "$(tm list-panes | wc -l)" -eq 2 ]
 tm select-pane -t "$nv"
 keys ' aC'

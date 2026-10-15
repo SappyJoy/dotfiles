@@ -1,9 +1,10 @@
 -- AI: Claude Code, connected to nvim through claudecode.nvim (the protocol of
--- Claude's VS Code extension). Claude runs in tmux (lua/ai.lua opens the panes); it
+-- Claude's VS Code extension). Claude runs in a tmux pane (lua/ai.lua opens it); it
 -- sees the file and the selection, takes sends as @file#L10-20, shows its edits as
 -- diffs here and reads the diagnostics. The server starts after the first screen,
 -- so a claude started by hand in this folder finds nvim too (it connects by itself
 -- with CLAUDE_CODE_AUTO_CONNECT_IDE, set in Claude's settings.json).
+-- <leader>ab, aw and ac are not here: they are the control board (lua/control_board/).
 local function claude(account)
   return function()
     require('ai').account = account
@@ -21,8 +22,8 @@ return {
     enabled = vim.fn.executable 'claude' == 1,
     event = 'VeryLazy',
     keys = {
-      { '<leader>ac', claude 'claude', desc = 'Claude (personal)' },
-      { '<leader>aC', claude 'claude-team', desc = 'Claude (team)' },
+      { '<leader>at', claude 'claude', desc = 'Claude (personal) in a tmux pane' },
+      { '<leader>aC', claude 'claude-team', desc = 'Claude (team) in a tmux pane' },
       { '<leader>as', '<cmd>ClaudeCodeSend<cr>', mode = 'x', desc = 'Send the selection to Claude' },
       { '<leader>as', '<cmd>ClaudeCodeAdd %<cr>', desc = 'Send this file to Claude' },
       {

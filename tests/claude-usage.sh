@@ -1,7 +1,8 @@
 #!/bin/sh
 # Tests for Claude Code's 5-hour limit on the bar: the status line
-# (home/dot_claude/statusline-command.sh) saves the window per account, and polybar's
-# script (home/dot_config/polybar/scripts/executable_claude-usage.sh) draws it.
+# (home/dot_claude/statusline-command.sh) saves the windows per account (the 7-day one
+# on line 2, for nvim's control board), and polybar's script
+# (home/dot_config/polybar/scripts/executable_claude-usage.sh) draws line 1.
 # Run: sh tests/claude-usage.sh (offline; needs bash and jq)
 
 set -u
@@ -22,17 +23,19 @@ usage=$XDG_CACHE_HOME/claude-usage
 now=$(date +%s)
 reset=$((now + 2 * 3600 + 5 * 60 + 30))
 
-# status [PERCENT RESETS_AT]: run the status line, with a 5-hour window if given
+# status [PERCENT RESETS_AT [PERCENT7 RESETS_AT7]]: run the status line, with a 5-hour
+# window if given, and a 7-day window
 status() {
-    if [ $# -eq 2 ]; then
-        limits=", \"rate_limits\": {\"five_hour\": {\"used_percentage\": $1, \"resets_at\": $2}}"
-    else
-        limits=
-    fi
+    limits=
+    [ $# -ge 2 ] && limits="\"five_hour\": {\"used_percentage\": $1, \"resets_at\": $2}"
+    [ $# -ge 4 ] && limits="$limits, \"seven_day\": {\"used_percentage\": $3, \"resets_at\": $4}"
+    [ -n "$limits" ] && limits=", \"rate_limits\": {$limits}"
     printf '{"workspace": {"current_dir": "%s"}, "model": {"display_name": "Opus"}%s}' \
         "$tmp" "$limits" | bash "$statusline"
 }
 saved() { [ "$(cat "$usage/$1" 2>/dev/null)" = "$2" ]; } # saved ACCOUNT CONTENT
+nl='
+' 
 
 status >/dev/null
 check "no rate limits: nothing saved" [ ! -e "$usage" ]
@@ -52,6 +55,30 @@ status 3 $((reset + 5 * 3600)) >/dev/null
 check "a newer window, lower: replaces" saved claude-personal "3 $((reset + 5 * 3600))"
 CLAUDE_CONFIG_DIR= status 7 "$reset" >/dev/null
 check "no CLAUDE_CONFIG_DIR: the default account's file" saved claude "7 $reset"
+
+# The 7-day window: line 2, with the same rules as the 5-hour one
+week=$((now + 3 * 86400))
+rm -rf "$usage"
+status 20 "$reset" 71.4 "$week" >/dev/null
+check "the 7-day window goes on line 2" saved claude-personal "20 $reset${nl}71 $week"
+check "polybar reads line 1 of it" sh -c 'read -r pct reset <"$1" && [ "$pct $reset" = "20 $2" ]' - "$usage/claude-personal" "$reset"
+status 25 "$reset" 60 "$week" >/dev/null
+check "7 days, same window, lower: kept; the 5-hour one rose" saved claude-personal "25 $reset${nl}71 $week"
+status 25 "$reset" 80 "$week" >/dev/null
+check "7 days, same window, higher, 5 hours unchanged: saved" saved claude-personal "25 $reset${nl}80 $week"
+status 25 "$reset" 5 $((week + 7 * 86400)) >/dev/null
+check "7 days, a newer window, lower: replaces" saved claude-personal "25 $reset${nl}5 $((week + 7 * 86400))"
+status 26 "$reset" >/dev/null
+check "a call without a 7-day window keeps the saved one" saved claude-personal "26 $reset${nl}5 $((week + 7 * 86400))"
+status 3 "$reset" 1 "$week" >/dev/null
+check "everything old: the file stays as it is" saved claude-personal "26 $reset${nl}5 $((week + 7 * 86400))"
+rm -rf "$usage"
+status 20 "$reset" >/dev/null
+check "no 7-day window: one line, no empty second one" sh -c '[ "$(wc -l <"$1")" -eq 1 ]' - "$usage/claude-personal"
+rm -rf "$usage"
+out=$(printf '{"workspace": {"current_dir": "%s"}, "model": {"display_name": "Opus"}, "rate_limits": {"seven_day": {"used_percentage": 9, "resets_at": %s}}}' "$tmp" "$week" | bash "$statusline")
+check "a 7-day window alone: nothing saved, the status line still prints" \
+    sh -c '[ ! -e "$1" ] && [ -n "$2" ]' - "$usage" "$out"
 
 # The bar
 mkdir -p "$XDG_CONFIG_HOME/polybar"

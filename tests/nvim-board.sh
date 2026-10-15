@@ -1,0 +1,316 @@
+#!/bin/sh
+# nvim's control board (lua/control_board/) in a real UI (a scratch tmux server), with
+# this branch's config in a scratch home: the first page's line and key, the board
+# (plan usage, Needs you, Sessions, Projects), its keys on a scratch project (open a
+# session tab, tick, comment, Inbox note, new session), the picker, the refresh, and
+# the fish functions cb and cl. The plugins are the installed ones (linked in, read
+# only). `board.py` is a stub that prints canned data, `claude` a stub (attach echoes
+# what you type), `tmux` records the jump to a session started by hand.
+# Run: sh tests/nvim-board.sh
+#   NVIM=path/to/nvim (default: nvim on PATH)
+
+set -u
+nvim=${NVIM:-nvim}
+here=$(cd "$(dirname "$0")" && pwd)
+data=${XDG_DATA_HOME:-$HOME/.local/share}/nvim
+real_tmux=$(command -v tmux)
+tmp=$(mktemp -d)
+tm() { tmux -L nvim-board -f /dev/null "$@"; }
+trap 'tm kill-server 2>/dev/null; rm -rf "$tmp"' EXIT
+fails=0
+check() { # check NAME CONDITION...
+    name=$1; shift
+    if "$@"; then echo "ok   $name"; else echo "FAIL $name ($*)"; fails=$((fails + 1)); fi
+}
+
+unset CLAUDE_CONFIG_DIR # a session of Claude would leak its own account in
+export HOME=$tmp/home XDG_CONFIG_HOME=$tmp/home/.config XDG_DATA_HOME=$tmp/home/.local/share \
+    XDG_STATE_HOME=$tmp/home/.local/state XDG_CACHE_HOME=$tmp/home/.cache SHELL=/bin/sh
+mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME/nvim" "$tmp/bin" "$HOME/.claude-personal"
+cp -r "$here/../home/dot_config/nvim" "$XDG_CONFIG_HOME/nvim"
+for d in lazy mason site; do ln -s "$data/$d" "$XDG_DATA_HOME/nvim/$d"; done
+
+# the stubs
+cat >"$tmp/bin/board.py" <<EOS
+import sys
+if sys.argv[1] == "--tail":
+    print("TAIL OF " + sys.argv[2])
+else:
+    print(open("$tmp/board.json").read())
+EOS
+cat >"$tmp/bin/claude" <<EOS
+#!/bin/sh
+echo "\${CLAUDE_CONFIG_DIR:-unset} \$PWD \$*" >>"$tmp/claude-calls"
+case \$1 in
+    --bg) echo "backgrounded · feed1234" ;;
+    attach) echo "ATTACHED \$2"; exec cat ;;
+esac
+EOS
+cat >"$tmp/bin/tmux" <<EOS
+#!/bin/sh
+[ "\$1" = switch-client ] && echo "\$*" >>"$tmp/tmux-calls"
+exec "$real_tmux" "\$@"
+EOS
+chmod +x "$tmp/bin/claude" "$tmp/bin/tmux"
+export PATH="$tmp/bin:$PATH" MILESTONE_FLOW_BOARD=$tmp/bin/board.py
+
+# a scratch project with a roadmap, a review and an inbox
+proj=$tmp/proj
+mkdir -p "$proj" && cd "$proj" && git init -q
+cat >ROADMAP.md <<'EOF'
+# proj
+
+A project.
+
+## Now
+
+M3 is in review.
+
+## Waiting on you
+
+- [ ] Review M3 — in REVIEW.md; Claude waits for it
+- [ ] Log in to npm: `npm login` — M4 needs it
+- [ ] Try the demo
+
+## Next
+
+- [ ] M4 Four — more
+EOF
+cat >REVIEW.md <<'EOF'
+# Review: M3 🚦 Third
+
+Look at the page.
+
+## Questions
+
+1. Is it fine?
+
+# Review: M2 🚦 Second
+
+Put off 2026-10-01: later.
+EOF
+printf '# Inbox\n\nNotes for later.\n\n- first\n\n' >INBOX.md
+printf 'x\n' >src.txt
+git add . && git -c user.email=t@t -c user.name=t commit -qm init
+
+# canned data: what the collector would print. board SESSION_NAME STATE
+board() {
+    python3 - "$@" >"$tmp/board.json" <<EOS
+import json, sys, time
+now = time.time()
+p = "$proj"
+name, state = sys.argv[1], sys.argv[2]
+bg = lambda short, name, activity, detail: {
+    "id": short + "-0000", "short": short, "account": "claude-personal",
+    "config_dir": "$HOME/.claude-personal", "kind": "background", "name": name, "cwd": p,
+    "activity": activity, "detail": detail, "since": now - 600, "tmux": None,
+    "project": "proj", "project_path": p}
+asking = bg("abc12345", name, state, "Which parser?")
+hand = {"id": "hand-1", "short": None, "account": "claude-personal",
+        "config_dir": "$HOME/.claude-personal", "kind": "interactive", "name": "by-hand",
+        "cwd": p, "activity": "idle", "detail": "", "since": now - 3000,
+        "tmux": "0:@3.%7", "project": "proj", "project_path": p}
+loose = dict(hand, id="hand-2", name="loose", tmux=None)
+sessions = [asking, bg("def67890", "Write docs", "working", ""), hand, loose]
+waiting = lambda text, line: {"kind": "waiting", "project": "proj", "title": text, "detail": "",
+    "since": now - 90000, "project_path": p, "path": p + "/ROADMAP.md", "line": line}
+needs = []
+if state == "answer":
+    needs.append({"kind": "answer", "project": "proj", "title": name, "detail": "Which parser?",
+        "since": now - 600, "session": asking["id"], "project_path": p})
+needs.append({"kind": "review", "project": "proj", "title": "M3 Third", "detail": "review waiting",
+    "since": now - 7200, "project_path": p, "path": p + "/REVIEW.md", "line": 1})
+needs.append(waiting("Log in to npm: \`npm login\` — M4 needs it", 12))
+needs.append(waiting("Try the demo", 13))
+json.dump({
+    "now": now,
+    "accounts": [
+        {"key": "claude", "label": "team", "five_hour": None, "seven_day": None},
+        {"key": "claude-personal", "label": "personal",
+         "five_hour": {"pct": 34, "resets_at": now + 3 * 3600},
+         "seven_day": {"pct": 61, "resets_at": now + 3 * 86400}}],
+    "needs": needs, "sessions": sessions,
+    "projects": [{"name": "proj", "path": p,
+        "current": {"id": "M3", "gate": True, "title": "Third", "status": "review"},
+        "done": 2, "total": 4, "reviews": [], "waiting": []}],
+    "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "waiting": 2,
+        "working": 1, "sessions": 4}}, sys.stdout)
+EOS
+}
+board "Fix parser" answer
+
+start() { # start ARGS...
+    tm kill-server 2>/dev/null
+    tm new-session -d -x 160 -y 70 -c "$proj" "$nvim $*"
+    sleep 4 # past VeryLazy, and the first run of the collector
+}
+keys() { tm send-keys -t 0 "$@"; sleep 0.6; }
+screen() { tm capture-pane -p -t 0; }
+shows() { screen | grep -qF -- "$1"; }
+# probe LUA: the value of a Lua expression in the running nvim (from Normal mode)
+probe() {
+    rm -f "$tmp/probe"
+    tm send-keys -t 0 Escape
+    sleep 0.2
+    tm send-keys -t 0 ":lua vim.fn.writefile({ tostring($1) }, '$tmp/probe')" Enter
+    sleep 0.4
+    cat "$tmp/probe" 2>/dev/null
+}
+on() { # on TEXT: the cursor on the first line with TEXT
+    tm send-keys -t 0 Escape
+    sleep 0.2
+    keys ":call cursor(1, 1) | call search('\\V$1')" Enter
+}
+normal() { tm send-keys -t 0 'C-\' C-n; sleep 0.4; } # out of a session tab's Terminal mode
+
+# ---- the first page -------------------------------------------------------------
+start
+check "first page: the line with the counts" shows "Control board   ❓1  🚦1  ☐2  ⏳1 working"
+check "  … and its key b" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep 'Control board' | grep -q ' b\$'"
+check "  … the art, the name and the quote stay" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '████████╗██╗   ██╗██████╗' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Чехов' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Find file'"
+
+# ---- the board ------------------------------------------------------------------
+keys b
+check "b: the board" shows "Plan ──"
+check "  … a bar with the percent and its reset" shows "34%  resets in 3h"
+check "  … a window with no data" shows "no data yet"
+check "  … Needs you, Sessions, Projects" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Sessions (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Projects ──'"
+check "  … a session that asks, a review, a waiting line" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Which parser' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 Third' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Log in to npm'"
+check "  … a project with its milestone and progress" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 🚦 Third · review.*2 of 4 done'"
+check "  … the board's keys" shows "⏎ open  t tick  c comment"
+keys q
+check "q: back to the first page" shows "Find file"
+
+# ---- session tabs -----------------------------------------------------------------
+keys b
+on 'Fix parser'
+keys Enter
+sleep 1
+check "Enter on a session: a tab running claude attach" shows "ATTACHED abc12345"
+check "  … with the personal account's folder" grep -q "^$HOME/.claude-personal .* attach abc12345" "$tmp/claude-calls"
+check "  … a winbar: project, name, state" shows "proj · Fix parser · needs you"
+keys hello
+check "  … what you type reaches the session" shows "hello"
+normal
+check "  … Normal mode keeps the screen" shows "ATTACHED abc12345"
+keys ':ControlBoard' Enter
+on 'Fix parser'
+keys Enter
+sleep 1
+check "Enter on the same session again: its tab, not a second attach" [ "$(grep -c ' attach abc12345' "$tmp/claude-calls")" = 1 ]
+board "Fix parser" working
+sleep 7
+check "the winbar follows the session (working)" shows "proj · Fix parser · working"
+normal
+keys q
+check "q in a session tab: the tab closes" [ "$(probe "vim.fn.tabpagenr '\$'")" = 2 ]
+
+# ---- the keys of the board ----------------------------------------------------------
+keys ':ControlBoard' Enter
+on 'Log in to npm'
+keys t
+sleep 1
+check "t on a Waiting on you line: ticked in ROADMAP.md" grep -q '^- \[x\] Log in to npm: `npm login`' "$proj/ROADMAP.md"
+check "  … the others stay" grep -q '^- \[ \] Try the demo' "$proj/ROADMAP.md"
+on 'M3 Third'
+keys t
+check "t on a review: nothing more ticked" [ "$(grep -c '^- \[x\]' "$proj/ROADMAP.md")" = 1 ]
+
+on 'M3 Third'
+keys c
+keys 'Looks good'
+keys Escape
+keys ':w' Enter
+check "c on a review: REVIEW.md opens in Insert mode, in a Your reply section" sh -c "grep -A1 '^## Your reply' '$proj/REVIEW.md' | tail -1 | grep -qx 'Looks good'"
+check "  … at the end of that review, not the next" sh -c "awk '/^## Your reply/{f=1} /^# Review: M2/{exit} END{exit !f}' '$proj/REVIEW.md'"
+keys ':tabclose' Enter
+on 'M3 Third'
+keys c
+keys 'More'
+keys Escape
+keys ':w' Enter
+check "c again: the same section" [ "$(grep -c '^## Your reply' "$proj/REVIEW.md")" = 1 ]
+keys ':tabclose' Enter
+
+on 'M3 Third'
+keys i
+keys 'try dark mode' Enter
+sleep 1
+check "i: a line in the project's INBOX.md" [ "$(tail -1 "$proj/INBOX.md")" = '- try dark mode' ]
+check "  … the others stay" grep -qx -- '- first' "$proj/INBOX.md"
+
+on 'M3 Third'
+keys s
+sleep 2
+check "s: claude --bg in the project" grep -q "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls"
+check "  … and its tab" shows "ATTACHED feed1234"
+check "  … the winbar before the board knows it" shows "proj · feed1234 · attached"
+normal
+keys q
+
+# ---- sessions started by hand -------------------------------------------------------
+keys ':ControlBoard' Enter
+on 'loose'
+keys Enter
+check "Enter on a session outside tmux: it says so" shows "outside tmux"
+on 'by-hand'
+keys Enter
+check "Enter on a session in tmux: jumps to its pane" grep -q 'switch-client -t 0 ; select-window -t @3 ; select-pane -t %7' "$tmp/tmux-calls"
+
+on 'Write docs'
+keys Enter
+sleep 1
+check "Enter on a background session in Sessions: its tab" shows "ATTACHED def67890"
+normal
+keys q
+
+# ---- the picker -------------------------------------------------------------------
+keys ':tabonly' Enter
+keys ' aw'
+sleep 2
+check "<leader>aw: a picker over the board's rows" shows "Claude: needs you, sessions, projects"
+check "  … sessions, a review, a project" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Write docs' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 Third'"
+keys 'docs'
+sleep 1
+check "  … a preview of the session" shows "TAIL OF def67890"
+keys Enter
+sleep 1
+check "  … Enter opens the session" shows "ATTACHED def67890"
+normal
+keys q
+
+# ---- the refresh and the keys outside the board ---------------------------------------
+start
+keys ' ab'
+check "<leader>ab: the board" shows "Plan ──"
+keys ':ControlBoard' Enter
+check "  … once: :ControlBoard goes to it" [ "$(probe "vim.fn.tabpagenr '\$'")" = 2 ]
+board "Fixed parser" answer
+sleep 7
+check "The board refreshes by itself" shows "Fixed parser"
+keys q
+
+start src.txt
+keys ' ac'
+sleep 2
+check "<leader>ac: a background session in this project" [ "$(grep -c "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls")" = 2 ]
+check "  … attached" shows "ATTACHED feed1234"
+
+# ---- cb: the board alone -------------------------------------------------------------
+start -c ControlBoard
+check "nvim -c ControlBoard: the board, no first page" shows "Plan ──"
+check "  … in the only tab" [ "$(probe "vim.fn.tabpagenr '\$'")" = 1 ]
+keys q
+sleep 1
+check "  … q leaves nvim" sh -c "! tmux -L nvim-board has-session -t 0 2>/dev/null"
+
+# ---- the fish functions ------------------------------------------------------------------
+: >"$tmp/claude-calls"
+(cd "$proj" && fish -c "source '$here/../home/dot_config/private_fish/functions/cl.fish'; cl" </dev/null >/dev/null)
+check "cl: starts a session here, then attaches it" sh -c "[ \"\$(sed 's/^[^ ]* [^ ]* //' '$tmp/claude-calls')\" = '--bg
+attach feed1234' ]"
+check "cb: nvim with the board" grep -q 'nvim -c ControlBoard' "$here/../home/dot_config/private_fish/functions/cb.fish"
+
+echo
+[ "$fails" = 0 ] && echo "all passed" || echo "$fails failed"
+exit "$fails"
