@@ -98,6 +98,15 @@ picker over the same rows, `<leader>ac` (`cl` in a shell) a new background sessi
 here. It needs milestone-flow's `board.py` (from the personal marketplace's clone);
 the cheatsheet has the keys.
 
+nvim tells you, with a notification and the project's name, when a session asks for
+an answer or goes idle and when a review appears; `<leader>an` opens the newest. Off
+nvim, Claude's Notification hook (`~/.claude/busy-hook.sh` runs `notify-hook.sh`; desktops
+only) sends a dunst notification (`notify-send`, when there is a display or a bus) and
+a tmux message on every attached client, which is what an ssh login sees: low
+urgency when a session has been idle for a minute, normal for a permission or a
+question, and critical instead of low when the project has a review waiting. The phone gets Claude Code's
+own push (Remote Control; `/config` has the two push switches).
+
 ### ssh
 
 - `~/.ssh/config` is each machine's own file: add that machine's hosts there. chezmoi
@@ -271,6 +280,10 @@ over with `chezmoi merge`.
     opens
   - `sh tests/nvim-notes.sh`: nvim's project notes in a scratch tmux and home: the
     `<leader>p` keys, Enter on `[[links]]` to notes and docs, images in notes
+  - `sh tests/claude-notify.sh`: the desktop and tmux notices of a waiting session,
+    with a stub `notify-send` and a private tmux
+  - `sh tests/nvim-notify.sh`: nvim's notifications for a waiting session and
+    `<leader>an`, in a scratch tmux and home with a stub collector
   - `sh tests/nvim-board.sh`: nvim's control board in a scratch tmux and home, with a
     stub collector and a stub `claude`: the first page's line, the board and its keys,
     session tabs, the picker, `cb` and `cl`
