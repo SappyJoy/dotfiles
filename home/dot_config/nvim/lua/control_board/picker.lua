@@ -1,6 +1,6 @@
 -- <leader>aw: the board's rows (needs you, sessions, projects) in a Telescope picker.
 -- Search them; the preview shows a session's last messages, a review, a roadmap.
--- Enter does what Enter does on the board.
+-- Enter does what Enter does on the board; p (Alt+p while typing) plays a review's recording.
 local data = require 'control_board.data'
 local pickers = require 'telescope.pickers'
 local finders = require 'telescope.finders'
@@ -99,12 +99,19 @@ function M.pick()
       },
       sorter = conf.generic_sorter {},
       previewer = previewer,
-      attach_mappings = function(bufnr)
+      attach_mappings = function(bufnr, map)
         actions.select_default:replace(function()
           local entry = action_state.get_selected_entry()
           actions.close(bufnr)
           require('control_board').open_row(entry.value.row)
         end)
+        local function play()
+          local entry = action_state.get_selected_entry()
+          actions.close(bufnr)
+          require('control_board.demo').play_review(entry.value.row)
+        end
+        map('n', 'p', play) -- a review's recording
+        map('i', '<M-p>', play)
         return true
       end,
     })

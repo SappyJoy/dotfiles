@@ -11,7 +11,7 @@ local BAR = 18
 local PROJECT, TITLE, TAG, AGE = 16, 24, 8, 4
 local ICON = { answer = '❓', review = '🚦', waiting = '☐', working = '⏳', idle = '·' }
 local STATE = { answer = 'needs you', working = 'working', idle = 'idle' }
-local FOOTER = ' ⏎ open  t tick  c comment  i inbox note  s new session  Tab more  r refresh  q close'
+local FOOTER = ' ⏎ open  t tick  c comment  p play  i inbox note  s new session  Tab more  r refresh  q close'
 
 local function width_of(s)
   return vim.fn.strdisplaywidth(s)

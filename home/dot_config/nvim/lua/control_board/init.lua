@@ -5,6 +5,7 @@
 -- project's Inbox. The facts come from milestone-flow's board.py (data.lua), the text
 -- from render.lua, the session tabs from session.lua, the picker (<leader>aw) from
 -- picker.lua. <leader>ac starts a background session in this project and attaches it.
+-- demo.lua plays the recording of a review's demo (`p` on the board and in the picker).
 -- notify.lua tells you in nvim when a session waits (<leader>an opens the newest notice).
 local data = require 'control_board.data'
 local render = require 'control_board.render'
@@ -329,6 +330,9 @@ local function map_keys(buf)
   map('c', function(row)
     return row and comment(row)
   end, 'Comment on a review')
+  map('p', function(row)
+    return require('control_board.demo').play_review(row)
+  end, "Play a review's recording")
   map('i', inbox_note, 'Inbox note')
   map('s', function(row)
     choose_project(row, require('control_board.session').start)

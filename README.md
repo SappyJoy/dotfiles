@@ -92,7 +92,8 @@ Its config is `~/.config/quartz/quartz.config.yaml`.
 waits for you (a session's question, a review, a Waiting on you line), the sessions
 and the milestone-flow projects, refreshed every few seconds. `Enter` opens a session
 in a nvim tab (`claude attach`; the session runs on when the tab closes), a review or
-a roadmap; `t` ticks, `c` comments on a review, `i` adds an Inbox note, `s` starts a
+a roadmap; `p` on a review plays the recording of its demo (`asciinema play`, in a
+tab); `t` ticks, `c` comments on a review, `i` adds an Inbox note, `s` starts a
 session. In nvim: `b` on the first page, `<leader>ab` the board, `<leader>aw` a
 picker over the same rows, `<leader>ac` (`cl` in a shell) a new background session
 here. It needs milestone-flow's `board.py` (from the personal marketplace's clone);

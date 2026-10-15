@@ -54,7 +54,14 @@ cat >"$tmp/bin/tmux" <<EOS
 [ "\$1" = switch-client ] && echo "\$*" >>"$tmp/tmux-calls"
 exec "$real_tmux" "\$@"
 EOS
-chmod +x "$tmp/bin/claude" "$tmp/bin/tmux"
+cat >"$tmp/bin/asciinema" <<EOS
+#!/bin/sh
+echo "\$*" >>"$tmp/asciinema-calls"
+echo "PLAYING \$2"
+sleep 1.5
+echo "THE LAST FRAME"
+EOS
+chmod +x "$tmp/bin/claude" "$tmp/bin/tmux" "$tmp/bin/asciinema"
 export PATH="$tmp/bin:$PATH" MILESTONE_FLOW_BOARD=$tmp/bin/board.py
 
 # a scratch project with a roadmap, a review and an inbox
@@ -92,6 +99,8 @@ Look at the page.
 
 Put off 2026-10-01: later.
 EOF
+mkdir -p .agent/review/M3
+printf '{"version": 2, "width": 100, "height": 28}\n' >.agent/review/M3/demo.cast
 printf '# Inbox\n\nNotes for later.\n\n- first\n\n' >INBOX.md
 printf 'x\n' >src.txt
 git add . && git -c user.email=t@t -c user.name=t commit -qm init
@@ -186,7 +195,7 @@ check "  … a window with no data" shows "no data yet"
 check "  … Needs you, Sessions, Projects" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Sessions (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Projects ──'"
 check "  … a session that asks, a review, a waiting line" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Which parser' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 Third' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Log in to npm'"
 check "  … a project with its milestone and progress" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 🚦 Third · review.*2 of 4 done'"
-check "  … the board's keys" shows "⏎ open  t tick  c comment"
+check "  … the board's keys" shows "⏎ open  t tick  c comment  p play"
 keys q
 check "q: back to the first page" shows "Find file"
 
@@ -332,6 +341,67 @@ keys Enter
 sleep 1
 check "  … Enter opens the session" shows "ATTACHED def67890"
 normal
+keys q
+
+# ---- a review's recording ---------------------------------------------------------------
+keys ':tabonly' Enter
+keys ':ControlBoard' Enter
+on 'M3 Third'
+keys p
+sleep 1
+check "p on a review: asciinema play of its recording, in a tab" grep -qx "play $proj/.agent/review/M3/demo.cast" "$tmp/asciinema-calls"
+check "  … which shows what it plays" shows "PLAYING $proj/.agent/review/M3/demo.cast"
+check "  … a winbar says how to stop it" shows "▶ demo.cast"
+sleep 2
+check "  … when it ends its last frame stays" shows "THE LAST FRAME"
+check "  … in Normal mode, where q closes it" [ "$(probe 'vim.fn.mode()')" = n ]
+check "  … in a tab of its own" [ "$(probe "vim.fn.tabpagenr '\$'")" = 2 ]
+keys q
+check "  … q closes the tab" [ "$(probe "vim.fn.tabpagenr '\$'")" = 1 ]
+check "  … and the board is there" shows "Plan ──"
+
+on 'Fix parser'
+keys p
+check "p on a session: it says only a review has one" shows "Only a review has a recording"
+mv "$proj/.agent/review/M3" "$proj/.agent/review/held"
+on 'M3 Third'
+keys p
+check "p on a review with no recording: it says so" shows "M3 Third has no recording"
+mv "$proj/.agent/review/held" "$proj/.agent/review/M3"
+printf '{"version": 2, "width": 100, "height": 28}\n' >"$proj/.agent/review/M3/second.cast"
+on 'M3 Third'
+keys p
+sleep 1
+check "p on a review with two recordings: it asks which" shows "second.cast"
+keys second
+keys Enter
+sleep 1
+check "  … and plays that one" shows "PLAYING $proj/.agent/review/M3/second.cast"
+normal
+keys q
+rm "$proj/.agent/review/M3/second.cast"
+
+keys ':tabonly' Enter
+keys ' aw'
+sleep 2
+keys 'review waiting'
+sleep 1.5
+tm send-keys -t 0 M-p
+sleep 1.5
+check "Alt+p in the picker: plays the review's recording" shows "PLAYING $proj/.agent/review/M3/demo.cast"
+normal
+keys q
+keys ' aw'
+sleep 2
+keys 'review waiting'
+sleep 1.5
+keys Escape
+keys p
+sleep 1.5
+check "p in the picker's Normal mode: the same" [ "$(grep -c "play $proj/.agent/review/M3/demo.cast" "$tmp/asciinema-calls")" -ge 3 ]
+normal
+keys q
+keys ':ControlBoard' Enter
 keys q
 
 # ---- the refresh and the keys outside the board ---------------------------------------
