@@ -377,6 +377,31 @@ sleep 2
 check "<leader>ac: a background session in this project" [ "$(grep -c "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls")" = 2 ]
 check "  … attached" shows "ATTACHED feed1234"
 
+# ---- a board taller than its window -----------------------------------------------------
+# The config's scrolloff is 10, so the board used to shift under the cursor on every j, and
+# redrew all of itself each time. Now the cursor moves down the window and the board turns
+# a page when it leaves it.
+tm kill-server 2>/dev/null
+tm new-session -d -x 100 -y 14 -c "$proj" "$nvim -c ControlBoard"
+sleep 4
+check "a small window: the board is taller than it" [ "$(probe "vim.api.nvim_buf_line_count(0) - vim.api.nvim_win_get_height(0)")" -ge 5 ]
+probe "(function() _G.scrolled = 0; vim.api.nvim_create_autocmd('WinScrolled', { callback = function() _G.scrolled = _G.scrolled + 1 end }) end)()" >/dev/null
+for _ in $(seq 17); do tm send-keys -t 0 j; sleep 0.15; done
+sleep 0.5
+check "j down the board: the cursor reaches the last rows" [ "$(probe "vim.fn.line '.'")" -ge 17 ]
+check "  … and the board scrolled twice at most, not on every j" [ "$(probe _G.scrolled)" -le 2 ]
+for _ in $(seq 17); do tm send-keys -t 0 k; sleep 0.15; done
+sleep 0.5
+check "k back up: to the first line" [ "$(probe "vim.fn.line '.'")" = 1 ]
+check "  … the board scrolled four times at most in all" [ "$(probe _G.scrolled)" -le 4 ]
+check "  … the config's own scrolloff is not touched" [ "$(probe 'vim.go.scrolloff')" = 10 ]
+check "  … a page is half the window, while the board is the buffer" [ "$(probe 'vim.go.scrolljump')" = -50 ]
+keys ':tabnew' Enter
+check "  … scrolljump is back to normal in another tab" [ "$(probe 'vim.go.scrolljump')" = 1 ]
+keys ':tabclose' Enter
+check "  … and the board has it again when you return" [ "$(probe 'vim.go.scrolljump')" = -50 ]
+keys q
+
 # ---- cb: the board alone -------------------------------------------------------------
 start -c ControlBoard
 check "nvim -c ControlBoard: the board, no first page" shows "Plan ──"
