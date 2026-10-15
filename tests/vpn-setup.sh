@@ -78,10 +78,11 @@ check "profile: no DNS" [ -z "$(printf '%s\n' "$conf" | grep DNS)" ]
 check "profile: colons unescaped" [ "$(printf '%s\n' "$conf" | grep Endpoint)" = 'Endpoint = 192.0.2.1:51820' ]
 check "connection: on the device vpnconfig, no peer routes" has 'connection modify vpnclaude connection.interface-name vpnconfig wireguard.peer-routes no'
 check "connection: the mark and a bound socket use table 5353" has 'priority 20000 fwmark 0x14e9 table 5353, priority 20001 oif vpnconfig table 5353'
-check "connection: Anthropic's range and the table's default route" has 'connection modify vpnclaude ipv4.routes 160.79.104.0/23,0.0.0.0/0 table=5353'
+check "connection: Anthropic's range, the names' resolver and the table's default route" has 'connection modify vpnclaude ipv4.routes 160.79.104.0/23,8.8.8.8/32,0.0.0.0/0 table=5353'
 check "the full tunnel no longer starts at boot" has 'connection modify vpnconfig connection.autoconnect no'
 check "not running: no reapply" hasnt 'device reapply'
 check "names: openrouter.ai fills the set" grep -qx 'nftset=/openrouter.ai/4#inet#tunnel_names#v4' "$etc/NetworkManager/dnsmasq.d/tunnel-names.conf"
+check "names: openrouter.ai is asked of 8.8.8.8, through the tunnel" grep -qx 'server=/openrouter.ai/8.8.8.8' "$etc/NetworkManager/dnsmasq.d/tunnel-names.conf"
 check "names: dnsmasq checked the file first" [ "$(line 'dnsmasq --test')" -lt "$(line '/etc/tunnel-names.nft')" ]
 check "names: dnsmasq is the resolver" grep -qx 'dns=dnsmasq' "$etc/NetworkManager/conf.d/dns-dnsmasq.conf"
 check "names: the set exists before dnsmasq restarts" [ "$(line 'systemctl enable -q --now tunnel-names.service')" -lt "$(line 'nmcli general reload dns-full')" ]
@@ -113,7 +114,7 @@ echo '10.1.0.0/16' >>"$tmp/.config/wireguard/claude-only.list"
 setup
 check "a new name: in dnsmasq's file" grep -qx 'nftset=/example.org/4#inet#tunnel_names#v4' "$etc/NetworkManager/dnsmasq.d/tunnel-names.conf"
 check "a new name: dnsmasq restarts" has 'nmcli general reload dns-full'
-check "a new range: a route" has 'ipv4.routes 160.79.104.0/23,10.1.0.0/16,0.0.0.0/0 table=5353'
+check "a new range: a route" has 'ipv4.routes 160.79.104.0/23,10.1.0.0/16,8.8.8.8/32,0.0.0.0/0 table=5353'
 
 echo 'another.example' >>"$tmp/.config/wireguard/claude-only.list"
 REJECT=1 setup
