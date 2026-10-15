@@ -6,7 +6,6 @@
 -- from render.lua, the session tabs from session.lua, the picker (<leader>aw) from
 -- picker.lua. <leader>ac starts a background session in this project and attaches it.
 -- demo.lua plays the recording of a review's demo (`p` on the board and in the picker).
--- A "tour due" row (a project's weekly guided tour, /milestone-flow:tour) tells how to start it.
 -- notify.lua tells you in nvim when a session waits (<leader>an opens the newest notice).
 local data = require 'control_board.data'
 local render = require 'control_board.render'
@@ -132,8 +131,6 @@ function M.open_row(row)
     edit(row.path, row.line)
   elseif row.kind == 'project' then
     edit(row.path .. '/ROADMAP.md')
-  elseif row.kind == 'tour' then -- the stops open in the nvim Claude was started from
-    vim.notify('A tour is due\nOpen nvim there, <leader>at,\nthen /milestone-flow:tour', vim.log.levels.INFO, { title = row.project })
   end
 end
 

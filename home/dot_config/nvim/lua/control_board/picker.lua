@@ -13,7 +13,7 @@ local entry_display = require 'telescope.pickers.entry_display'
 
 local M = {}
 
-local ICON = { answer = '❓', review = '🚦', waiting = '☐', tour = '🧭', session = '⏳', project = '▪' }
+local ICON = { answer = '❓', review = '🚦', waiting = '☐', session = '⏳', project = '▪' }
 local SESSION_ICON = { answer = '❓', working = '⏳', idle = '·' }
 
 -- every row of the board, as { icon, play, project, title, detail, row }
@@ -24,7 +24,7 @@ local function entries(board)
     table.insert(found, { icon = icon, play = play, project = project, title = title, detail = detail, row = row })
   end
   for _, need in ipairs(board.needs) do
-    add(ICON[need.kind] or '·', need.project, need.title, need.detail, need)
+    add(ICON[need.kind], need.project, need.title, need.detail, need)
   end
   for _, s in ipairs(board.sessions) do
     local row = vim.tbl_extend('force', s, { kind = 'session', session = s.id })
@@ -58,10 +58,6 @@ local previewer = previewers.new_buffer_previewer {
           show(bufnr, vim.split(text ~= '' and text or row.detail or '', '\n'))
         end)
       end)
-      return
-    end
-    if row.kind == 'tour' then -- no file behind it: say how to start one
-      show(bufnr, { row.title .. ': ' .. (row.detail or ''), '', 'Open nvim in the project, press <leader>at,', 'then run /milestone-flow:tour' })
       return
     end
     local path = row.kind == 'project' and row.path .. '/ROADMAP.md' or row.path
