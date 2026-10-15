@@ -12,8 +12,8 @@
 #   profile; it carries just what claude-only.list names (vpn-hosts) and is the one up
 #   after boot. Its address ranges are routes; its names go through dnsmasq, which
 #   becomes the machine's resolver (/etc/NetworkManager/conf.d/dns-dnsmasq.conf,
-#   dnsmasq.d/tunnel-names.conf) and fills an nftables set (/etc/tunnel-names.nft,
-#   tunnel-names.service)
+#   dnsmasq.d/tunnel-names.conf), asks 8.8.8.8 through the tunnel for them and fills
+#   an nftables set (/etc/tunnel-names.nft, tunnel-names.service)
 # The profiles come with chezmoi, encrypted: ~/.config/sing-box/config.json and
 # ~/.config/wireguard/vpnconfig.conf. toggle-vless and toggle-wireguard switch them.
 set -eu
@@ -24,6 +24,10 @@ wireguard=$HOME/.config/wireguard/vpnconfig.conf
 # packets to a listed name get this mark, and vpnclaude routes the mark by this table
 mark=0x14e9
 table=5353
+# the resolver asked for the listed names, through the tunnel: the ISP's resolver
+# denies a blocked name (youtube.com: NXDOMAIN), and plain DNS to anyone else is
+# answered by the ISP too
+dns=8.8.8.8
 # the largest TCP segment that fits the tunnel: WireGuard's MTU of 1420 less 40
 mss=1380
 
@@ -89,8 +93,8 @@ else
     echo "missing $wireguard: no WireGuard profile to import"
 fi
 
-# Names in the list: dnsmasq, run by NetworkManager as the machine's resolver, puts
-# every address it answers for a listed name into an nftables set; packets to the set
+# Names in the list: dnsmasq, run by NetworkManager as the machine's resolver, asks
+# $dns for them and puts every address it answers into an nftables set; packets to the set
 # get the mark that vpnclaude's rule sends into the tunnel, and the tunnel's address
 # as their source. The set fills as names are looked up and lasts until a reboot.
 # Such a connection starts on the route to the LAN (MTU 1500) and is moved into the
@@ -146,6 +150,7 @@ EOF
     {
         echo "# Written by vpn-setup from ~/.config/wireguard/claude-only.list (vpn-hosts names)."
         for name in $(vpn-hosts names); do
+            echo "server=/$name/$dns"
             echo "nftset=/$name/4#inet#tunnel_names#v4"
         done
     } >"$tmp/tunnel-names.conf"
@@ -178,8 +183,9 @@ fi
 # Claude Code works while the full tunnel is off and nothing else uses it. It takes
 # the device name vpnconfig: the two share a key, and NetworkManager runs one
 # connection per device. It comes up at boot; the full tunnel no longer does. Its
-# peer accepts any address, and its routes say what goes in: the ranges below, and
-# table $table for marked packets and for a socket bound to the device
+# peer accepts any address, and its routes say what goes in: the ranges below, the
+# resolver for the names, and table $table for marked packets and for a socket bound
+# to the device
 # (curl --interface vpnconfig). The tracked profile escapes its colons (\:).
 if nmcli -g NAME connection show | grep -qx vpnclaude; then
     echo "ok      WireGuard: NetworkManager has vpnclaude"
@@ -196,7 +202,7 @@ elif [ -f "$wireguard" ]; then
 fi
 if nmcli -g NAME connection show | grep -qx vpnclaude; then
     ranges=$(vpn-hosts ranges | tr '\n' ',')
-    nmcli connection modify vpnclaude ipv4.routes "${ranges}0.0.0.0/0 table=$table"
+    nmcli connection modify vpnclaude ipv4.routes "${ranges}$dns/32,0.0.0.0/0 table=$table"
     if [ "$(nmcli -g GENERAL.CONNECTION device show vpnconfig 2>/dev/null)" = vpnclaude ]; then
         nmcli device reapply vpnconfig >/dev/null
     fi
