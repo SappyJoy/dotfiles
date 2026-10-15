@@ -108,7 +108,7 @@ git add . && git -c user.email=t@t -c user.name=t commit -qm init
 # canned data: what the collector would print. board SESSION_NAME STATE
 board() {
     python3 - "$@" >"$tmp/board.json" <<EOS
-import json, sys, time
+import json, os, sys, time
 now = time.time()
 p = "$proj"
 name, state = sys.argv[1], sys.argv[2]
@@ -134,6 +134,10 @@ needs.append({"kind": "review", "project": "proj", "title": "M3 Third", "detail"
     "since": now - 7200, "project_path": p, "path": p + "/REVIEW.md", "line": 1})
 needs.append(waiting("Log in to npm: \`npm login\` — M4 needs it", 12))
 needs.append(waiting("Try the demo", 13))
+tour = os.path.exists("$tmp/with-tour")
+if tour:
+    needs.append({"kind": "tour", "project": "proj", "title": "Tour due", "project_path": p,
+        "detail": "last tour 9d ago: the hooks", "since": now - 2 * 86400})
 if len(sys.argv) > 3:  # another project, in another folder, with the same name
     other = "$tmp/other/proj"
     needs.append(dict(waiting("Other thing", 5), project_path=other, path=other + "/ROADMAP.md"))
@@ -152,7 +156,7 @@ json.dump({
     "needs": needs, "sessions": sessions,
     "projects": projects,
     "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "waiting": 2,
-        "working": 1, "sessions": 4}}, sys.stdout)
+        "tour": 1 if tour else 0, "working": 1, "sessions": 4}}, sys.stdout)
 EOS
 }
 board "Fix parser" answer
@@ -479,6 +483,28 @@ keys ':tabnew' Enter
 keys ':tabprevious' Enter
 keys q
 check "q on the board with other tabs open: scrolljump and scrolloff are normal again" [ "$(probe 'vim.go.scrolljump') $(probe 'vim.go.scrolloff')" = '1 10' ]
+
+# ---- a tour that is due ------------------------------------------------------------------
+touch "$tmp/with-tour"
+board "Fix parser" answer
+start
+keys b
+check "a tour is due: a row under Needs you, with the last one" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep 'Tour due' | grep -q 'last tour 9d ago: the hooks'"
+check "  … counted in the section" shows "Needs you (5)"
+on 'Tour due'
+keys Enter
+check "Enter on it: how to start the tour" shows "/milestone-flow:tour"
+keys ' aw'
+sleep 2
+keys 'Tour due'
+sleep 1
+check "<leader>aw: the picker lists it, and does not break on its kind" shows "Tour due"
+keys Escape
+keys Escape
+keys q
+check "The first page's line leaves tours out" shows "Control board   ❓1  🚦1  ☐2  ⏳1 working"
+rm -f "$tmp/with-tour"
+board "Fix parser" answer
 
 # ---- cb: the board alone -------------------------------------------------------------
 start -c ControlBoard

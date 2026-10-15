@@ -212,6 +212,10 @@ projects. It refreshes by itself.
   project's lines, `r` refreshes, `q` closes
 - `<leader>aw`: the same rows in a picker, with previews; `<leader>ac` (and `cl` in a
   shell): a new background session here, attached
+- `Tour due` (a compass) means a project's weekly guided tour is a week old:
+  `Enter` tells how to start it. Open nvim in the project, `<leader>at`, then
+  `/milestone-flow:tour`: Claude walks you through one part in about 20 minutes and
+  opens each stop in that nvim; try `gd` and `gr` there, answer, say `next`
 - A notification pops up when a session asks for an answer or goes idle and when a
   review appears (what already waited at the start is not announced); `<leader>an`
   opens the newest one, again for the next older. The desktop (dunst) and tmux get

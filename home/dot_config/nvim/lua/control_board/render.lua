@@ -9,7 +9,7 @@ local M = {}
 local WINDOW = { five_hour = 5 * 3600, seven_day = 7 * 86400 }
 local BAR = 18
 local PROJECT, TITLE, TAG, AGE = 16, 24, 8, 4
-local ICON = { answer = '❓', review = '🚦', waiting = '☐', working = '⏳', idle = '·' }
+local ICON = { answer = '❓', review = '🚦', waiting = '☐', tour = '🧭', working = '⏳', idle = '·' }
 local STATE = { answer = 'needs you', working = 'working', idle = 'idle' }
 local FOOTER = ' ⏎ open  t tick  c comment  p play  i inbox note  s new session  Tab more  r refresh  q close'
 
@@ -154,7 +154,7 @@ function M.render(data, opts)
   end
 
   local counts = data.counts
-  section(lines, spans, 'Needs you', counts.answer + counts.review + counts.waiting, w)
+  section(lines, spans, 'Needs you', counts.answer + counts.review + counts.waiting + (counts.tour or 0), w)
   if #data.needs == 0 then
     local n = add '   nothing waits for you'
     table.insert(spans, { n, 0, #lines[n], 'ControlBoardDim' })
@@ -166,7 +166,9 @@ function M.render(data, opts)
   end
   for _, need in ipairs(data.needs) do
     local since = need.since and age(now - need.since) or ''
-    if need.kind ~= 'waiting' then
+    if need.kind == 'tour' then -- a nudge, not a demand: the quiet colour
+      add_row(need, ICON.tour, 'ControlBoardWait', need.project, need.title, need.detail, '', since)
+    elseif need.kind ~= 'waiting' then
       add_row(need, ICON[need.kind], 'ControlBoardAsk', need.project, need.title, need.detail, '', since)
     elseif opts.expanded and opts.expanded[need.project_path] then
       add_row(need, ICON.waiting, 'ControlBoardWait', need.project, need.title, need.detail, '', since)
