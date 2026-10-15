@@ -130,6 +130,17 @@ function M.attach(s)
     end,
   })
   unwatch = unwatch or data.watch(update_winbars)
+  -- Closing the tab (:tabclose, Ctrl-W c) only hides a terminal buffer, and its
+  -- `claude attach` would go on: wipe it, which detaches the client, not the session
+  vim.api.nvim_create_autocmd('BufHidden', {
+    buffer = buf,
+    once = true,
+    callback = function()
+      vim.schedule(function()
+        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+      end)
+    end,
+  })
   vim.api.nvim_create_autocmd('BufWipeout', {
     buffer = buf,
     once = true,

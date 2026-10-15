@@ -52,7 +52,7 @@ function M.refresh(done)
     return
   end
   running = true
-  vim.system({ 'python3', script, '--json' }, { text = true, timeout = 20000 }, function(out)
+  local started, err = pcall(vim.system, { 'python3', script, '--json' }, { text = true, timeout = 20000 }, function(out)
     vim.schedule(function()
       running = false
       local waiting = callbacks
@@ -73,6 +73,14 @@ function M.refresh(done)
       end
     end)
   end)
+  if not started then -- python3 is missing: say so, and let the next refresh try again
+    running = false
+    local waiting = callbacks
+    callbacks = {}
+    for _, fn in ipairs(waiting) do
+      fn(nil, tostring(err))
+    end
+  end
 end
 
 local function stop_timer()
