@@ -204,6 +204,8 @@ projects. It refreshes by itself.
 - `Enter` opens what is under the cursor: a session in a tab (`claude attach`; type
   in it, `Ctrl+\ Ctrl+N` then `Ctrl+U` / `Ctrl+D` scroll it, `q` or `Ctrl+Z`
   detaches, the session goes on), a review or the roadmap as a file
+- In a session's tab, `Alt+A` is `Space a` while you type: `Alt+A W` picks, `Alt+A B`
+  goes back to the board
 - `p` plays the recording of a review's demo in a tab (`asciinema play`; Space pauses,
   `Ctrl+C` stops, `Ctrl+\ Ctrl+N` then `q` closes). A row that has one shows a `▶`
   after its icon, here and in the picker (`p`, `Alt+p` while typing); on any other

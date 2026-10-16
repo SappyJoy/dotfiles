@@ -223,6 +223,23 @@ on 'Fix parser'
 keys Enter
 sleep 1
 check "Enter on the same session again: its tab, not a second attach" [ "$(grep -c ' attach abc12345' "$tmp/claude-calls")" = 1 ]
+check "  … its winbar names Alt+A" shows "Alt+A as Space a"
+keys M-a b
+check "Alt+A B from the prompt: back to the board" shows "Plan ──"
+on 'Fix parser'
+keys Enter
+sleep 1
+keys M-a w
+sleep 2
+check "Alt+A W from the prompt: the picker" shows "Claude: needs you, sessions, projects"
+keys C-c
+check "  … closing it: the session's tab again" shows "ATTACHED abc12345"
+keys i
+keys M-ф е
+check "Alt+Ф Е in the Russian layout: the board" shows "Plan ──"
+on 'Fix parser'
+keys Enter
+sleep 1
 board "Fix parser" working
 sleep 7
 check "the winbar follows the session (working)" shows "proj · Fix parser · working"

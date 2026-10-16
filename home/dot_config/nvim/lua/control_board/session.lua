@@ -3,6 +3,8 @@
 -- detaches; the session goes on. A session started by hand in tmux is jumped to there.
 -- In the tab, Claude scrolls with its own PageUp/PageDown (nvim's normal mode sees only
 -- the screen), so in Normal mode Ctrl+U/Ctrl+D and the page keys send them.
+-- Space types a space at the prompt, so Alt+A stands for <leader>a there: Alt+A W picks,
+-- Alt+A B goes to the board.
 local data = require 'control_board.data'
 
 local M = {}
@@ -67,7 +69,7 @@ local function winbar_text(buf)
     label = s.project .. ' · ' .. s.name
     state = '%#' .. GROUP[s.activity] .. '#' .. STATE[s.activity]
   end
-  return ' ' .. label:gsub('%%', '%%%%') .. ' · ' .. state .. '%*%=%#ControlBoardDim#Ctrl+Z detaches · Ctrl+\\ Ctrl+N Normal mode '
+  return ' ' .. label:gsub('%%', '%%%%') .. ' · ' .. state .. '%*%=%#ControlBoardDim#Alt+A as Space a · Ctrl+Z detaches · Ctrl+\\ Ctrl+N Normal mode '
 end
 
 local function update_winbars()
@@ -97,6 +99,14 @@ local function map_keys(buf)
   vim.keymap.set('n', 'q', '<cmd>bwipeout!<cr>', { buffer = buf, desc = 'Detach (the session goes on)' })
   -- vim-tmux-navigator maps <C-\> in Terminal mode, which breaks nvim's <C-\><C-n>
   vim.keymap.set('t', '<C-\\><C-n>', '<C-\\><C-n>', { buffer = buf, desc = 'Normal mode (the session goes on)' })
+  -- Alt+A: Normal mode, then <leader>a waits for its key (Alt+Ф and <leader>ф in Russian).
+  -- Both go in front of the keys typed after Alt+A, which may be read already.
+  for lhs, group in pairs { ['<M-a>'] = '<leader>a', ['<M-ф>'] = '<leader>ф' } do
+    vim.keymap.set('t', lhs, function()
+      vim.api.nvim_feedkeys(vim.keycode(group), 'mi', false)
+      vim.api.nvim_feedkeys(vim.keycode('<C-\\><C-n>'), 'ni', false)
+    end, { buffer = buf, desc = 'Space a from the prompt (the session goes on)' })
+  end
 end
 
 -- Open the session in a tab: its own, if it has one. s needs short, config_dir, and
