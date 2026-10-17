@@ -56,6 +56,18 @@ check "a newer window, lower: replaces" saved claude-personal "3 $((reset + 5 * 
 CLAUDE_CONFIG_DIR= status 7 "$reset" >/dev/null
 check "no CLAUDE_CONFIG_DIR: the default account's file" saved claude "7 $reset"
 
+# The history the control board's Week reads: one line per saved change
+week=$((now + 3 * 86400))
+hist=$XDG_CACHE_HOME/claude-board/windows/claude-personal
+rm -rf "$usage" "$XDG_CACHE_HOME/claude-board"
+status 20 "$reset" 71 "$week" >/dev/null
+status 10 "$reset" 71 "$week" >/dev/null
+status 25 "$reset" 71 "$week" >/dev/null
+status 25 "$reset" 80 "$week" >/dev/null
+check "each saved change goes to the history, an ignored call does not" \
+    [ "$(cat "$hist")" = "5h 20 $reset${nl}7d 71 $week${nl}5h 25 $reset${nl}7d 80 $week" ]
+rm -rf "$XDG_CACHE_HOME/claude-board"
+
 # The 7-day window: line 2, with the same rules as the 5-hour one
 week=$((now + 3 * 86400))
 rm -rf "$usage"

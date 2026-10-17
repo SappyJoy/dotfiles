@@ -4,7 +4,7 @@
 #        | context window % · 5-hour and 7-day rate limit %
 # Colors are dimmed to match the status line's rendering style.
 # Also saves the 5-hour and 7-day windows for polybar's claude module and nvim's
-# control board (see the end).
+# control board (see the end), and keeps a history of the windows for the board's Week.
 
 input=$(cat)
 
@@ -83,6 +83,14 @@ if [ -n "$rl_5h_window" ] || [ -n "$rl_7d_window" ]; then
     mkdir -p "${usage_file%/*}"
     { printf '%s\n' "$new_5h"; [ -z "$new_7d" ] || printf '%s\n' "$new_7d"; } >"$usage_file.$$" &&
       mv "$usage_file.$$" "$usage_file"
+    # every saved window is also appended to a history the control board's Week reads:
+    # "5h PERCENT RESETS_AT" or "7d PERCENT RESETS_AT", one line per change
+    history=${XDG_CACHE_HOME:-$HOME/.cache}/claude-board/windows/${account#.}
+    mkdir -p "${history%/*}"
+    {
+      [ "$new_5h" = "${old[0]:-}" ] || printf '5h %s\n' "$new_5h"
+      [ -z "$new_7d" ] || [ "$new_7d" = "${old[1]:-}" ] || printf '7d %s\n' "$new_7d"
+    } >>"$history"
   fi
 fi
 
