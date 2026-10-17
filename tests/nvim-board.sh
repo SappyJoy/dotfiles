@@ -110,6 +110,27 @@ printf '# Inbox\n\nNotes for later.\n\n- first\n\n' >INBOX.md
 printf 'x\n' >src.txt
 git add . && git -c user.email=t@t -c user.name=t commit -qm init
 
+# week.py, next to the stub board.py: canned Week data (the second line shows what a run costs)
+cat >"$tmp/bin/week.py" <<EOS
+import json, os, time
+open("$tmp/week-calls", "a").write("x")
+if os.path.exists("$tmp/week-fails"):
+    raise SystemExit("week boom")
+now = time.time()
+days = [time.strftime("%Y-%m-%d", time.localtime(now - n * 86400)) for n in range(6, -1, -1)]
+print(json.dumps({
+    "days": days,
+    "tokens": {"total": 3000000, "projects": [
+        {"name": "proj", "days": [0, 0, 100, 400000, 0, 800000, 1200000], "total": 2400000},
+        {"name": "other", "days": [0, 0, 0, 0, 0, 0, 600000], "total": 600000}],
+        "top_prompt": {"project": "proj", "text": "fix the parser", "tokens": 900000}},
+    "windows": [{"account": "personal", "kind": "5h", "pct": 92, "resets_at": now - 3600},
+                {"account": "personal", "kind": "5h", "pct": 30, "resets_at": now + 3600}],
+    "milestones": [{"project": "proj", "count": 3}],
+    "growth": [{"name": "proj", "path": "$proj", "loc": 12500, "added": 3400, "removed": 200,
+        "grew": [{"part": "lib/parser", "delta": 900}], "new": ["lib/report"],
+        "big": [{"path": "src.txt", "lines": 412}]}]}))
+EOS
 # canned data: what the collector would print. board SESSION_NAME STATE
 board() {
     python3 - "$@" >"$tmp/board.json" <<EOS
@@ -210,6 +231,14 @@ check "  … the board's keys, and what p plays" shows "⏎ open  t tick  c comm
 check "  … the review has a recording: a ▶ after its icon" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▶ proj *M3 Third'"
 check "  … and no other row has one (the key hint does)" sh -c "[ \$(tmux -L nvim-board capture-pane -p -t 0 | grep -c '▶') = 2 ]"
 check "  … a finished track under Needs you" shows "track scorer"
+check "  … the Week: tokens per project with their share" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Week ──' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'proj *2.4M.* 80%'"
+check "  … a spark for each day, and the costliest prompt" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▁▁▁▃▁▆█' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Costliest prompt: 900k in proj, \"fix the parser\"'"
+check "  … the 5-hour windows as bars, milestones finished, code growth" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '5h personal' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Milestones finished: proj 3' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'proj *13k *+3.4k −200' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'lib/parser +900 · new: lib/report' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'src.txt *412 lines'"
+on 'src.txt'
+keys Enter
+check "Enter on a flagged file: the file" [ "$(probe "vim.fn.expand('%:t')")" = "src.txt" ]
+keys ':bd' Enter
+keys b
 on 'track scorer'
 keys Enter
 check "Enter on a track: its TRACK.md" shows "The scorer findings"

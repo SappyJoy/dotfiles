@@ -6,6 +6,7 @@
 -- from render.lua, the session tabs from session.lua, the picker (<leader>aw) from
 -- picker.lua. <leader>ac starts a background session in this project and attaches it.
 -- demo.lua plays the recording of a review's demo (`p` on the board and in the picker).
+-- week.lua and week_view.lua add its Week section (tokens, plan windows, milestones, code growth).
 -- notify.lua tells you in nvim when a session waits (<leader>an opens the newest notice).
 local data = require 'control_board.data'
 local render = require 'control_board.render'
@@ -69,6 +70,10 @@ local function draw(buf, board)
     width = vim.api.nvim_win_get_width(win) - 1,
     expanded = expanded,
     playable = require('control_board.demo').playable,
+    week_view = function(w, kit)
+      local week, err = require('control_board.week').last()
+      return require('control_board.week_view').build(week, err, w, kit)
+    end,
   })
   rows[buf] = out.rows
   vim.bo[buf].modifiable = true
@@ -129,7 +134,9 @@ function M.open_row(row)
     vim.notify('That session is gone; refresh with r', vim.log.levels.WARN)
   elseif row.kind == 'review' or row.kind == 'waiting' or row.kind == 'track' then
     edit(row.path, row.line)
-  elseif row.kind == 'project' then
+  elseif row.kind == 'file' then
+    edit(row.path)
+  elseif row.kind == 'project' or row.kind == 'growth' then
     edit(row.path .. '/ROADMAP.md')
   end
 end
@@ -319,6 +326,15 @@ local function close()
   end
 end
 
+-- the Week reads a week of transcripts: on opening the board and on r, drawn when it is in
+local function refresh_week(buf)
+  require('control_board.week').refresh(function()
+    if vim.api.nvim_buf_is_valid(buf) then
+      draw(buf, data.last())
+    end
+  end)
+end
+
 local function map_keys(buf)
   local function map(lhs, fn, desc)
     vim.keymap.set('n', lhs, function()
@@ -344,6 +360,7 @@ local function map_keys(buf)
   map('<Tab>', toggle, 'Show all Waiting on you lines of the project')
   map('r', function()
     data.refresh()
+    refresh_week(buf)
   end, 'Refresh')
   map('q', close, 'Close the board')
 end
@@ -377,6 +394,7 @@ function M.open()
     if win then
       vim.api.nvim_set_current_win(win)
     end
+    refresh_week(existing)
     return data.refresh()
   end
   fresh_tab()
@@ -422,6 +440,7 @@ function M.open()
       vim.notify(err, vim.log.levels.ERROR)
     end
   end)
+  refresh_week(buf)
 end
 
 function M.pick()

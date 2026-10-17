@@ -199,7 +199,9 @@ this folder connects too.
 
 `cb` in a shell opens nvim on the board; `b` on the first page, `<leader>ab` here.
 Plan usage (5h and 7d, a tick for the pace), what needs you, the sessions, the
-projects. It refreshes by itself.
+projects, and at the bottom the Week: tokens per project and day, the 5-hour windows,
+milestones finished, code growth (`Enter` on a project opens its roadmap, on a `⚠` file
+opens the file). It refreshes by itself; the Week on opening and on `r`.
 
 - `Enter` opens what is under the cursor: a session in a tab (`claude attach`; type
   in it, `Ctrl+\ Ctrl+N` then `Ctrl+U` / `Ctrl+D` scroll it, `q` or `Ctrl+Z`

@@ -209,6 +209,20 @@ function M.render(data, opts)
     rows[add(b.text)] = vim.tbl_extend('force', p, { kind = 'project' })
   end
 
+  if opts.week_view then -- the Week: its lines and spans start at 1 of their own
+    local view = opts.week_view(w, { fit = fit, builder = builder, section = section })
+    local offset = #lines
+    for _, line in ipairs(view.lines) do
+      table.insert(lines, line)
+    end
+    for _, span in ipairs(view.spans) do
+      table.insert(spans, { span[1] + offset, span[2], span[3], span[4] })
+    end
+    for lnum, row in pairs(view.rows) do
+      rows[lnum + offset] = row
+    end
+  end
+
   add ''
   table.insert(spans, { add(FOOTER), 0, #FOOTER, 'ControlBoardDim' })
   return { lines = lines, spans = spans, rows = rows }
