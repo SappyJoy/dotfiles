@@ -9,7 +9,7 @@
 #
 # The text is the project's name and the notification's message. An idle session in a
 # project with a review waiting for the user says so instead, and the desktop shows
-# it as critical. The urgency of the others follows notification_type: idle is low,
+# it as critical; so does an idle side track that has written its TRACK.md. The urgency of the others follows notification_type: idle is low,
 # a permission or a question is normal.
 #
 # Runs in every live session, both accounts: silent on stdout and stderr, always exit 0.
@@ -36,6 +36,19 @@ done
 [ -n "$root" ] || root=$(git -C "$cwd" rev-parse --show-toplevel) || root=$cwd
 project=${root##*/}
 
+# A side track (`.claude/worktrees/track-<slug>` of the project, M25) is a checkout of
+# its own: the project is the one above it, and the track is named by its slug
+track=
+case $cwd in
+    */.claude/worktrees/track-*)
+        project=${cwd%%/.claude/worktrees/track-*}
+        track=${cwd#*/.claude/worktrees/track-}
+        track=${track%%/*}
+        tdir=$project/.claude/worktrees/track-$track
+        project=${project##*/}
+        ;;
+esac
+
 # The first review in REVIEW.md that the user hasn't put off: "M3 Title". A review is
 # put off by a line starting with "Put off" within three lines of its heading.
 review=$(awk '
@@ -44,6 +57,7 @@ review=$(awk '
     near > 0 { near--; if ($0 ~ /^Put off/) off = 1 }
     END { flush(); print found }
 ' "$root/REVIEW.md")
+[ -z "$track" ] || review=
 
 urgency=normal
 body=${message:-needs you}
@@ -54,6 +68,14 @@ case $type in
         if [ -n "$review" ]; then
             urgency=critical
             body="review waiting: $review"
+        fi
+        if [ -n "$track" ]; then
+            urgency=low
+            body="track $track is still working"
+            if [ -f "$tdir/TRACK.md" ]; then
+                urgency=critical
+                body="track $track is done: read TRACK.md"
+            fi
         fi
         ;;
 esac

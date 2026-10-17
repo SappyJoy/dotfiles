@@ -103,6 +103,19 @@ check "only put-off reviews: not urgent" \
 rm -f "$proj/REVIEW.md"
 
 reset
+trk=$proj/.claude/worktrees/track-scorer-books
+mkdir -p "$trk/src"
+note idle_prompt "$trk/src" "Claude is waiting for your input"
+check "an idle side track with no report: the project's name, the track's slug, low" \
+    [ "$(sent)" = "[-a][Claude Code][-u][low][-h][string:x-dunst-stack-tag:claude-s1][--][proj][track scorer-books is still working]" ]
+reset
+echo '# Track' >"$trk/TRACK.md"
+note idle_prompt "$trk" "Claude is waiting for your input"
+check "an idle side track with its TRACK.md: critical, says it is done" \
+    [ "$(sent)" = "[-a][Claude Code][-u][critical][-h][string:x-dunst-stack-tag:claude-s1][--][proj][track scorer-books is done: read TRACK.md]" ]
+check "a finished track: the tmux message says so" screen_has "proj: track scorer-books is done"
+
+reset
 note elicitation_dialog "$repo/lib" "Claude Code needs your input"
 check "a folder in a git repo: the repo's name, normal urgency" \
     [ "$(sent)" = "[-a][Claude Code][-u][normal][-h][string:x-dunst-stack-tag:claude-s1][--][plain-repo][Claude Code needs your input]" ]
