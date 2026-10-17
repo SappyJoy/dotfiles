@@ -13,7 +13,7 @@ local entry_display = require 'telescope.pickers.entry_display'
 
 local M = {}
 
-local ICON = { answer = '❓', review = '🚦', waiting = '☐', session = '⏳', project = '▪' }
+local ICON = { answer = '❓', review = '🚦', track = '🧭', waiting = '☐', session = '⏳', project = '▪' }
 local SESSION_ICON = { answer = '❓', working = '⏳', idle = '·' }
 
 -- every row of the board, as { icon, play, project, title, detail, row }

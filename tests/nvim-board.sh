@@ -86,6 +86,11 @@ M3 is in review.
 
 - [ ] M4 Four — more
 EOF
+cat >TRACK.md <<'EOF'
+# Track scorer
+
+The scorer findings, in three lines.
+EOF
 cat >REVIEW.md <<'EOF'
 # Review: M3 🚦 Third
 
@@ -132,6 +137,8 @@ if state == "answer":
         "since": now - 600, "session": asking["id"], "project_path": p})
 needs.append({"kind": "review", "project": "proj", "title": "M3 Third", "detail": "review waiting",
     "since": now - 7200, "project_path": p, "path": p + "/REVIEW.md", "line": 1})
+needs.append({"kind": "track", "project": "proj", "title": "track scorer", "detail": "report ready",
+    "since": now - 3600, "project_path": p, "path": p + "/TRACK.md"})
 needs.append(waiting("Log in to npm: \`npm login\` — M4 needs it", 12))
 needs.append(waiting("Try the demo", 13))
 if len(sys.argv) > 3:  # another project, in another folder, with the same name
@@ -151,7 +158,7 @@ json.dump({
          "seven_day": {"pct": 61, "resets_at": now + 3 * 86400}}],
     "needs": needs, "sessions": sessions,
     "projects": projects,
-    "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "waiting": 2,
+    "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "track": 1, "waiting": 2,
         "working": 1, "sessions": 4}}, sys.stdout)
 EOS
 }
@@ -196,12 +203,18 @@ keys b
 check "b: the board" shows "Plan ──"
 check "  … a bar with the percent and its reset" shows "34%  resets in 3h"
 check "  … a window with no data" shows "no data yet"
-check "  … Needs you, Sessions, Projects" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Sessions (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Projects ──'"
+check "  … Needs you, Sessions, Projects" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (5)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Sessions (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Projects ──'"
 check "  … a session that asks, a review, a waiting line" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Which parser' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 Third' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Log in to npm'"
 check "  … a project with its milestone and progress" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 🚦 Third · review.*2 of 4 done'"
 check "  … the board's keys, and what p plays" shows "⏎ open  t tick  c comment  p play ▶"
 check "  … the review has a recording: a ▶ after its icon" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▶ proj *M3 Third'"
 check "  … and no other row has one (the key hint does)" sh -c "[ \$(tmux -L nvim-board capture-pane -p -t 0 | grep -c '▶') = 2 ]"
+check "  … a finished track under Needs you" shows "track scorer"
+on 'track scorer'
+keys Enter
+check "Enter on a track: its TRACK.md" shows "The scorer findings"
+keys ':bd' Enter
+keys b
 keys q
 check "q: back to the first page" shows "Find file"
 

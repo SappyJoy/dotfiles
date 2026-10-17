@@ -127,7 +127,7 @@ function M.open_row(row)
       return require('control_board.session').open(session)
     end
     vim.notify('That session is gone; refresh with r', vim.log.levels.WARN)
-  elseif row.kind == 'review' or row.kind == 'waiting' then
+  elseif row.kind == 'review' or row.kind == 'waiting' or row.kind == 'track' then
     edit(row.path, row.line)
   elseif row.kind == 'project' then
     edit(row.path .. '/ROADMAP.md')
