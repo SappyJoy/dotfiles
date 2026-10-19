@@ -17,3 +17,16 @@ yt4.ggpht.com
 yt3.googleusercontent.com  # channel art
 youtube-nocookie.com       # embeds on other sites
 ikea.com                   # 403 on www.ikea.com without the tunnel (2026-10-16); photos on the same name
+# Telegram, seen 2026-10-19: no TCP connection to its data centers without the tunnel,
+# and telegram.org, t.me, web.telegram.org time out. The app connects by address, so
+# its own ranges (core.telegram.org/resources/cidr.txt; IPv6 left out: no IPv6 here).
+# t.me, telesco.pe (the CDN) and updates.tdesktop.com are in 149.154.160.0/20.
+91.108.4.0/22
+91.108.8.0/22
+91.108.12.0/22
+91.108.16.0/22
+91.108.20.0/22
+91.108.56.0/22
+91.105.192.0/23
+149.154.160.0/20
+185.76.151.0/24
