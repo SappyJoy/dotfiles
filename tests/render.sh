@@ -87,7 +87,7 @@ out=$(modify dot_claude/modify_settings.json '{"enabledPlugins": {"own@x": true,
 check "claude settings: plugins on everywhere, the rest off, the machine's own kept" python3 -c '
 import json, sys
 on = json.loads(sys.argv[1])["enabledPlugins"]
-everywhere = {"milestone-flow@personal", "mason-lsp@personal", "playwright@claude-plugins-official"}
+everywhere = {"milestone-flow@personal", "mason-lsp@personal", "shop-search@personal", "playwright@claude-plugins-official"}
 off = {"frontend-design", "plugin-dev", "context7", "claude-code-setup", "claude-md-management",
        "session-report", "superpowers"}
 sys.exit(on != {**{p: True for p in everywhere}, **{p + "@claude-plugins-official": False for p in off},
