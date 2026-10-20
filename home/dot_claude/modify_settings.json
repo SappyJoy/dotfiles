@@ -40,6 +40,13 @@
 {{- range $id, $on := $plugins }}
 {{-   $s = setValueAtPath (list "enabledPlugins" $id) $on $s }}
 {{- end }}
+{{- /* No claude.ai pages: pages are local files, which last. The Artifact tool alone
+       cost 11.4k tokens at every session start (2026-10-20). Added to the machine's own
+       deny rules. */ -}}
+{{- $deny := list }}
+{{- if and (hasKey $s "permissions") (hasKey $s.permissions "deny") }}{{ $deny = $s.permissions.deny }}{{ end }}
+{{- $deny = concat $deny (list "Artifact" "ArtifactComments" "ArtifactData" "mcp__claude_ai_Claude_Docs") | uniq }}
+{{- $s = setValueAtPath "permissions.deny" $deny $s }}
 {{- /* The `personal` marketplace (milestone-flow, mason-lsp, shop-search): a clone of the toolkit
        that follows its main branch, made by `make marketplace` there. Only the source:
        Claude Code keeps its own fields (autoUpdate) next to it. */ -}}
