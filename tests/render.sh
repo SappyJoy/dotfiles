@@ -103,6 +103,16 @@ check "claude settings: a new machine gets the plugins and the marketplace" pyth
 import json, sys
 s = json.loads(sys.argv[1])
 sys.exit(not (s["enabledPlugins"]["milestone-flow@personal"] and "personal" in s["extraKnownMarketplaces"]))' "$out"
+# No claude.ai pages: the Artifact tools and the Docs connector denied, the machine's own
+# deny rules and other permissions kept
+out=$(modify dot_claude/modify_settings.json '{"permissions": {"deny": ["Bash(rm:*)", "Artifact"], "allow": ["Read"]}}')
+check "claude settings: claude.ai pages denied, the machine's own rules kept" python3 -c '
+import json, sys
+p = json.loads(sys.argv[1])["permissions"]
+sys.exit(p != {"deny": ["Bash(rm:*)", "Artifact", "ArtifactComments", "ArtifactData", "mcp__claude_ai_Claude_Docs"],
+               "allow": ["Read"]})' "$out"
+out=$(modify dot_claude/modify_settings.json '')
+check "claude settings: a new machine denies claude.ai pages" has '"mcp__claude_ai_Claude_Docs"'
 
 # Per machine: arch uses pacman, so its mise config has only the settings (per-project
 # versions), and it gets no mise external, no scripts and no apt list.
