@@ -1,7 +1,7 @@
 #!/bin/bash
 # theme-term light|dark: the terminal side of the light/dark switch, on every
-# machine: tmux's accent, delta's tints and every running nvim, plus the state file
-# a new nvim reads. The terminal's own palette is switched by the caller:
+# machine: tmux's accent, delta's tints, every running nvim and Claude Code's theme,
+# plus the state file a new nvim reads. The caller switches the terminal's palette:
 # theme-switcher (kitty, on arch) or theme-switcher.ps1 (Windows Terminal, on WSL).
 
 MODE=$1
@@ -14,6 +14,7 @@ STATE_FILE="$HOME/.config/nvim/.theme_state"
 TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.conf
 GIT_THEME="$HOME/.config/git/theme.gitconfig"  # delta's light/dark, included by .gitconfig
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"  # both accounts' (the personal one links it)
 
 echo "$MODE" > "$STATE_FILE"
 
@@ -25,6 +26,14 @@ else
     echo 'set -g @minimal-tmux-bg "#FFCC66"' > "$TMUX_THEME"
     printf '[delta]\n\tdark = true\n' > "$GIT_THEME"
     scheme=ayu-mirage
+fi
+
+# Claude Code: its theme names are the modes. New sessions start in it; a running one
+# keeps its theme (it has no auto theme), /theme switches it. cat keeps the file's inode.
+if [ -f "$CLAUDE_SETTINGS" ] && command -v jq >/dev/null; then
+    tmp=$(mktemp)
+    jq --arg theme "$MODE" '.theme = $theme' "$CLAUDE_SETTINGS" > "$tmp" && cat "$tmp" > "$CLAUDE_SETTINGS"
+    rm -f "$tmp"
 fi
 
 # tmux, if a server runs
