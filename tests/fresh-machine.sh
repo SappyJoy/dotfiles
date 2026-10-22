@@ -79,9 +79,11 @@ if [ "${1:-}" = --inside ]; then
     # Tools: every "mise" row of tools.tsv is installed at its pinned version.
     out=$(bash -lc 'tools-check --missing' 2>&1)
     printf '%s\n' "$out" | sed 's/^/     tools-check: /'
-    # A mise row: its install column (after status, tool, have, want) starts with "mise "
-    check "tools-check: no mise row missing or older" \
-        [ -z "$(printf '%s\n' "$out" | grep -E '^(missing|older) +[^ ]+ +[^ ]+ +[^ ]+ +mise ')" ]
+    # A mise row: its install column (after status, tool, have, want) starts with "mise ".
+    # Without cargo (this image has no Rust), the "mise cargo:" rows are skipped.
+    check "tools-check: no mise row missing, older or broken (cargo rows: only with cargo)" \
+        [ -z "$(printf '%s\n' "$out" | grep -E '^(missing|older|broken) +[^ ]+ +[^ ]+ +[^ ]+ +mise ' |
+            { bash -lc 'command -v cargo' >/dev/null && cat || grep -v ' mise cargo:'; })" ]
     # Claude Code's status line: settings.json runs the script, which needs jq
     check "claude settings run the status line" \
         grep -q '"command": "bash ~/.claude/statusline-command.sh"' ~/.claude/settings.json

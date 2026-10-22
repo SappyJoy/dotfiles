@@ -6,7 +6,8 @@
 # install: how a machine other than arch gets it (arch uses pacman). The first word:
 #   mise <tool>: installed by chezmoi apply through mise, pinned to `version`
 #     (mise cargo:<crate> builds from source, and only where cargo is: upstream's
-#     binaries of tree-sitter and bob need glibc 2.39)
+#     binaries of tree-sitter and bob need glibc 2.39; tree-sitter without its QuickJS,
+#     whose C build failed on Ubuntu 22.04: it runs grammar.js with node)
 #   apt <package>: installed by chezmoi apply with sudo, where there is sudo
 #   anything else: a hint for installing by hand
 fish	core	4.9.3	fish --version	mise github:fish-shell/fish-shell
@@ -14,7 +15,7 @@ tmux	core	3.7c	tmux -V	mise aqua:tmux/tmux-builds
 asciinema	core	3.2.1	asciinema --version	mise github:asciinema/asciinema
 agg	core	1.9.0	agg --version	mise github:asciinema/agg
 nvim	core	0.12.5	nvim --version	mise github:neovim/neovim-releases
-tree-sitter	core	0.26.9	tree-sitter --version	mise cargo:tree-sitter-cli
+tree-sitter	core	0.26.9	tree-sitter --version	mise cargo:tree-sitter-cli[default-features=false]
 git	core	2.55.0	git --version	apt git
 fzf	core	0.74.4	fzf --version	mise aqua:junegunn/fzf
 rg	core	15.2.0	rg --version	mise aqua:BurntSushi/ripgrep

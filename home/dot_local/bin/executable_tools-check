@@ -45,9 +45,10 @@ command -v timeout >/dev/null 2>&1 && timeout='timeout 10'
 
 # installed_version CHECK: the first version number CHECK prints, colors stripped.
 # Prefers a dotted number (1.2.3, or 3.7c as tmux has it) and falls back to a plain
-# one (picom: v13).
+# one (picom: v13). Fails when CHECK does: its error may hold numbers (GLIBC_2.39).
 installed_version() {
-    out=$($timeout sh -c "$1" </dev/null 2>&1 | head -n 5 | sed "s/$esc\[[0-9;]*m//g")
+    out=$($timeout sh -c "$1" </dev/null 2>&1) || return 1
+    out=$(printf '%s\n' "$out" | head -n 5 | sed "s/$esc\[[0-9;]*m//g")
     v=$(printf '%s\n' "$out" | grep -oE '[0-9]+(\.[0-9]+)+[a-z]?' | head -n 1)
     [ -n "$v" ] || v=$(printf '%s\n' "$out" | grep -oE '[0-9]+' | head -n 1)
     printf '%s\n' "$v"
@@ -93,9 +94,9 @@ EOF
     fi
 
     if command -v "$name" >/dev/null 2>&1; then
-        if [ "$check" = - ]; then have=-; else have=$(installed_version "$check"); fi
-        if [ -z "$have" ]; then have='?' status=unknown
-        elif [ "$have" = - ]; then status=ok
+        if [ "$check" = - ]; then have=- status=ok
+        elif ! have=$(installed_version "$check"); then have='?' status=broken
+        elif [ -z "$have" ]; then have='?' status=unknown
         else status=$(compare "$have" "$want")
         fi
     else
@@ -116,7 +117,7 @@ EOF
     fi
 
     case $status in
-        missing) need=$((need + 1)) color=$c_bad ;;
+        missing|broken) need=$((need + 1)) color=$c_bad ;;
         older) need=$((need + 1)) color=$c_warn ;;
         *) [ $only_action = 1 ] && continue
            color=$c_ok hint= ;;
