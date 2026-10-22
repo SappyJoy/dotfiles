@@ -26,11 +26,13 @@ M.base = {
   'yaml',
 }
 
+-- each once: nvim-treesitter builds a parser asked for twice in parallel, in one
+-- cache folder, and the two builds break each other
 function M.missing()
   local have = require('nvim-treesitter').get_installed()
   return vim.tbl_filter(function(p)
     return not vim.tbl_contains(have, p)
-  end, vim.list_extend(vim.deepcopy(M.base), require('lang').list 'parsers'))
+  end, vim.list.unique(vim.list_extend(vim.deepcopy(M.base), require('lang').list 'parsers')))
 end
 
 -- whether tree-sitter-cli is here and runs (orgmode's grammar uses it too)
