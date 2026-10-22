@@ -5,6 +5,8 @@
 # check: prints the version. "-": presence only.
 # install: how a machine other than arch gets it (arch uses pacman). The first word:
 #   mise <tool>: installed by chezmoi apply through mise, pinned to `version`
+#     (mise cargo:<crate> builds from source, and only where cargo is: upstream's
+#     binaries of tree-sitter and bob need glibc 2.39)
 #   apt <package>: installed by chezmoi apply with sudo, where there is sudo
 #   anything else: a hint for installing by hand
 fish	core	4.9.3	fish --version	mise github:fish-shell/fish-shell
@@ -12,7 +14,7 @@ tmux	core	3.7c	tmux -V	mise aqua:tmux/tmux-builds
 asciinema	core	3.2.1	asciinema --version	mise github:asciinema/asciinema
 agg	core	1.9.0	agg --version	mise github:asciinema/agg
 nvim	core	0.12.5	nvim --version	mise github:neovim/neovim-releases
-tree-sitter	core	0.26.9	tree-sitter --version	mise aqua:tree-sitter/tree-sitter
+tree-sitter	core	0.26.9	tree-sitter --version	mise cargo:tree-sitter-cli
 git	core	2.55.0	git --version	apt git
 fzf	core	0.74.4	fzf --version	mise aqua:junegunn/fzf
 rg	core	15.2.0	rg --version	mise aqua:BurntSushi/ripgrep
@@ -30,7 +32,7 @@ jless	core	0.9.0	jless --version	global: mise use -p ~/.config/mise/conf.d/local
 tldr	core	1.9.0	tldr --version	mise aqua:tealdeer-rs/tealdeer
 chezmoi	core	2.72.2	chezmoi --version	sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
 age	core	1.3.2	age --version	mise aqua:FiloSottile/age
-bob	dev	4.1.7	bob --version	mise aqua:MordechaiHadad/bob
+bob	dev	4.1.7	bob --version	mise cargo:bob-nvim
 uv	dev	0.12.18	uv --version	mise aqua:astral-sh/uv
 python3	dev	3.14.7	python3 --version	apt python3-venv
 cc	dev	-	-	apt build-essential
@@ -48,7 +50,6 @@ dir2md	dev	0.3.1	-	mise pipx:dir2md[uvx_args=--python 3.12]
 dvc	dev	3.67.1	dvc --version	mise pipx:dvc[extras=all]
 jupytext	dev	1.19.5	jupytext --version	mise pipx:jupytext
 claude	dev	2.1.282	claude --version	curl -fsSL https://claude.ai/install.sh | bash
-tree-sitter	dev	0.26.9	tree-sitter --version	cargo install --locked tree-sitter-cli (nvim builds its parsers with it; upstream's binary needs glibc 2.39)
 codex	dev	0.158.0	codex --version	mise aqua:openai/codex
 i3	desktop	4.25.1	i3 --version	apt i3-wm
 polybar	desktop	3.7.2	polybar --version	apt polybar
