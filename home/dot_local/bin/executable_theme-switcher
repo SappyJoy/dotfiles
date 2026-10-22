@@ -1,7 +1,6 @@
 #!/bin/bash
 
 MODE=$1
-STATE_FILE="$HOME/.config/nvim/.theme_state"
 
 # Verify arguments
 if [ "$MODE" != light ] && [ "$MODE" != dark ]; then
@@ -13,9 +12,6 @@ fi
 I3_COLORS="$HOME/.config/i3/colors"
 POLYBAR_COLORS="$HOME/.config/polybar/colors.ini"
 KITTY_THEME="$HOME/.config/kitty/theme.conf"
-TMUX_CONF="$HOME/.config/tmux/tmux.conf"
-TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.conf
-GIT_THEME="$HOME/.config/git/theme.gitconfig"  # delta's light/dark, included by .gitconfig
 GTK3_SETTINGS="$HOME/.config/gtk-3.0/settings.ini"  # a create_ seed; GTK3 apps read it on start
 ROFI_COLORS="$HOME/.config/rofi/colors.rasi"  # untracked; config.rasi holds the light colors
 DUNST_THEME="$HOME/.config/dunst/dunstrc.d/50-theme.conf"  # untracked; dunstrc holds the light colors
@@ -26,9 +22,6 @@ gtk3_dark() {
     [ -f "$GTK3_SETTINGS" ] &&
         sed -i "s/^gtk-application-prefer-dark-theme=.*/gtk-application-prefer-dark-theme=$1/" "$GTK3_SETTINGS"
 }
-
-# Save state
-echo "$MODE" > "$STATE_FILE"
 
 if [ "$MODE" == "light" ]; then
     # === LIGHT MODE (Ayu Light) ===
@@ -62,12 +55,6 @@ EOF
 
     # Kitty: Point to the light config file
     echo "include themes/ayu_light.conf" > "$KITTY_THEME"
-
-    # Tmux
-    echo 'set -g @minimal-tmux-bg "#FF9940"' > "$TMUX_THEME"
-
-    # Delta (git pager, lazygit diffs)
-    printf '[delta]\n\tlight = true\n' > "$GIT_THEME"
 
     # rofi: its config's own colors are the light ones (a missing file only warns)
     echo '/* light: the colors in config.rasi (theme-switcher) */' > "$ROFI_COLORS"
@@ -107,12 +94,6 @@ EOF
 
     # Kitty: Point to the dark config file
     echo "include themes/ayu_mirage.conf" > "$KITTY_THEME"
-
-    # Tmux
-    echo 'set -g @minimal-tmux-bg "#FFCC66"' > "$TMUX_THEME"
-
-    # Delta (git pager, lazygit diffs)
-    printf '[delta]\n\tdark = true\n' > "$GIT_THEME"
 
     # rofi: overrides config.rasi's light colors (read at each start)
     cat <<EOF > "$ROFI_COLORS"
@@ -158,20 +139,8 @@ i3-msg restart >/dev/null
 # Kitty (Live Reload)
 kill -SIGUSR1 $(pidof kitty)
 
-# Tmux
-tmux source-file "$TMUX_CONF"
-
 # dunst (if running; otherwise it reads the files when it starts)
 if pgrep -xu "$USER" dunst >/dev/null; then dunstctl reload; fi
 
-# nvim: every running one follows (a new one reads the state file). One already in
-# the mode is left alone, such as the one whose colorscheme change called this. A
-# prompt blocks nvim's RPC until it's answered, hence the timeout, in the background.
-if command -v nvim >/dev/null; then
-    if [ "$MODE" == "light" ]; then scheme=ayu-light; else scheme=ayu-mirage; fi
-    for sock in "${XDG_RUNTIME_DIR:-/run/user/$UID}"/nvim.*.0; do
-        [ -S "$sock" ] || continue
-        timeout 2 nvim --server "$sock" --remote-expr \
-            "execute(&background ==# '$MODE' ? '' : 'colorscheme $scheme')" >/dev/null 2>&1 &
-    done
-fi
+# tmux, delta and every running nvim: the part every machine shares
+theme-term "$MODE"

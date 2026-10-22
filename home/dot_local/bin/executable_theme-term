@@ -1,0 +1,42 @@
+#!/bin/bash
+# theme-term light|dark: the terminal side of the light/dark switch, on every
+# machine: tmux's accent, delta's tints and every running nvim, plus the state file
+# a new nvim reads. The terminal's own palette is switched by the caller:
+# theme-switcher (kitty, on arch) or theme-switcher.ps1 (Windows Terminal, on WSL).
+
+MODE=$1
+if [ "$MODE" != light ] && [ "$MODE" != dark ]; then
+    echo "Usage: $0 light|dark"
+    exit 1
+fi
+
+STATE_FILE="$HOME/.config/nvim/.theme_state"
+TMUX_CONF="$HOME/.config/tmux/tmux.conf"
+TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.conf
+GIT_THEME="$HOME/.config/git/theme.gitconfig"  # delta's light/dark, included by .gitconfig
+
+echo "$MODE" > "$STATE_FILE"
+
+if [ "$MODE" == "light" ]; then
+    echo 'set -g @minimal-tmux-bg "#FF9940"' > "$TMUX_THEME"
+    printf '[delta]\n\tlight = true\n' > "$GIT_THEME"
+    scheme=ayu-light
+else
+    echo 'set -g @minimal-tmux-bg "#FFCC66"' > "$TMUX_THEME"
+    printf '[delta]\n\tdark = true\n' > "$GIT_THEME"
+    scheme=ayu-mirage
+fi
+
+# tmux, if a server runs
+tmux source-file "$TMUX_CONF" 2>/dev/null
+
+# nvim: every running one follows (a new one reads the state file). One already in
+# the mode is left alone, such as the one whose colorscheme change called this. A
+# prompt blocks nvim's RPC until it's answered, hence the timeout, in the background.
+if command -v nvim >/dev/null; then
+    for sock in "${XDG_RUNTIME_DIR:-/run/user/$UID}"/nvim.*.0; do
+        [ -S "$sock" ] || continue
+        timeout 2 nvim --server "$sock" --remote-expr \
+            "execute(&background ==# '$MODE' ? '' : 'colorscheme $scheme')" >/dev/null 2>&1 &
+    done
+fi
