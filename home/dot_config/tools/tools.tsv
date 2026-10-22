@@ -39,7 +39,7 @@ python3	dev	3.14.7	python3 --version	apt python3-venv
 cc	dev	-	-	apt build-essential
 unzip	dev	-	-	apt unzip
 node	dev	26.10.0	node --version	global: mise use -p ~/.config/mise/conf.d/local.toml node@26 (needs libatomic1)
-go	dev	1.27.1	go version	go.dev/dl
+go	dev	1.27.1	go version	global: mise use -p ~/.config/mise/conf.d/local.toml go@1.27 (blocked proxy: go env -w GOPROXY=https://goproxy.cn,direct)
 rustc	dev	1.91.1	rustc --version	curl https://sh.rustup.rs -sSf | sh
 java	dev	17.0.20.1	java -version	global: mise use -p ~/.config/mise/conf.d/local.toml java@temurin-17
 docker	dev	29.8.1	docker --version	docs.docker.com/engine/install
