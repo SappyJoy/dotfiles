@@ -1,6 +1,6 @@
--- Ayu, light or mirage, in step with the desktop: theme-switcher writes the mode to
--- ~/.config/nvim/.theme_state and switches running nvims; a colorscheme picked here
--- switches the desktop.
+-- Ayu, light or mirage, in step with the desktop: theme-term (run by theme-switcher)
+-- writes the mode to ~/.config/nvim/.theme_state and switches running nvims; a
+-- colorscheme picked here switches the desktop where theme-switcher exists (arch).
 local state_file = vim.fn.expand '~/.config/nvim/.theme_state'
 
 local function overrides()
