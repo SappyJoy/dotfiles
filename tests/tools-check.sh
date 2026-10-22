@@ -31,6 +31,8 @@ fake plain 'plain v13 (rev d87a5ba)'
 fake letter 'letter 3.7c'
 fake gui 'gui 3.1'
 fake bare 'no version here'
+printf '#!/bin/sh\necho "broke: version GLIBC_2.39 not found" >&2\nexit 1\n' >"$tmp/bin/broke"
+chmod +x "$tmp/bin/broke"
 
 T=$(printf '\t')
 cat >"$tmp/tools.tsv" <<EOF
@@ -44,6 +46,7 @@ letter${T}core${T}3.7b${T}letter --version${T}get-letter
 gone${T}core${T}1.0${T}gone --version${T}get-gone
 gui${T}desktop${T}3.1${T}gui --version${T}get-gui
 bare${T}core${T}-${T}-${T}get-bare
+broke${T}core${T}1.0${T}broke --version${T}get-broke
 EOF
 
 mkdir -p "$tmp/.config/chezmoi"
@@ -67,6 +70,7 @@ check "plain number is parsed" has '^ok +plain +13 +13 '
 check "letter suffix is kept and compared" has '^newer +letter +3\.7c +3\.7b '
 check "missing tool is missing, with hint" has '^missing +gone +- +1\.0 +get-gone$'
 check "presence-only tool is ok" has '^ok +bare +- +- '
+check "a check that fails is broken, with hint, not its error's numbers" has '^broken +broke +\? +1\.0 +get-broke$'
 check "desktop tool skipped where desktop is false, display or not" hasnt ' gui '
 check "skip is reported" has '1 desktop tools skipped'
 check "exit 1 when something needs action" [ "$code" = 1 ]
@@ -75,6 +79,7 @@ run --missing
 check "--missing hides ok and newer" hasnt '^(ok|newer) '
 check "--missing shows older" has '^older +old '
 check "--missing shows missing" has '^missing +gone '
+check "--missing shows broken" has '^broken +broke '
 
 answer true; DISPLAY_FOR_TEST=; run; unset DISPLAY_FOR_TEST
 check "desktop tool shown where desktop is true, display or not" has '^ok +gui +3\.1 '
@@ -94,6 +99,7 @@ check "--record writes the older version" [ "$(row old)" = 1.2.0 ]
 check "--record writes the newer version" [ "$(row new)" = 2.0.1 ]
 check "--record keeps missing rows" [ "$(row gone)" = 1.0 ]
 check "--record keeps any-version rows" [ "$(row bare)" = - ]
+check "--record keeps broken rows" [ "$(row broke)" = 1.0 ]
 check "--record records desktop tools too" [ "$(row gui)" = 3.1 ]
 check "--record keeps comments" grep -q '^# name' "$tmp/tools.tsv"
 check "--record keeps the file mode" [ "$(stat -c %a "$tmp/tools.tsv")" = 640 ]
