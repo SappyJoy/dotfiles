@@ -1,6 +1,6 @@
 # Tools I use on every machine, checked by `tools-check`. Tab-separated columns:
 # name  group  version  check  install
-# group: core (any machine), dev, desktop (skipped without a display).
+# group: core (any machine), dev, desktop (skipped where chezmoi's desktop answer is false).
 # version: the one in use on arch; `tools-check --record` updates it. "-": any.
 # check: prints the version. "-": presence only.
 # install: how a machine other than arch gets it (arch uses pacman). The first word:

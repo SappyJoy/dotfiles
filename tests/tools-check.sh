@@ -46,9 +46,15 @@ gui${T}desktop${T}3.1${T}gui --version${T}get-gui
 bare${T}core${T}-${T}-${T}get-bare
 EOF
 
-run() { # run ARGS...: sets out and code; no display unless the caller sets DISPLAY
-    out=$(env -u WAYLAND_DISPLAY PATH="$tmp/bin:/usr/bin:/bin" TOOLS_LIST="$tmp/tools.tsv" \
-        DISPLAY="${DISPLAY_FOR_TEST:-}" ${TC_SHELL:-sh} "$tc" "$@" 2>&1)
+mkdir -p "$tmp/.config/chezmoi"
+answer() { # answer true|false: chezmoi's "desktop" answer, as chezmoi writes it
+    printf '[data]\n    desktop = %s\n    personal = false\n' "$1" >"$tmp/.config/chezmoi/chezmoi.toml"
+}
+answer false
+
+run() { # run ARGS...: sets out and code; HOME is $tmp, with a display unless the caller unsets it
+    out=$(env HOME="$tmp" PATH="$tmp/bin:/usr/bin:/bin" TOOLS_LIST="$tmp/tools.tsv" \
+        DISPLAY="${DISPLAY_FOR_TEST-:0}" ${TC_SHELL:-sh} "$tc" "$@" 2>&1)
     code=$?
 }
 
@@ -61,7 +67,7 @@ check "plain number is parsed" has '^ok +plain +13 +13 '
 check "letter suffix is kept and compared" has '^newer +letter +3\.7c +3\.7b '
 check "missing tool is missing, with hint" has '^missing +gone +- +1\.0 +get-gone$'
 check "presence-only tool is ok" has '^ok +bare +- +- '
-check "desktop tool skipped without display" hasnt ' gui '
+check "desktop tool skipped where desktop is false, display or not" hasnt ' gui '
 check "skip is reported" has '1 desktop tools skipped'
 check "exit 1 when something needs action" [ "$code" = 1 ]
 
@@ -70,9 +76,9 @@ check "--missing hides ok and newer" hasnt '^(ok|newer) '
 check "--missing shows older" has '^older +old '
 check "--missing shows missing" has '^missing +gone '
 
-DISPLAY_FOR_TEST=:99; run; DISPLAY_FOR_TEST=
-check "desktop tool shown with a display" has '^ok +gui +3\.1 '
-run --all
+answer true; DISPLAY_FOR_TEST=; run; unset DISPLAY_FOR_TEST
+check "desktop tool shown where desktop is true, display or not" has '^ok +gui +3\.1 '
+answer false; run --all
 check "--all shows desktop tools" has '^ok +gui '
 
 grep -E '^(#|same|new|bare)' "$tmp/tools.tsv" >"$tmp/ok.tsv"
