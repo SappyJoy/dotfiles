@@ -8,7 +8,7 @@
 #
 # Usage: tools-check [--missing] [--all] [--record] [--list FILE]
 #   --missing  only the tools that need action (missing or older)
-#   --all      include desktop tools even without a display
+#   --all      include desktop tools on a machine that isn't a desktop
 #   --record   write the installed versions into the list (on the reference machine)
 # Exit: 0 when nothing needs action, 1 when something does, 2 on usage errors.
 
@@ -67,8 +67,11 @@ else
     c_ok= c_warn= c_bad= c_dim= c_off=
 fi
 
-display=0
-[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && display=1
+# A desktop is a machine whose chezmoi answer "desktop" is true. Not $DISPLAY: WSL
+# sets it without being one.
+desktop=0
+grep -qE '^[[:space:]]*desktop[[:space:]]*=[[:space:]]*true' \
+    "$HOME/.config/chezmoi/chezmoi.toml" 2>/dev/null && desktop=1
 
 need=0 skipped=0 changed=0 shown=0
 out_rows=
@@ -84,7 +87,7 @@ while IFS= read -r line || [ -n "$line" ]; do
 $line
 EOF
 
-    if [ $record = 0 ] && [ "$group" = desktop ] && [ $display = 0 ] && [ $all = 0 ]; then
+    if [ $record = 0 ] && [ "$group" = desktop ] && [ $desktop = 0 ] && [ $all = 0 ]; then
         skipped=$((skipped + 1))
         continue
     fi
@@ -132,7 +135,7 @@ if [ $record = 1 ]; then
 fi
 
 [ $skipped -gt 0 ] &&
-    printf '%s(%d desktop tools skipped: no display; --all shows them)%s\n' "$c_dim" "$skipped" "$c_off"
+    printf '%s(%d desktop tools skipped: not a desktop; --all shows them)%s\n' "$c_dim" "$skipped" "$c_off"
 if [ $need -eq 0 ]; then
     [ $only_action = 1 ] && echo "tools-check: nothing to do"
     exit 0

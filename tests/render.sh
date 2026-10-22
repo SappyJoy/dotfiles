@@ -49,6 +49,11 @@ check "mise config: nothing but mise rows" [ "$(printf '%s\n' "$out" | grep -c '
 check "mise config: tool options kept" has '"pipx:aider-chat[uvx_args=--python 3.12]"'
 out=$(render .chezmoitemplates/mise-tools.toml false)
 check "mise config: desktop rows only on a desktop" hasnt 'greenclip'
+nocargo=$(mktemp -d); trap 'rm -rf "$nocargo"' EXIT
+ln -s "$(command -v chezmoi)" "$nocargo/chezmoi"
+out=$(PATH="$nocargo" render .chezmoitemplates/mise-tools.toml true)
+check "mise config: no cargo rows where cargo isn't" hasnt '"cargo:'
+check "  … the other rows still there" has '"aqua:junegunn/fzf"'
 out=$(render dot_config/mise/config.toml.tmpl)
 check "mise config: per-project node and java versions" has 'idiomatic_version_file_enable_tools = ["node", "java"]'
 
