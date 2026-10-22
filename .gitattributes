@@ -1,0 +1,3 @@
+# Scripts need LF: a git with core.autocrlf=true (Windows, WSL) would check them out
+# with CRLF, and "#!/bin/sh\r" fails to run.
+* text=auto eol=lf
