@@ -118,6 +118,18 @@ sys.exit(p != {"deny": ["Bash(rm:*)", "Artifact", "ArtifactComments", "ArtifactD
                "allow": ["Read"]})' "$out"
 out=$(modify dot_claude/modify_settings.json '')
 check "claude settings: a new machine denies claude.ai pages" has '"mcp__claude_ai_Claude_Docs"'
+# Effort: high where the machine has none; /effort's choice stays
+out=$(modify dot_claude/modify_settings.json '')
+check "claude settings: a new machine gets high effort" python3 -c '
+import json, sys
+m = json.loads(sys.argv[1])["modelSettings"]
+sys.exit(m != {"claude-opus-5-5": {"effortLevel": "high"}, "claude-fable-5-1": {"effortLevel": "high"}})' "$out"
+out=$(modify dot_claude/modify_settings.json '{"modelSettings": {"claude-opus-5-5": {"effortLevel": "xhigh"}, "other": {"effortLevel": "low"}}}')
+check "claude settings: the machine's effort stays" python3 -c '
+import json, sys
+m = json.loads(sys.argv[1])["modelSettings"]
+sys.exit(m != {"claude-opus-5-5": {"effortLevel": "xhigh"}, "claude-fable-5-1": {"effortLevel": "high"},
+               "other": {"effortLevel": "low"}})' "$out"
 
 # Per machine: arch uses pacman, so its mise config has only the settings (per-project
 # versions), and it gets no mise external, no scripts and no apt list.
