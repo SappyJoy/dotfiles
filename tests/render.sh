@@ -16,9 +16,11 @@ check() { # check NAME CONDITION...
 }
 has() { printf '%s\n' "$out" | grep -qF -- "$1"; }
 hasnt() { ! has "$1"; }
-# render FILE [DESKTOP]: FILE (under home/) rendered, with .desktop set (default true)
+# render FILE [DESKTOP] [KERNEL]: FILE (under home/) rendered, with .desktop set (default
+# true) and the kernel release KERNEL (default WSL's)
 render() {
-    chezmoi execute-template --source "$src" --override-data "{\"desktop\": ${2:-true}}" \
+    chezmoi execute-template --source "$src" --override-data \
+        "{\"desktop\": ${2:-true}, \"chezmoi\": {\"kernel\": {\"osrelease\": \"${3:-6.18.54.1-microsoft-standard-WSL2}\"}}}" \
         <"$src/home/$1"
 }
 json_len() { python3 -c 'import json, sys; print(len(json.load(sys.stdin)))'; }
@@ -33,11 +35,13 @@ rows() { # rows AWK_CONDITION: count the tools.tsv rows matching it
     awk -F '\t' "!/^#/ && NF && ($1)" "$tsv" | wc -l | tr -d ' '
 }
 
-# tools.json: one object per row; desktop rows only when .desktop
+# tools.json: one object per row; desktop rows only when .desktop, wsl rows only on WSL
 out=$(render .chezmoitemplates/tools.json true | json_len)
 check "tools.json: every row on a desktop" [ "$out" = "$(rows 1)" ]
 out=$(render .chezmoitemplates/tools.json false | json_len)
 check "tools.json: no desktop rows elsewhere" [ "$out" = "$(rows '$2 != "desktop"')" ]
+out=$(render .chezmoitemplates/tools.json true 6.18.0-arch1-1 | json_len)
+check "tools.json: no wsl rows outside WSL" [ "$out" = "$(rows '$2 != "wsl"')" ]
 
 # mise [tools]: exactly the "mise" rows, each pinned to its version
 out=$(render .chezmoitemplates/mise-tools.toml true)
@@ -49,6 +53,8 @@ check "mise config: nothing but mise rows" [ "$(printf '%s\n' "$out" | grep -c '
 check "mise config: tool options kept" has '"pipx:aider-chat[uvx_args=--python 3.12]"'
 out=$(render .chezmoitemplates/mise-tools.toml false)
 check "mise config: desktop rows only on a desktop" hasnt 'greenclip'
+out=$(render .chezmoitemplates/mise-tools.toml true 6.18.0-arch1-1)
+check "mise config: wsl rows only on WSL" hasnt 'win32yank'
 nocargo=$(mktemp -d); trap 'rm -rf "$nocargo"' EXIT
 ln -s "$(command -v chezmoi)" "$nocargo/chezmoi"
 out=$(PATH="$nocargo" render .chezmoitemplates/mise-tools.toml true)

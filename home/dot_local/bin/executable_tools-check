@@ -3,12 +3,13 @@
 #
 # The list (~/.config/tools/tools.tsv) has one tab-separated row per tool:
 #   name  group  version  check  install
-# group is core, dev or desktop. version is the one in use on arch ("-": any).
+# group is core, dev, desktop or wsl. version is the one in use on arch ("-": any).
 # check prints the version ("-": presence only). install is a hint.
 #
 # Usage: tools-check [--missing] [--all] [--record] [--list FILE]
 #   --missing  only the tools that need action (missing or older)
-#   --all      include desktop tools on a machine that isn't a desktop
+#   --all      include desktop tools on a machine that isn't a desktop, and wsl tools
+#              outside WSL
 #   --record   write the installed versions into the list (on the reference machine)
 # Exit: 0 when nothing needs action, 1 when something does, 2 on usage errors.
 
@@ -17,7 +18,7 @@ set -u
 list=${TOOLS_LIST:-$HOME/.config/tools/tools.tsv}
 only_action=0 all=0 record=0
 
-usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; }
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -74,7 +75,11 @@ desktop=0
 grep -qE '^[[:space:]]*desktop[[:space:]]*=[[:space:]]*true' \
     "$HOME/.config/chezmoi/chezmoi.toml" 2>/dev/null && desktop=1
 
-need=0 skipped=0 changed=0 shown=0
+# WSL's kernel names itself: 6.18.54.1-microsoft-standard-WSL2.
+wsl=0
+grep -qi microsoft "${TOOLS_OSRELEASE:-/proc/sys/kernel/osrelease}" 2>/dev/null && wsl=1
+
+need=0 skipped=0 wsl_skipped=0 changed=0 shown=0
 out_rows=
 [ $record = 1 ] && out_rows=$(mktemp)
 
@@ -90,6 +95,10 @@ EOF
 
     if [ $record = 0 ] && [ "$group" = desktop ] && [ $desktop = 0 ] && [ $all = 0 ]; then
         skipped=$((skipped + 1))
+        continue
+    fi
+    if [ $record = 0 ] && [ "$group" = wsl ] && [ $wsl = 0 ] && [ $all = 0 ]; then
+        wsl_skipped=$((wsl_skipped + 1))
         continue
     fi
 
@@ -137,6 +146,8 @@ fi
 
 [ $skipped -gt 0 ] &&
     printf '%s(%d desktop tools skipped: not a desktop; --all shows them)%s\n' "$c_dim" "$skipped" "$c_off"
+[ $wsl_skipped -gt 0 ] &&
+    printf '%s(%d WSL tools skipped: not WSL; --all shows them)%s\n' "$c_dim" "$wsl_skipped" "$c_off"
 if [ $need -eq 0 ]; then
     [ $only_action = 1 ] && echo "tools-check: nothing to do"
     exit 0
