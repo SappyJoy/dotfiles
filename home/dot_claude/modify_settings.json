@@ -6,9 +6,13 @@
 {{- $s := dict }}
 {{- if .chezmoi.stdin }}{{ $s = fromJson .chezmoi.stdin }}{{ end }}
 {{- $s = setValueAtPath "model" "opus[1m]" $s }}
-{{- $s = setValueAtPath "modelSettings" (dict
-      "claude-opus-5-5" (dict "effortLevel" "xhigh")
-      "claude-fable-5-1" (dict "effortLevel" "high")) $s }}
+{{- /* Effort: high where the machine has none yet. /effort writes it here, and that
+       choice stays, so switching to xhigh for a while leaves the dotfiles alone. */ -}}
+{{- range $model := list "claude-opus-5-5" "claude-fable-5-1" }}
+{{-   if not (dig "modelSettings" $model "effortLevel" "" $s) }}
+{{-     $s = setValueAtPath (list "modelSettings" $model "effortLevel") "high" $s }}
+{{-   end }}
+{{- end }}
 {{- $s = setValueAtPath "enableWorkflows" false $s }}
 {{- $s = setValueAtPath "agentPushNotifEnabled" true $s }}
 {{- /* Compact at 300k, not at about 967k (Opus 1M's default): long autonomous runs
