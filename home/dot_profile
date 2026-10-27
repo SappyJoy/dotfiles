@@ -2,9 +2,12 @@
 # session script. Keep every line guarded: a failing command here breaks the ly login.
 
 # Tool dirs outside the system paths, where present: npm's global prefix (~/.npmrc),
-# and adb from the Android SDK, in front of pacman's android-tools so its version
-# matches Android Studio's adb server.
-for dir in "$HOME/.npm-global/bin" "$HOME/Android/Sdk/platform-tools"; do
+# adb from the Android SDK, in front of pacman's android-tools so its version
+# matches Android Studio's adb server, and HarmonyOS's command-line-tools (hvigorw,
+# ohpm) and the harmonyos plugin's `ohos`.
+for dir in "$HOME/.npm-global/bin" "$HOME/Android/Sdk/platform-tools" \
+        "$HOME/.local/share/harmonyos/command-line-tools/bin" \
+        "$HOME/.local/share/claude-plugins/personal/plugins/harmonyos/scripts"; do
     if [ -d "$dir" ]; then
         case ":$PATH:" in
             *":$dir:"*) ;;
