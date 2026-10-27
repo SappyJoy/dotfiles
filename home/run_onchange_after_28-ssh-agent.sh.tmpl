@@ -1,0 +1,8 @@
+{{- if .chezmoi.kernel.osrelease | lower | contains "microsoft" -}}
+#!/bin/sh
+# Start the ssh-agent unit and keep it on (WSL only).
+# chezmoi runs this again whenever the unit changes: {{ include "dot_config/systemd/user/ssh-agent.service" | sha256sum }}
+set -eu
+systemctl --user daemon-reload
+systemctl --user enable --now ssh-agent.service
+{{ end -}}

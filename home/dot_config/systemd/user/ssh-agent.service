@@ -1,0 +1,11 @@
+# WSL only: an ssh-agent on the socket .profile and fish's env.fish look for, as
+# arch's openssh unit does. Replaces Ubuntu's own ssh-agent.service, which starts
+# only with an X session.
+[Unit]
+Description=ssh-agent on $XDG_RUNTIME_DIR/ssh-agent.socket
+
+[Service]
+ExecStart=/usr/bin/ssh-agent -D -a %t/ssh-agent.socket
+
+[Install]
+WantedBy=default.target
