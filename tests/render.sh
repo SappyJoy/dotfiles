@@ -171,6 +171,12 @@ out=$(chezmoi execute-template --source "$src" --override-data '{"chezmoi": {"os
     <"$src/home/.chezmoiexternal.toml.tmpl")
 check "ubuntu: btop's theme \"$theme\" comes as an external" has "\".config/btop/themes/$theme.theme\""
 
+# the toolkit's plugins: cloned from its private repo on own machines only
+out=$(chezmoi execute-template --source "$src" --override-data '{"personal": true}' <"$src/home/.chezmoiexternal.toml.tmpl")
+check "toolkit: cloned on own machines" has '[".local/share/claude-plugins/personal"]'
+out=$(chezmoi execute-template --source "$src" --override-data '{"personal": false}' <"$src/home/.chezmoiexternal.toml.tmpl")
+check "toolkit: not on other machines" hasnt 'claude-toolkit'
+
 # polybar stops when a file it includes is missing: colors.ini is seeded (theme-switcher
 # rewrites it later) and defines every color the config uses
 seed="$src/home/dot_config/polybar/create_colors.ini"

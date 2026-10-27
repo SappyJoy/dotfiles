@@ -41,3 +41,17 @@
     executable = true
     checksum.sha256 = "{{ get $sha256 $arch }}"
 {{- end }}
+
+{{- /* Claude Code's `personal` marketplace (modify_settings.json): the toolkit's main,
+       cloned from its private repo, so own machines only (their ssh key opens it).
+       Where you work on the toolkit, its `make marketplace` points this clone at your
+       repo instead; then the pull below comes from there. */}}
+{{- if .personal }}
+
+# The toolkit's plugins; `chezmoi update` pulls main hourly at most, `-R` at once
+[".local/share/claude-plugins/personal"]
+    type = "git-repo"
+    url = "git@github.com:SappyJoy/claude-toolkit.git"
+    refreshPeriod = "1h"
+    pull.args = ["--ff-only"]
+{{- end }}
