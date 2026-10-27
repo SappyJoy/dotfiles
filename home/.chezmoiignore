@@ -43,6 +43,11 @@
 .claude/notify-hook.sh
 {{- end }}
 
+{{ if not (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+# the ssh-agent unit: arch's openssh has its own, WSL's Ubuntu starts one only with X
+.config/systemd/user/ssh-agent.service
+{{- end }}
+
 {{ if ne .chezmoi.osRelease.id "arch" -}}
 # makepkg exists only on Arch
 .config/pacman/**

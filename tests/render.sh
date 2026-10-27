@@ -182,6 +182,16 @@ check "polybar: colors.ini is seeded" [ -f "$seed" ]
 check "polybar: the seed has every color the config uses" [ -z "$missing" ]
 [ -z "$missing" ] || printf '     not in the seed: %s\n' "$missing"
 
+# the ssh-agent unit and its start script: WSL only (arch's openssh has its own)
+out=$(render .chezmoiignore true)
+check "ssh-agent unit: kept on WSL" hasnt '.config/systemd/user/ssh-agent.service'
+out=$(render .chezmoiignore true 6.18.0-arch1-1)
+check "ssh-agent unit: ignored outside WSL" has '.config/systemd/user/ssh-agent.service'
+out=$(render run_onchange_after_28-ssh-agent.sh.tmpl)
+check "ssh-agent script: enables the unit on WSL" has 'enable --now ssh-agent.service'
+out=$(render run_onchange_after_28-ssh-agent.sh.tmpl true 6.18.0-arch1-1)
+check "ssh-agent script: empty outside WSL" [ -z "$out" ]
+
 if [ $fails -gt 0 ]; then
     echo "$fails failed"
     exit 1
