@@ -30,6 +30,7 @@ fake color '\033[1m4.5.6\033[0m'
 fake plain 'plain v13 (rev d87a5ba)'
 fake letter 'letter 3.7c'
 fake gui 'gui 3.1'
+fake win 'win 0.1'
 fake bare 'no version here'
 printf '#!/bin/sh\necho "broke: version GLIBC_2.39 not found" >&2\nexit 1\n' >"$tmp/bin/broke"
 chmod +x "$tmp/bin/broke"
@@ -45,6 +46,7 @@ plain${T}dev${T}13${T}plain --version${T}get-plain
 letter${T}core${T}3.7b${T}letter --version${T}get-letter
 gone${T}core${T}1.0${T}gone --version${T}get-gone
 gui${T}desktop${T}3.1${T}gui --version${T}get-gui
+win${T}wsl${T}0.1${T}win --version${T}get-win
 bare${T}core${T}-${T}-${T}get-bare
 broke${T}core${T}1.0${T}broke --version${T}get-broke
 EOF
@@ -54,9 +56,13 @@ answer() { # answer true|false: chezmoi's "desktop" answer, as chezmoi writes it
     printf '[data]\n    desktop = %s\n    personal = false\n' "$1" >"$tmp/.config/chezmoi/chezmoi.toml"
 }
 answer false
+kernel() { # kernel RELEASE: the kernel release tools-check reads
+    printf '%s\n' "$1" >"$tmp/osrelease"
+}
+kernel 6.18.0-arch1-1
 
 run() { # run ARGS...: sets out and code; HOME is $tmp, with a display unless the caller unsets it
-    out=$(env HOME="$tmp" PATH="$tmp/bin:/usr/bin:/bin" TOOLS_LIST="$tmp/tools.tsv" \
+    out=$(env HOME="$tmp" PATH="$tmp/bin:/usr/bin:/bin" TOOLS_LIST="$tmp/tools.tsv" TOOLS_OSRELEASE="$tmp/osrelease" \
         DISPLAY="${DISPLAY_FOR_TEST-:0}" ${TC_SHELL:-sh} "$tc" "$@" 2>&1)
     code=$?
 }
@@ -85,6 +91,14 @@ answer true; DISPLAY_FOR_TEST=; run; unset DISPLAY_FOR_TEST
 check "desktop tool shown where desktop is true, display or not" has '^ok +gui +3\.1 '
 answer false; run --all
 check "--all shows desktop tools" has '^ok +gui '
+check "--all shows wsl tools" has '^ok +win '
+
+run
+check "wsl tool skipped outside WSL" hasnt ' win '
+check "wsl skip is reported" has '1 WSL tools skipped'
+kernel 6.18.54.1-microsoft-standard-WSL2; run; kernel 6.18.0-arch1-1
+check "wsl tool shown on WSL" has '^ok +win +0\.1 '
+check "  … and no wsl skip reported" hasnt 'WSL tools skipped'
 
 grep -E '^(#|same|new|bare)' "$tmp/tools.tsv" >"$tmp/ok.tsv"
 out=$(PATH="$tmp/bin:/usr/bin:/bin" ${TC_SHELL:-sh} "$tc" --list "$tmp/ok.tsv"); code=$?
@@ -101,6 +115,7 @@ check "--record keeps missing rows" [ "$(row gone)" = 1.0 ]
 check "--record keeps any-version rows" [ "$(row bare)" = - ]
 check "--record keeps broken rows" [ "$(row broke)" = 1.0 ]
 check "--record records desktop tools too" [ "$(row gui)" = 3.1 ]
+check "--record records wsl tools too" [ "$(row win)" = 0.1 ]
 check "--record keeps comments" grep -q '^# name' "$tmp/tools.tsv"
 check "--record keeps the file mode" [ "$(stat -c %a "$tmp/tools.tsv")" = 640 ]
 run --record

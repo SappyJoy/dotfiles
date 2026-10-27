@@ -1,6 +1,7 @@
 # Tools I use on every machine, checked by `tools-check`. Tab-separated columns:
 # name  group  version  check  install
-# group: core (any machine), dev, desktop (skipped where chezmoi's desktop answer is false).
+# group: core (any machine), dev, desktop (skipped where chezmoi's desktop answer is false),
+#   wsl (only on WSL).
 # version: the one in use on arch; `tools-check --record` updates it. "-": any.
 # check: prints the version. "-": presence only.
 # install: how a machine other than arch gets it (arch uses pacman). The first word:
@@ -70,3 +71,4 @@ nitrogen	desktop	-	-	apt nitrogen
 sing-box	desktop	1.14.1	sing-box version	mise github:SagerNet/sing-box[asset_pattern=*linux-amd64-musl.tar.gz]
 wg	desktop	1.0.20260223	wg --version	apt wireguard-tools
 mmdc	desktop	12.0.0	mmdc --version	PUPPETEER_SKIP_DOWNLOAD=1 npm i -g @mermaid-js/mermaid-cli (renders with an installed Chrome; nvim draws Mermaid blocks with it)
+win32yank.exe	wsl	0.1.1	-	mise github:equalsraf/win32yank[asset_pattern=win32yank-x64.zip,bin=win32yank.exe]
