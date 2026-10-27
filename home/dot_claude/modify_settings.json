@@ -52,8 +52,9 @@
 {{- $deny = concat $deny (list "Artifact" "ArtifactComments" "ArtifactData" "mcp__claude_ai_Claude_Docs") | uniq }}
 {{- $s = setValueAtPath "permissions.deny" $deny $s }}
 {{- /* The `personal` marketplace (milestone-flow, mason-lsp, shop-search): a clone of the toolkit
-       that follows its main branch, made by `make marketplace` there. Only the source:
-       Claude Code keeps its own fields (autoUpdate) next to it. */ -}}
+       that follows its main branch, cloned by .chezmoiexternal on own machines (or made by
+       `make marketplace` in the toolkit). Only the source: Claude Code keeps its own
+       fields (autoUpdate) next to it. */ -}}
 {{- $s = setValueAtPath "extraKnownMarketplaces.personal.source" (dict
       "source" "directory"
       "path" (joinPath .chezmoi.homeDir ".local/share/claude-plugins/personal")) $s }}
