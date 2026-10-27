@@ -1,6 +1,9 @@
 # Tool dirs outside the system paths, where present: npm's global prefix (~/.npmrc),
-# and adb from the Android SDK, in front of pacman's android-tools (as in ~/.profile).
-for dir in ~/.npm-global/bin ~/Android/Sdk/platform-tools
+# adb from the Android SDK, in front of pacman's android-tools, and HarmonyOS's
+# command-line-tools (hvigorw, ohpm) and the harmonyos plugin's `ohos` (as in ~/.profile).
+for dir in ~/.npm-global/bin ~/Android/Sdk/platform-tools \
+        ~/.local/share/harmonyos/command-line-tools/bin \
+        ~/.local/share/claude-plugins/personal/plugins/harmonyos/scripts
     test -d $dir; and fish_add_path -g $dir
 end
 

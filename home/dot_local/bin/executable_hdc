@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# hdc for HarmonyOS phones. In WSL the phone is plugged into Windows, and Linux hdc
+# can't see USB, so this runs DevEco Studio's hdc.exe (the same places `ohos` looks).
+# Elsewhere it falls back to the Linux hdc from the command-line-tools.
+for f in /mnt/?/Program\ Files/Huawei/DevEco*/sdk/default/openharmony/toolchains/hdc.exe \
+         /mnt/?/Huawei/DevEco*/sdk/default/openharmony/toolchains/hdc.exe \
+         "$HOME/.local/share/harmonyos/command-line-tools/sdk/default/openharmony/toolchains/hdc"; do
+  [[ -x "$f" ]] && exec "$f" "$@"
+done
+echo "hdc: no DevEco Studio hdc.exe on a Windows drive and no command-line-tools hdc" >&2
+exit 127
