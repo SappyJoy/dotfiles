@@ -71,5 +71,10 @@ vim.cmd 'syntax manual'
 
 -- The clipboard provider's check costs startup time: set it once the UI is up.
 vim.schedule(function()
+  -- WSL sets DISPLAY, so nvim would pick xclip, through WSLg, which hangs when WSLg
+  -- crashes. win32yank talks to the Windows clipboard itself.
+  if vim.fn.has 'wsl' == 1 and vim.fn.executable 'win32yank.exe' == 1 then
+    vim.g.clipboard = 'win32yank'
+  end
   vim.o.clipboard = 'unnamedplus'
 end)
