@@ -57,6 +57,7 @@
 # secrets: only on own machines, which hold the age key
 .config/fish/private.fish
 .ssh/personal.conf
+.ssh/known_hosts.gpu
 .config/sing-box/**
 .config/wireguard/**
 {{- end }}
