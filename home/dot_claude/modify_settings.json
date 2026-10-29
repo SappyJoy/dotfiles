@@ -14,6 +14,9 @@
 {{-   end }}
 {{- end }}
 {{- $s = setValueAtPath "enableWorkflows" false $s }}
+{{- /* Keep every session transcript: Claude Code deletes those untouched for 30 days
+       by default, and the nvim session picker searches and resumes all of them. */ -}}
+{{- $s = setValueAtPath "cleanupPeriodDays" 36500 $s }}
 {{- $s = setValueAtPath "agentPushNotifEnabled" true $s }}
 {{- /* Compact at 300k, not at about 967k (Opus 1M's default): long autonomous runs
        grew sessions to 460k, and every reply re-reads the whole context. */ -}}
