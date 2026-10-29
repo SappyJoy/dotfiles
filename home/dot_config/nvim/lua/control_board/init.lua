@@ -5,7 +5,8 @@
 -- project's Inbox. The facts come from milestone-flow's board.py (data.lua), the text
 -- from render.lua, the session tabs from session.lua, the picker (<leader>aw) from
 -- picker.lua. <leader>ac starts a background session in this project and attaches it.
--- demo.lua plays the recording of a review's demo (`p` on the board and in the picker).
+-- history.lua searches every past session (<leader>ar titles, <leader>aR what was said) and
+-- continues one. demo.lua plays the recording of a review's demo (`p` on the board and in the picker).
 -- week.lua and week_view.lua add its Week section (tokens, plan windows, milestones, code growth).
 -- notify.lua tells you in nvim when a session waits (<leader>an opens the newest notice).
 local data = require 'control_board.data'
@@ -481,6 +482,12 @@ vim.api.nvim_create_user_command('ControlBoard', M.open, { desc = 'The Claude co
 if vim.fn.executable 'claude' == 1 then
   vim.keymap.set('n', '<leader>ab', M.open, { desc = 'Control board' })
   vim.keymap.set('n', '<leader>aw', M.pick, { desc = 'Pick a session, review or project' })
+  vim.keymap.set('n', '<leader>ar', function()
+    require('control_board.history').pick()
+  end, { desc = 'Search every past session (continue one)' })
+  vim.keymap.set('n', '<leader>aR', function()
+    require('control_board.history').grep()
+  end, { desc = 'Search what was said in every past session' })
   vim.keymap.set('n', '<leader>ac', M.new_session, { desc = 'New Claude session here (background)' })
   local notify = require 'control_board.notify'
   vim.keymap.set('n', '<leader>an', notify.open_latest, { desc = 'Open what the last Claude notification was about' })

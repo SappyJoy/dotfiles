@@ -410,6 +410,68 @@ check "  … Enter opens the session" shows "ATTACHED def67890"
 normal
 keys q
 
+# ---- every past session ------------------------------------------------------------------
+# real transcripts in the scratch home, read by the toolkit's sessions.py
+tools=${MILESTONE_FLOW_SESSIONS:-$(getent passwd "$(id -un)" | cut -d: -f6)/src/personal/claude/toolkit/plugins/milestone-flow/scripts/sessions.py}
+mkdir -p "$HOME/.claude/projects/p"
+past() { # past ID TITLE CWD PROMPT REPLY DAY
+    printf '%s\n%s\n%s\n' \
+        "{\"type\":\"ai-title\",\"aiTitle\":\"$2\",\"sessionId\":\"$1\"}" \
+        "{\"type\":\"user\",\"cwd\":\"$3\",\"timestamp\":\"$6T10:00:00Z\",\"message\":{\"role\":\"user\",\"content\":\"$4\"}}" \
+        "{\"type\":\"assistant\",\"timestamp\":\"$6T10:00:05Z\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"$5\"}]}}" \
+        >"$HOME/.claude/projects/p/$1.jsonl"
+}
+past aaaa1111 "Cleared parser work" "$proj" "tune the parser" "the zebra heuristic is slow" 2026-10-01
+past def67890-0000 "Open one" "$proj" "docs please" "writing docs now" 2026-10-02
+past cccc3333 "Gone folder" "$tmp/removed" "old idea" "nothing left" 2026-09-30
+: >"$tmp/claude-calls"
+keys ":let \$MILESTONE_FLOW_SESSIONS='$tools'" Enter
+keys ':tabonly' Enter
+keys ' ar'
+sleep 3
+check "<leader>ar: a picker over every past session" shows "Cleared parser work"
+check "  … with project, date and first prompt" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '2026-10-01 *proj *Cleared parser work *tune'"
+check "  … newest nearest the prompt" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -E 'Open one|Cleared parser|Gone folder' | grep -o -E 'Open one|Cleared parser|Gone folder' | tr '\n' ',' | grep -q '^Gone folder,Cleared parser,Open one,'"
+keys 'parser'
+sleep 1
+check "  … a preview of the conversation" shows "Claude: the zebra heuristic is slow"
+keys Enter
+sleep 2
+check "  … Enter resumes it from its folder, under its account" grep -qx "$HOME/.claude-personal $proj --bg --resume aaaa1111" "$tmp/claude-calls"
+check "  … and opens it in a tab" shows "ATTACHED feed1234"
+normal
+keys q
+keys ' ar'
+sleep 2
+keys 'Open one'
+sleep 1
+keys Enter
+sleep 2
+check "A session that is open already: its tab, no second session" shows "ATTACHED def67890"
+check "  … started nothing" [ "$(grep -c -- '--resume' "$tmp/claude-calls")" = 1 ]
+normal
+keys q
+keys ' ar'
+sleep 2
+keys 'Gone folder'
+sleep 1
+keys Enter
+sleep 1
+check "A session whose folder is gone: says so" shows "which is gone"
+check "  … and starts nothing" [ "$(grep -c -- '--resume' "$tmp/claude-calls")" = 1 ]
+keys ' aR'
+sleep 2
+keys 'zebra'
+sleep 2
+check "<leader>aR: searches what was said, with the matching line" shows "the zebra heuristic is slow"
+check "  … and shows the conversation at that line" shows "You: tune the parser"
+keys C-g
+sleep 1
+check "  … Ctrl-G goes back to the titles" shows "Sessions (Ctrl-G"
+keys C-c
+sleep 0.5
+keys ':tabonly' Enter
+
 # ---- a review's recording ---------------------------------------------------------------
 keys ':tabonly' Enter
 keys ':ControlBoard' Enter

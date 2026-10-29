@@ -4,7 +4,7 @@
 -- diffs here and reads the diagnostics. The server starts after the first screen,
 -- so a claude started by hand in this folder finds nvim too (it connects by itself
 -- with CLAUDE_CODE_AUTO_CONNECT_IDE, set in Claude's settings.json).
--- <leader>ab, aw and ac are not here: they are the control board (lua/control_board/).
+-- <leader>ab, aw, ac, ar and aR are not here: they are the control board (lua/control_board/).
 local function claude(account)
   return function()
     require('ai').account = account

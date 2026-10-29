@@ -185,19 +185,39 @@ function M.open(s)
   end
 end
 
--- Start a background session in a folder and open it
-function M.start(root)
-  local config = default_config()
-  vim.notify('Starting a Claude session in ' .. vim.fs.basename(root) .. '…')
-  vim.system(claude(config, '--bg'), { cwd = root, text = true }, function(out)
+-- Run `claude --bg …` in a folder, then open the session it printed
+local function background(config, root, args, label)
+  vim.system(claude(config, '--bg', unpack(args)), { cwd = root, text = true }, function(out)
     vim.schedule(function()
       local short = (out.stdout or ''):match 'backgrounded · (%w+)'
       if not short then
         return vim.notify('claude --bg failed: ' .. vim.trim((out.stderr or '') .. (out.stdout or '')), vim.log.levels.ERROR)
       end
-      M.attach { short = short, config_dir = config, project = vim.fs.basename(root), name = short }
+      M.attach { short = short, config_dir = config, project = vim.fs.basename(root), name = label or short }
     end)
   end)
+end
+
+-- Start a background session in a folder and open it
+function M.start(root)
+  vim.notify('Starting a Claude session in ' .. vim.fs.basename(root) .. '…')
+  background(default_config(), root, {})
+end
+
+-- Continue a past session (an entry of sessions.py's index: id, cwd, config_dir, title):
+-- its open tab or live session if it has one, else a background session resumed from its
+-- own folder under its own account
+function M.resume(entry)
+  for _, s in ipairs(data.last() and data.last().sessions or {}) do
+    if s.id == entry.id then
+      return M.open(s)
+    end
+  end
+  if not (entry.cwd and vim.uv.fs_stat(entry.cwd)) then
+    return vim.notify(('%s ran in %s, which is gone; it cannot be continued there'):format(entry.title, entry.cwd or '?'), vim.log.levels.WARN)
+  end
+  vim.notify('Continuing ' .. entry.title .. '…')
+  background(entry.config_dir, entry.cwd, { '--resume', entry.id }, entry.title)
 end
 
 return M
