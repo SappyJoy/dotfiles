@@ -1,7 +1,9 @@
 -- Every Claude session ever run, in Telescope (<leader>ar): search by title, project,
 -- date or first prompt; Ctrl-G (Alt-G while typing is the same key in Insert) switches
 -- to a search of everything said, <leader>aR starts there. Enter continues the session
--- in a tab (session.resume). The preview is a plain-text copy of the conversation.
+-- in a tab (session.resume). The preview renders the conversation's Markdown copy as
+-- notes are rendered (render-markdown): a heading over each prompt and reply, code in
+-- colour, tool runs dimmed, the matching line marked in a search.
 -- The index and the copies come from milestone-flow's sessions.py (cached by size and
 -- offset, so a search opens in well under a second after the first run).
 local data = require 'control_board.data'
@@ -11,8 +13,40 @@ local conf = require('telescope.config').values
 local actions = require 'telescope.actions'
 local action_state = require 'telescope.actions.state'
 local entry_display = require 'telescope.pickers.entry_display'
+local previewers = require 'telescope.previewers'
 
 local M = {}
+
+local ns = vim.api.nvim_create_namespace 'control_board_history'
+
+-- the conversation as Markdown, at entry.lnum if it has one
+local function conversation()
+  return previewers.new_buffer_previewer {
+    title = 'Conversation',
+    define_preview = function(self, entry)
+      conf.buffer_previewer_maker(entry.filename, self.state.bufnr, {
+        bufname = self.state.bufname,
+        winid = self.state.winid,
+        use_ft_detect = false,
+        callback = function(bufnr)
+          vim.bo[bufnr].filetype = 'markdown' -- treesitter and render-markdown attach
+          for i, line in ipairs(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+            if line:find '^%*⚙ ' then -- a tool run: *⚙ Bash ×2 · Read*
+              vim.api.nvim_buf_set_extmark(bufnr, ns, i - 1, 0, { end_col = #line, hl_group = 'Comment', priority = 200 })
+            end
+          end
+          if entry.lnum and vim.api.nvim_win_is_valid(self.state.winid) then
+            vim.api.nvim_buf_set_extmark(bufnr, ns, entry.lnum - 1, 0, { line_hl_group = 'TelescopePreviewLine' })
+            pcall(vim.api.nvim_win_set_cursor, self.state.winid, { entry.lnum, 0 })
+            vim.api.nvim_win_call(self.state.winid, function()
+              vim.cmd 'normal! zz'
+            end)
+          end
+        end,
+      })
+    end,
+  }
+end
 
 local function script()
   local env = vim.env.MILESTONE_FLOW_SESSIONS
@@ -68,7 +102,7 @@ local function pick_titles(index, switch)
         end,
       },
       sorter = conf.generic_sorter {},
-      previewer = conf.file_previewer {},
+      previewer = conversation(),
       attach_mappings = function(bufnr, map)
         actions.select_default:replace(function()
           resume(bufnr, function(e)
@@ -120,7 +154,7 @@ local function pick_text(index, switch)
         end,
       },
       sorter = require('telescope.sorters').empty(),
-      previewer = conf.grep_previewer {},
+      previewer = conversation(),
       attach_mappings = function(bufnr, map)
         actions.select_default:replace(function()
           resume(bufnr, function(e)

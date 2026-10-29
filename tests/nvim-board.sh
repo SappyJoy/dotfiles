@@ -434,7 +434,8 @@ check "  … with project, date and first prompt" sh -c "tmux -L nvim-board capt
 check "  … newest nearest the prompt" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -E 'Open one|Cleared parser|Gone folder' | grep -o -E 'Open one|Cleared parser|Gone folder' | tr '\n' ',' | grep -q '^Gone folder,Cleared parser,Open one,'"
 keys 'parser'
 sleep 1
-check "  … a preview of the conversation" shows "Claude: the zebra heuristic is slow"
+check "  … a preview of the conversation" shows "the zebra heuristic is slow"
+check "  … rendered: a heading for each prompt and reply, no # marks" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '● Claude' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q '# ● Claude'"
 keys Enter
 sleep 2
 check "  … Enter resumes it from its folder, under its account" grep -qx "$HOME/.claude-personal $proj --bg --resume aaaa1111" "$tmp/claude-calls"
@@ -464,7 +465,7 @@ sleep 2
 keys 'zebra'
 sleep 2
 check "<leader>aR: searches what was said, with the matching line" shows "the zebra heuristic is slow"
-check "  … and shows the conversation at that line" shows "You: tune the parser"
+check "  … and shows the conversation at that line" shows "tune the parser"
 keys C-g
 sleep 1
 check "  … Ctrl-G goes back to the titles" shows "Sessions (Ctrl-G"
