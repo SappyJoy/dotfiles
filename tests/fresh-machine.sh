@@ -52,6 +52,7 @@ if [ "${1:-}" = --inside ]; then
     check "ssh config: own hosts stay first" [ "$(head -n 1 ~/.ssh/config)" = 'Host work' ]
     check "ssh config: the dotfiles block is last" [ "$(tail -n 1 ~/.ssh/config)" = '# <<< dotfiles' ]
     check "ssh config: no personal hosts without secrets" test ! -e ~/.ssh/personal.conf
+    check "ssh config: no GPU host keys without secrets" test ! -e ~/.ssh/known_hosts.gpu
     out=$(ssh -G other.example 2>&1)
     check "ssh reads defaults.conf" has '^controlmaster auto$'
     out=$(ssh -G work 2>&1)
