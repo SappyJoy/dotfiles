@@ -193,6 +193,32 @@ function M.render(data, opts)
     end
   end
 
+  -- the GPU and RAM lock (heavy), from machine_lock.py: who holds, who waits, who is outside it
+  local m = data.machine
+  if m then
+    local held_gpu = false
+    for _, l in ipairs(m.leases) do
+      held_gpu = held_gpu or (l.state == 'held' and l.gpu)
+    end
+    local gpu_free = not held_gpu and #m.outsiders == 0
+    section(lines, spans, 'GPU and RAM', nil, w)
+    local b = builder(#lines + 1, spans)
+    b.add('   GPU ')
+    b.add(gpu_free and 'free' or 'in use', gpu_free and 'ControlBoardDim' or 'ControlBoardHot')
+    b.add(('   RAM %.1f of %.1f GB held'):format(m.ram.held_mb / 1024, m.ram.budget_mb / 1024), 'ControlBoardDim')
+    add(b.text)
+    for _, l in ipairs(m.leases) do
+      local held = l.state == 'held'
+      local detail = (l.gpu and 'GPU ' or '') .. ('%.1f GB'):format(l.ram_mb / 1024) .. (l.session ~= '' and ' · ' .. l.session or '')
+      local row = vim.tbl_extend('force', l, { kind = 'lease', id = tostring(l.pid) })
+      add_row(row, held and '🔒' or '💤', held and 'ControlBoardWork' or 'ControlBoardDim', l.project, l.cmd, detail, l.state, age(now - l.since))
+    end
+    for _, o in ipairs(m.outsiders) do
+      local row = { kind = 'lease', id = 'gpu' .. o.pid, project = 'outside the lock' }
+      add_row(row, '⚠', 'ControlBoardHot', 'outside the lock', o.name, ('pid %d · %d MB'):format(o.pid, o.mb), 'GPU', '')
+    end
+  end
+
   local order = { answer = 1, working = 2, idle = 3 }
   local sessions = vim.deepcopy(data.sessions)
   table.sort(sessions, function(a, b)
