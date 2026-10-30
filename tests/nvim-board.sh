@@ -51,7 +51,7 @@ cat >"$tmp/bin/claude" <<EOS
 echo "\${CLAUDE_CONFIG_DIR:-unset} \$PWD \$*" >>"$tmp/claude-calls"
 case \$1 in
     --bg) echo "backgrounded · feed1234" ;;
-    attach) echo \$\$ >"$tmp/attach.pid.\$2"; echo "ATTACHED \$2"; exec cat ;;
+    attach) echo \$\$ >"$tmp/attach.pid.\$2"; echo "ATTACHED \$2"; trap 'exit 0' TSTP; while IFS= read -r l; do echo "\$l"; done ;;
 esac
 EOS
 cat >"$tmp/bin/tmux" <<EOS
@@ -224,7 +224,7 @@ probe() {
 on() { # on TEXT: the cursor on the first line with TEXT
     tm send-keys -t 0 Escape
     sleep 0.2
-    keys ":call cursor(1, 1) | call search('\\V$1')" Enter
+    keys ":call cursor(1, 1) | call search('\\V$1') | normal! zv" Enter
 }
 normal() { tm send-keys -t 0 'C-\' C-n; sleep 0.4; } # out of a session tab's Terminal mode
 
@@ -236,15 +236,39 @@ check "  … the art, the name and the quote stay" sh -c "tmux -L nvim-board cap
 
 # ---- the board ------------------------------------------------------------------
 keys b
+# the board opens on what needs you, the other sections folded
+check "b: the board opens on Needs you" shows "Needs you (5)"
+check "  … Needs you is open: its rows show" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Which parser' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Log in to npm'"
+check "  … Plan, Sessions, Projects and the Week are folded: their headings stay, their rows hide" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Plan ▸ 4 lines' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Sessions (4) ▸ 4 lines' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Projects ▸' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Write docs' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q '34%'"
+check "  … the cursor is on the first thing that needs you" [ "$(probe "vim.api.nvim_get_current_line():find('Which parser', 1, true) ~= nil")" = true ]
+check "  … the footer lists the keys, five or so" shows "⏎ open · t tick · s jump · n new session · ? all keys"
+keys ":call cursor(1, 1) | call search('Sessions (')" Enter # on() would unfold it
+keys Enter
+check "Enter on a folded heading: the section opens" shows "Write docs"
+keys Enter
+check "  … and again: it folds" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Write docs'"
+keys r
+sleep 2
+check "  … the refresh keeps it folded" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Write docs'"
+keys Enter
+sleep 3
+check "  … and an opened section stays open through a refresh" shows "Write docs"
+keys Enter
+keys s
+check "s on the board: flash waits for text (⚡ in the command line)" shows "⚡"
+keys 'Log in'
+keys Enter
+check "  … and Enter jumps to the one match" [ "$(probe "vim.api.nvim_get_current_line():find('Log in', 1, true) ~= nil")" = true ]
+check "every <leader>a key has a label for which-key" [ "$(probe "#vim.tbl_filter(function(m) return m.lhs:match('^ a') and (m.desc or '') == '' end, vim.api.nvim_get_keymap 'n')")" = 0 ]
+keys zR
 check "b: the board" shows "Plan ──"
 check "  … a bar with the percent and its reset" shows "34%  resets in 3h"
 check "  … a window with no data" shows "no data yet"
 check "  … Needs you, Sessions, Projects" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (5)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Sessions (4)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Projects ──'"
 check "  … a session that asks, a review, a waiting line" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Which parser' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 Third' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Log in to npm'"
 check "  … a project with its milestone and progress" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 🚦 Third · review.*2 of 4 done'"
-check "  … the board's keys, and what p plays" shows "⏎ open  t tick  c comment  p play ▶"
 check "  … the review has a recording: a ▶ after its icon" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▶ proj *M3 Third'"
-check "  … and no other row has one (the key hint does)" sh -c "[ \$(tmux -L nvim-board capture-pane -p -t 0 | grep -c '▶') = 2 ]"
+check "  … and no other row has one" sh -c "[ \$(tmux -L nvim-board capture-pane -p -t 0 | grep -c '▶') = 1 ]"
 check "  … a finished track under Needs you" shows "track scorer"
 check "  … the Week: tokens per project with their share" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Week ──' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'proj *2.4M.* 80%'"
 check "  … a spark for each day, and the costliest prompt" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▁▁▁▃▁▆█' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Costliest prompt: 900k in proj, \"fix the parser\"'"
@@ -271,16 +295,19 @@ keys Enter
 check "Enter on a flagged file: the file" [ "$(probe "vim.fn.expand('%:t')")" = "src.txt" ]
 keys ':bd' Enter
 keys b
+keys zR
 on 'track scorer'
 keys Enter
 check "Enter on a track: its TRACK.md" shows "The scorer findings"
 keys ':bd' Enter
 keys b
+keys zR
 keys q
 check "q: back to the first page" shows "Find file"
 
 # ---- session tabs -----------------------------------------------------------------
 keys b
+keys zR
 on 'Fix parser'
 keys Enter
 sleep 1
@@ -297,7 +324,7 @@ on 'Fix parser'
 keys Enter
 sleep 1
 check "Enter on the same session again: its tab, not a second attach" [ "$(grep -c ' attach abc12345' "$tmp/claude-calls")" = 1 ]
-check "  … its winbar names Alt+A" shows "Alt+A as Space a"
+check "  … the footer lists its keys" shows "Alt+A menu · Alt+A Esc scroll · Ctrl+6 board · Ctrl+Z detach"
 keys M-a b
 check "Alt+A B from the prompt: back to the board" shows "Plan ──"
 on 'Fix parser'
@@ -321,8 +348,52 @@ normal
 keys q
 check "q in a session tab: the tab closes" [ "$(probe "vim.fn.tabpagenr '\$'")" = 2 ]
 
+# ---- keys in a session window -------------------------------------------------------
+on 'Fix parser'
+keys Enter
+sleep 1
+keys M-a
+sleep 1.5
+check "Alt+A waits past timeoutlen (300 ms): the Claude menu is still open" shows "Control board"
+check "  … and the terminal did not go back to typing" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep -q ' TERMINAL '"
+keys Escape
+check "  … Esc closes the menu and stays in Normal mode" shows " NORMAL "
+check "  … the footer lists the Normal mode keys" shows "i type · Ctrl+U/Ctrl+D page · G end · Ctrl+6 board · Alt+A menu · ? keys"
+keys C-u
+check "Ctrl+U in Normal mode: Claude gets PageUp" shows "[5~"
+keys C-d
+check "Ctrl+D: PageDown" shows "[6~"
+keys G
+check "G: the end" shows "[1;5F"
+keys '?'
+check "?: the cheat sheet, at the board" shows "Control board (all your Claude sessions, in nvim)"
+keys q
+keys i
+check "i: back to typing" shows " TERMINAL "
+keys C-^
+check "Ctrl+6 in a session: the board" shows "Needs you ("
+keys C-^
+check "Ctrl+6 on the board: the last session, ready to type" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q ' TERMINAL ' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'ATTACHED abc12345'"
+keys C-z
+sleep 1
+check "Ctrl+Z (the client exits): the board, and the session's tab is gone" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (' && [ \"\$(grep -c ' attach abc12345' '$tmp/claude-calls')\" -ge 1 ]"
+check "  … no session window left" [ "$(probe "#vim.tbl_filter(function(b) return vim.b[b].control_session ~= nil end, vim.api.nvim_list_bufs())")" = 0 ]
+keys C-^
+check "Ctrl+6 with no session window: says so" shows "No session window yet"
+on 'Fix parser'
+keys Enter
+sleep 1
+keys M-ф
+sleep 1
+check "Alt+Ф (Russian layout): the menu too" shows "Control board"
+keys Escape
+normal
+keys q
+check "q from Normal mode: the board" shows "Needs you ("
+
 # ---- the keys of the board ----------------------------------------------------------
 keys ':ControlBoard' Enter
+keys zR
 on 'Log in to npm'
 keys t
 sleep 1
@@ -359,6 +430,7 @@ check "  … the others stay" grep -qx -- '- first' "$proj/INBOX.md"
 keys ':tabedit ROADMAP.md' Enter
 sed -i 's/^M3 is in review\./M3 changed outside./' "$proj/ROADMAP.md"
 keys ':ControlBoard' Enter
+keys zR
 on 'Log in to npm'
 keys Tab
 on 'Try the demo'
@@ -371,6 +443,7 @@ keys ':tabedit INBOX.md' Enter
 keys 'Gotyped'
 keys Escape
 keys ':ControlBoard' Enter
+keys zR
 on 'M3 Third'
 keys i
 keys 'blocked note' Enter
@@ -390,6 +463,7 @@ keys ':bwipeout ROADMAP.md' Enter
 # the review moved down in REVIEW.md: c finds its heading
 sed -i '1i Preface' "$proj/REVIEW.md"
 keys ':ControlBoard' Enter
+keys zR
 on 'M3 Third'
 keys c
 keys 'Third time'
@@ -399,9 +473,9 @@ check "c after the review moved down: the same Your reply section" sh -c "[ \"\$
 keys ':tabclose' Enter
 
 on 'M3 Third'
-keys s
+keys n
 sleep 2
-check "s: claude --bg in the project" grep -q "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls"
+check "n: claude --bg in the project" grep -q "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls"
 check "  … and its tab" shows "ATTACHED feed1234"
 check "  … the winbar before the board knows it" shows "proj · feed1234 · attached"
 normal
@@ -409,6 +483,7 @@ keys q
 
 # ---- sessions started by hand -------------------------------------------------------
 keys ':ControlBoard' Enter
+keys zR
 on 'loose'
 keys Enter
 check "Enter on a session outside tmux: it says so" shows "outside tmux"
@@ -508,6 +583,7 @@ keys ':tabonly' Enter
 # ---- a review's recording ---------------------------------------------------------------
 keys ':tabonly' Enter
 keys ':ControlBoard' Enter
+keys zR
 on 'M3 Third'
 keys p
 sleep 1
@@ -572,13 +648,15 @@ check "p in the picker's Normal mode: the same" [ "$(grep -c "play $proj/.agent/
 normal
 keys q
 keys ':ControlBoard' Enter
+keys zR
 keys q
 
 # ---- the refresh and the keys outside the board ---------------------------------------
 start
 keys ' ab'
-check "<leader>ab: the board" shows "Plan ──"
+check "<leader>ab: the board" shows "Needs you ("
 keys ':ControlBoard' Enter
+keys zR
 check "  … once: :ControlBoard goes to it" [ "$(probe "vim.fn.tabpagenr '\$'")" = 2 ]
 board "Fixed parser" answer
 sleep 7
@@ -593,6 +671,7 @@ keys q
 board "Fixed parser" answer dup
 start
 keys b
+keys zR
 check "Two projects of one name: each has its own waiting line" shows "Other thing"
 check "  … and its own count of the others" shows "+ 1 more"
 on 'Third · review'
@@ -625,6 +704,8 @@ board "Fix parser" answer
 tm kill-server 2>/dev/null
 tm new-session -d -x 100 -y 14 -c "$proj" "$nvim -c ControlBoard"
 sleep 4
+keys zR
+start_line=$(probe "vim.fn.line '.'")
 check "a small window: the board is taller than it" [ "$(probe "vim.api.nvim_buf_line_count(0) - vim.api.nvim_win_get_height(0)")" -ge 5 ]
 # only the board's window counts (a notification float or which-key scrolls too)
 probe "(function() local win = vim.api.nvim_get_current_win(); _G.scrolled = 0; vim.api.nvim_create_autocmd('WinScrolled', { callback = function() if vim.v.event[tostring(win)] then _G.scrolled = _G.scrolled + 1 end end }) end)()" >/dev/null
@@ -632,11 +713,11 @@ for _ in $(seq 17); do tm send-keys -t 0 j; sleep 0.15; done
 sleep 0.5
 check "j down the board: the cursor reaches the last rows" [ "$(probe "vim.fn.line '.'")" -ge 17 ]
 check "  … and the board scrolled" [ "$(probe _G.scrolled)" -ge 1 ]
-check "  … twice at most, not on every j" [ "$(probe _G.scrolled)" -le 2 ]
+check "  … three times at most, not on every j" [ "$(probe _G.scrolled)" -le 3 ]
 for _ in $(seq 17); do tm send-keys -t 0 k; sleep 0.15; done
 sleep 0.5
-check "k back up: to the first line" [ "$(probe "vim.fn.line '.'")" = 1 ]
-check "  … the board scrolled four times at most in all" [ "$(probe _G.scrolled)" -le 4 ]
+check "k back up: to where the board opened (on what needs you)" [ "$(probe "vim.fn.line '.'")" = "$start_line" ]
+check "  … the board scrolled six times at most in all" [ "$(probe _G.scrolled)" -le 6 ]
 check "  … a page is half the window, while the board is the buffer" [ "$(probe 'vim.go.scrolljump')" = -50 ]
 keys ':tabnew' Enter
 check "  … scrolljump and the config's scrolloff are back in another tab" [ "$(probe 'vim.go.scrolljump') $(probe 'vim.go.scrolloff')" = '1 10' ]
@@ -645,14 +726,23 @@ check "  … and the board has it again when you return" [ "$(probe 'vim.go.scro
 keys ':edit src.txt' Enter
 check "A file in the board's window (the board is wiped): scrolljump and scrolloff are normal" [ "$(probe 'vim.go.scrolljump') $(probe 'vim.go.scrolloff')" = '1 10' ]
 keys ':ControlBoard' Enter
+keys zR
 keys ':tabnew' Enter
 keys ':tabprevious' Enter
 keys q
 check "q on the board with other tabs open: scrolljump and scrolloff are normal again" [ "$(probe 'vim.go.scrolljump') $(probe 'vim.go.scrolloff')" = '1 10' ]
 
+# ---- prose: no typewriter mode ------------------------------------------------------------
+start
+keys ':edit ROADMAP.md' Enter
+sleep 1
+check "a Markdown file: no typewriter mode (no <leader>mt, no b:typewriter)" [ "$(probe "vim.fn.maparg(' mt', 'n') .. tostring(vim.b.typewriter)")" = nil ]
+check "  … the config's scrolloff stays (a wrapped paragraph keeps its margin)" [ "$(probe 'vim.wo.scrolloff')" = 10 ]
+check "  … the prose settings stay: soft wrap, spelling" [ "$(probe "tostring(vim.wo.wrap) .. tostring(vim.wo.spell)")" = truetrue ]
+
 # ---- cb: the board alone -------------------------------------------------------------
 start -c ControlBoard
-check "nvim -c ControlBoard: the board, no first page" shows "Plan ──"
+check "nvim -c ControlBoard: the board, no first page" shows "Needs you (5)"
 check "  … in the only tab" [ "$(probe "vim.fn.tabpagenr '\$'")" = 1 ]
 keys q
 sleep 1

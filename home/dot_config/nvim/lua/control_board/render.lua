@@ -4,7 +4,8 @@
 --          playable = function(row) -> true for a row that has a recording to play }.
 -- Output: { lines = {...}, spans = { {lnum, from, to, group} },
 --           rows = { [lnum] = row } } (the data's own rows: needs, sessions, projects);
---           lnum is 1-based, spans' columns are 0-based bytes.
+--           lnum is 1-based, spans' columns are 0-based bytes. The keys are not listed
+--           here: the window's footer does that (init.lua).
 local M = {}
 
 local WINDOW = { five_hour = 5 * 3600, seven_day = 7 * 86400 }
@@ -14,7 +15,6 @@ local PLAY = '▶' -- in its own column after the icon: a review with a recordin
 local ICON = { answer = '❓', review = '🚦', track = '🧭', waiting = '☐', working = '⏳', idle = '·' }
 local STATE = { answer = 'needs you', working = 'working', idle = 'idle' }
 local RUNNER = { working = { '⏳', 'ControlBoardWork' }, waiting = { '💤', 'ControlBoardDim' }, stalled = { '🛑', 'ControlBoardHot' } }
-local FOOTER = ' ⏎ open  t tick  c comment  p play ▶  i inbox note  s new session  Tab more  r refresh  q close'
 
 local function width_of(s)
   return vim.fn.strdisplaywidth(s)
@@ -234,8 +234,6 @@ function M.render(data, opts)
     end
   end
 
-  add ''
-  table.insert(spans, { add(FOOTER), 0, #FOOTER, 'ControlBoardDim' })
   return { lines = lines, spans = spans, rows = rows }
 end
 

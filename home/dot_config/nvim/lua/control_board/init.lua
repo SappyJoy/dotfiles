@@ -18,6 +18,9 @@ local M = {}
 local ns = vim.api.nvim_create_namespace 'control_board'
 local expanded = {} -- projects whose Waiting on you lines are all shown
 local rows = {} -- the board's buffer -> { [lnum] = row }
+local sections = {} -- the board's buffer -> { { lnum, name } } in order: the heads of its folds
+local closed = {} -- section name -> folded? what you did with zc / zo / Enter; else only Needs you is open
+local FOOTER = { n = ' ⏎ open · t tick · s jump · n new session · ? all keys ' }
 local LINKS = {
   ControlBoardTitle = 'Title',
   ControlBoardSection = 'Comment',
@@ -57,6 +60,36 @@ local function board_buffer()
   end
 end
 
+-- the tab the board is in
+function M.board_tab()
+  local buf = board_buffer()
+  local win = buf and vim.fn.win_findbuf(buf)[1]
+  return win and vim.api.nvim_win_get_tabpage(win)
+end
+
+-- a closed section: its heading and how much is hidden
+function M.foldtext()
+  local line = vim.fn.getline(vim.v.foldstart)
+  local head = line:match '^(.-) ─' or line
+  local hidden = vim.v.foldend - vim.v.foldstart
+  return { { ('%s ▸ %d %s, ⏎ opens'):format(head, hidden, hidden == 1 and 'line' or 'lines'), 'ControlBoardSection' } }
+end
+
+-- ? : the cheat sheet, at the board's part
+function M.cheatsheet()
+  local path = vim.fn.stdpath 'config' .. '/cheatsheet.md'
+  local win = Snacks.win { file = path, width = 0.6, height = 0.85, border = 'rounded', title = ' cheatsheet ', wo = { spell = false } }
+  for lnum, line in ipairs(vim.fn.readfile(path)) do
+    if line:match '^## Control board' then
+      vim.api.nvim_win_call(win.win, function()
+        vim.api.nvim_win_set_cursor(0, { lnum, 0 })
+        vim.cmd 'normal! zt'
+      end)
+      return
+    end
+  end
+end
+
 local function row_key(row)
   return row and (row.kind .. '\0' .. (row.id or row.project_path or row.path or row.project or '') .. '\0' .. (row.title or row.name or ''))
 end
@@ -78,6 +111,11 @@ local function draw(buf, board)
     end,
   })
   rows[buf] = out.rows
+  vim.api.nvim_win_call(win, function() -- before the lines go: replacing them drops the folds
+    for _, old in ipairs(sections[buf] or {}) do
+      closed[old[2]] = vim.fn.foldclosed(old[1]) ~= -1
+    end
+  end)
   vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, out.lines)
   vim.bo[buf].modifiable = false
@@ -89,6 +127,31 @@ local function draw(buf, board)
   for lnum, row in pairs(out.rows) do
     if was and row_key(row) == was then
       target = lnum
+    end
+  end
+  local first_draw = not sections[buf]
+  vim.api.nvim_win_call(win, function() -- fold the sections again, as they were
+    vim.wo[win].foldmethod = 'marker' -- no markers: the old folds go (`normal! zE` would end which-key's popup)
+    vim.fn.foldclosed(1) -- folds are made when asked: ask now, with the markers gone
+    vim.wo[win].foldmethod = 'manual'
+    sections[buf] = {}
+    for _, span in ipairs(out.spans) do
+      if span[4] == 'ControlBoardSection' then
+        local line = out.lines[span[1]]
+        table.insert(sections[buf], { span[1], line:match '^ (.-)%s*%(%d+%)' or line:match '^ (.-) ─' })
+      end
+    end
+    for i, sec in ipairs(sections[buf]) do
+      local last = i < #sections[buf] and sections[buf][i + 1][1] - 1 or #out.lines
+      vim.cmd(('%d,%dfold'):format(sec[1], last))
+      if closed[sec[2]] == false or (closed[sec[2]] == nil and sec[2] == 'Needs you') then
+        vim.cmd(('%dfoldopen'):format(sec[1]))
+      end
+    end
+  end)
+  if first_draw then -- the board opens on what needs you
+    for _, sec in ipairs(sections[buf]) do
+      target = sec[2] == 'Needs you' and sec[1] + 1 or target
     end
   end
   vim.api.nvim_win_set_cursor(win, { target, 0 })
@@ -346,8 +409,16 @@ local function map_keys(buf)
     end, { buffer = buf, nowait = true, desc = desc })
   end
   map('<CR>', function(row)
-    return row and M.open_row(row)
-  end, 'Open')
+    if row then
+      return M.open_row(row)
+    end
+    local lnum = vim.fn.line '.' -- a heading: fold or unfold its section
+    if vim.fn.foldclosed(lnum) ~= -1 then
+      vim.cmd 'foldopen'
+    elseif vim.fn.foldlevel(lnum) > 0 then
+      vim.cmd 'foldclose'
+    end
+  end, 'Open; on a heading fold or unfold the section')
   map('t', function(row)
     return row and tick(row)
   end, 'Tick a Waiting on you line')
@@ -358,9 +429,11 @@ local function map_keys(buf)
     return require('control_board.demo').play_review(row)
   end, "Play a review's recording")
   map('i', inbox_note, 'Inbox note')
-  map('s', function(row)
+  map('n', function(row)
     choose_project(row, require('control_board.session').start)
   end, 'New background session')
+  map('?', M.cheatsheet, 'The keys of the board and sessions')
+  vim.keymap.set('n', '<C-^>', require('control_board.session').back, { buffer = buf, desc = 'The last session' })
   map('<Tab>', toggle, 'Show all Waiting on you lines of the project')
   map('r', function()
     data.refresh()
@@ -415,7 +488,10 @@ function M.open()
   vim.wo.relativenumber = false
   vim.wo.signcolumn = 'no'
   vim.wo.list = false
-  vim.wo.fillchars = 'eob: '
+  vim.wo.fillchars = 'eob: ,fold: '
+  vim.wo.foldmethod = 'manual' -- one fold for each section, made on every draw
+  vim.wo.foldtext = "v:lua.require'control_board'.foldtext()"
+  vim.b[buf].footer = FOOTER
   map_keys(buf)
   turn_pages(buf)
   local unwatch = data.watch(function(board)

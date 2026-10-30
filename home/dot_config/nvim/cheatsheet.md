@@ -204,17 +204,26 @@ milestones finished, code growth (`Enter` on a project opens its roadmap, on a `
 opens the file). It refreshes by itself; the Week on opening and on `r`.
 
 - `Enter` opens what is under the cursor: a session in a tab (`claude attach`; type
-  in it, `Ctrl+\ Ctrl+N` then `Ctrl+U` / `Ctrl+D` scroll it, `q` or `Ctrl+Z`
-  detaches, the session goes on), a review or the roadmap as a file
-- In a session's tab, `Alt+A` is `Space a` while you type: `Alt+A W` picks, `Alt+A B`
-  goes back to the board
+  in it), a review or the roadmap as a file; on a heading, it folds or unfolds the
+  section. The board opens on Needs you, the other sections folded (`za` / `zR` too).
+  A line at the bottom of the window lists the keys that work there
+- `s` jumps (flash) to any text on the board; `n` starts a new background session
+- In a session's tab (the line at the bottom shows what works in the mode you are in):
+  - `Ctrl+6` switches between the board and the last session, both ways
+  - `Ctrl+Z` detaches (Claude's own key; the session goes on) and lands on the board;
+    `q` does the same from Normal mode. `Left` at an empty prompt is Claude's own:
+    its agent view, inside the window
+  - `Alt+A` (left or right Alt) is `Space a` while you type: it opens the Claude menu
+    and waits. `W` picks a session, `B` the board, `C` a new session, `R` searches past
+    sessions. `Esc` closes the menu and leaves you in Normal mode
+  - Normal mode scrolls the session: `Ctrl+U` page up, `Ctrl+D` page down, `G` the end
+    (Claude's own scroll, not nvim's); `i` goes back to typing; `?` is this sheet
 - `p` plays the recording of a review's demo in a tab (`asciinema play`; Space pauses,
   `Ctrl+C` stops, `Ctrl+\ Ctrl+N` then `q` closes). A row that has one shows a `▶`
   after its icon, here and in the picker (`p`, `Alt+p` while typing); on any other
   row `p` says there is nothing to play. In a shell: `asciinema play FILE.cast`
 - `t` ticks a Waiting on you line, `c` comments on a review, `i` adds an Inbox note
-  to the project, `s` starts a background session there, `Tab` shows all of a
-  project's lines, `r` refreshes, `q` closes
+  to the project, `Tab` shows all of a project's lines, `r` refreshes, `q` closes
 - Runners: a milestone runner at work has a row under Runners (state, `M7 · 2/4 steps`,
   its last action, tokens, minutes since it acted; `stalled` past 10 minutes working or
   30 waiting). `Enter` on it, or `<leader>aS` anywhere, opens its detail in a window:
@@ -253,9 +262,8 @@ opens the file). It refreshes by itself; the Week on opening and on `r`.
 
 ## Writing
 
-- In text (Markdown, notes, commit messages, LaTeX, Typst) the line you type on stays
-  in the middle of the screen, like paper in a typewriter: `<leader>mt` on / off;
-  `<leader>mn` line numbers on / off
+- In text (Markdown, notes, commit messages, LaTeX, Typst): `<leader>mn` line numbers
+  on / off
 - In text `j` `k` and the arrows move by screen line through a wrapped paragraph
   (in Insert mode too); a count moves by real lines (`5j`)
 - Markdown is rendered in place: `<leader>mr` on / off. Images, `$math$` and
