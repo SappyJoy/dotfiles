@@ -11,7 +11,7 @@ local ns = vim.api.nvim_create_namespace 'control_board_runners'
 local HOT = { stalled = 'ControlBoardHot', waiting = 'ControlBoardDim', working = 'ControlBoardWork' }
 
 local function lines_of(runners, only, loading)
-  local lines, marks = { ' Runners' .. (only and '' or ' (' .. #runners .. ')'), '' }, {}
+  local lines, marks = { ' Runners' .. ((only or loading) and '' or ' (' .. #runners .. ')'), '' }, {}
   for _, r in ipairs(runners) do
     if not only or r.id == only then
       for i, text in ipairs(r.detail) do
