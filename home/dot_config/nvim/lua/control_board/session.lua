@@ -4,7 +4,9 @@
 -- In the tab, Claude scrolls with its own PageUp/PageDown (nvim's normal mode sees only
 -- the screen), so in Normal mode Ctrl+U/Ctrl+D and the page keys send them.
 -- Space types a space at the prompt, so Alt+A stands for <leader>a there: Alt+A W picks,
--- Alt+A B goes to the board.
+-- Alt+A B goes to the board. Ctrl+6 switches between the board and the last session, Ctrl+Z
+-- (claude attach's own detach) ends the client and lands on the board. The footer (the
+-- statusline, ui/statusline.lua) lists the keys of the mode you are in.
 local data = require 'control_board.data'
 
 local M = {}
@@ -14,6 +16,10 @@ local GROUP = { answer = 'ControlBoardAsk', working = 'ControlBoardWork', idle =
 local KEYS = { page_up = '\27[5~', page_down = '\27[6~', bottom = '\27[1;5F' }
 
 local unwatch
+
+vim.keymap.set('n', '<Plug>(ControlBoardLeaderA)', function()
+  require('which-key').show { keys = '<leader>a', mode = 'n' }
+end, { desc = 'The <leader>a popup' })
 
 -- claude for the account whose config folder it is; the default folder (~/.claude)
 -- is the account without CLAUDE_CONFIG_DIR
@@ -69,15 +75,46 @@ local function winbar_text(buf)
     label = s.project .. ' · ' .. s.name
     state = '%#' .. GROUP[s.activity] .. '#' .. STATE[s.activity]
   end
-  return ' ' .. label:gsub('%%', '%%%%') .. ' · ' .. state .. '%*%=%#ControlBoardDim#Alt+A as Space a · Ctrl+Z detaches · Ctrl+\\ Ctrl+N Normal mode '
+  return ' ' .. label:gsub('%%', '%%%%') .. ' · ' .. state .. '%* '
 end
 
 local function update_winbars()
   for _, win in ipairs(vim.api.nvim_list_wins()) do
     local buf = vim.api.nvim_win_get_buf(win)
     if vim.b[buf].control_session then
-      vim.wo[win].winbar = winbar_text(buf)
+      local text = winbar_text(buf)
+      if vim.wo[win].winbar ~= text then -- setting it again, even unchanged, closes the which-key popup
+        vim.wo[win].winbar = text
+      end
     end
+  end
+end
+
+-- the keys that work in a session window, by mode (n: Normal, t: typing), for the footer
+local FOOTER = {
+  t = ' Alt+A menu · Alt+A Esc scroll · Ctrl+6 board · Ctrl+Z detach ',
+  n = ' i type · Ctrl+U/Ctrl+D page · G end · Ctrl+6 board · Alt+A menu · ? keys ',
+}
+
+local last_key -- the session window we were in last: where Ctrl+6 on the board goes
+
+-- the board's tab, in front
+local function show_board()
+  local board = require 'control_board'
+  local tab = board.board_tab()
+  if not tab then
+    return board.open()
+  end
+  vim.api.nvim_set_current_tabpage(tab)
+end
+
+-- Close a session window (the client exits, the session goes on) and land on the board
+local function leave(buf)
+  if vim.api.nvim_buf_is_valid(buf) then
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+  end
+  if require('control_board').board_tab() then
+    show_board()
   end
 end
 
@@ -96,16 +133,20 @@ local function map_keys(buf)
   map('<C-d>', KEYS.page_down, 'Scroll the session down')
   map('<PageDown>', KEYS.page_down, 'Scroll the session down')
   map('G', KEYS.bottom, 'Scroll the session to the end')
-  vim.keymap.set('n', 'q', '<cmd>bwipeout!<cr>', { buffer = buf, desc = 'Detach (the session goes on)' })
+  vim.keymap.set('n', 'q', function()
+    leave(buf)
+  end, { buffer = buf, desc = 'Detach (the session goes on)' })
+  vim.keymap.set('n', '?', function()
+    require('control_board').cheatsheet()
+  end, { buffer = buf, desc = 'The keys of the board and sessions' })
+  vim.keymap.set({ 'n', 't' }, '<C-^>', show_board, { buffer = buf, desc = 'The board' })
   -- vim-tmux-navigator maps <C-\> in Terminal mode, which breaks nvim's <C-\><C-n>
   vim.keymap.set('t', '<C-\\><C-n>', '<C-\\><C-n>', { buffer = buf, desc = 'Normal mode (the session goes on)' })
-  -- Alt+A: Normal mode, then <leader>a waits for its key (Alt+Ф and <leader>ф in Russian).
-  -- Both go in front of the keys typed after Alt+A, which may be read already.
-  for lhs, group in pairs { ['<M-a>'] = '<leader>a', ['<M-ф>'] = '<leader>ф' } do
-    vim.keymap.set('t', lhs, function()
-      vim.api.nvim_feedkeys(vim.keycode(group), 'mi', false)
-      vim.api.nvim_feedkeys(vim.keycode('<C-\\><C-n>'), 'ni', false)
-    end, { buffer = buf, desc = 'Space a from the prompt (the session goes on)' })
+  -- Alt+A: Normal mode, then the <leader>a popup, which waits for the key as long as it
+  -- takes (the pending keys of a plain <leader>a would run as `a` after timeoutlen, 300 ms).
+  -- Esc closes the popup and stays in Normal mode. Alt+Ф is the same in the Russian layout.
+  for _, lhs in ipairs { '<M-a>', '<M-ф>' } do
+    vim.keymap.set('t', lhs, '<C-\\><C-n><Plug>(ControlBoardLeaderA)', { buffer = buf, remap = true, desc = 'Space a from the prompt (the session goes on)' })
   end
 end
 
@@ -125,7 +166,7 @@ function M.attach(s)
   pcall(vim.api.nvim_buf_set_name, buf, 'claude ' .. (s.project or '') .. ' ' .. s.short) -- the tab's label
   update_winbars()
   map_keys(buf)
-  -- Ctrl+Z in Claude detaches: the client exits, and the tab goes with it
+  -- Ctrl+Z in Claude detaches: the client exits, and the tab goes with it; the board is next
   vim.api.nvim_create_autocmd('TermClose', {
     buffer = buf,
     once = true,
@@ -134,11 +175,18 @@ function M.attach(s)
       update_winbars()
       if vim.v.event.status == 0 then
         vim.schedule(function()
-          pcall(vim.api.nvim_buf_delete, buf, { force = true })
+          leave(buf)
         end)
       end
     end,
   })
+  vim.api.nvim_create_autocmd({ 'BufEnter', 'TermEnter' }, {
+    buffer = buf,
+    callback = function()
+      last_key = s.short
+    end,
+  })
+  vim.b[buf].footer = FOOTER
   unwatch = unwatch or data.watch(update_winbars)
   -- Closing the tab (:tabclose, Ctrl-W c) only hides a terminal buffer, and its
   -- `claude attach` would go on: wipe it, which detaches the client, not the session
@@ -162,6 +210,16 @@ function M.attach(s)
     end,
   })
   data.refresh()
+  vim.cmd.startinsert()
+end
+
+-- Ctrl+6 on the board: the session window we were in last
+function M.back()
+  local tab = last_key and find_tab(last_key)
+  if not tab then
+    return vim.notify('No session window yet: Enter on a session opens one', vim.log.levels.INFO)
+  end
+  vim.api.nvim_set_current_tabpage(tab)
   vim.cmd.startinsert()
 end
 

@@ -101,9 +101,23 @@ local function words(buf)
   return (n < 1000 and n or ('%.1fk'):format(n / 1000)) .. ' words  '
 end
 
+-- A buffer may list its own keys (b:footer = { n = '…', t = '…' }, by mode): the right
+-- side then shows them, in place of the filetype and position (the control board).
+local function footer(buf)
+  local keys = vim.b[buf].footer
+  if keys then
+    local text = keys[vim.api.nvim_get_mode().mode:sub(1, 1)] or keys.n
+    return text and hl('StlDim', text)
+  end
+end
+
 function M.render()
   local buf = vim.api.nvim_win_get_buf(vim.g.statusline_winid or 0)
   local ft = vim.bo[buf].filetype
+  local keys = footer(buf)
+  if keys then
+    return mode() .. file(buf) .. '%=' .. keys
+  end
   return table.concat {
     mode(),
     git(buf),
