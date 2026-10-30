@@ -241,7 +241,7 @@ check "b: the board opens on Needs you" shows "Needs you (5)"
 check "  … Needs you is open: its rows show" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Which parser' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Log in to npm'"
 check "  … Plan, Sessions, Projects and the Week are folded: their headings stay, their rows hide" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Plan ▸ 4 lines' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Sessions (4) ▸ 4 lines' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Projects ▸' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Write docs' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q '34%'"
 check "  … the cursor is on the first thing that needs you" [ "$(probe "vim.api.nvim_get_current_line():find('Which parser', 1, true) ~= nil")" = true ]
-check "  … the footer lists the keys, five or so" shows "⏎ open · t tick · s jump · n new session · ? all keys"
+check "  … the footer lists the keys, five or so" shows "⏎ open · t tick · s jump · a new session · ? all keys"
 keys ":call cursor(1, 1) | call search('Sessions (')" Enter # on() would unfold it
 keys Enter
 check "Enter on a folded heading: the section opens" shows "Write docs"
@@ -480,10 +480,11 @@ keys ':w' Enter
 check "c after the review moved down: the same Your reply section" sh -c "[ \"\$(grep -c '^## Your reply' '$proj/REVIEW.md')\" = 1 ] && grep -q 'Third time' '$proj/REVIEW.md' && [ \"\$(head -1 '$proj/REVIEW.md')\" = Preface ]"
 keys ':tabclose' Enter
 
+check "n on the board stays search-next" [ "$(probe "vim.fn.maparg('n', 'n')")" = "" ]
 on 'M3 Third'
-keys n
+keys a
 sleep 2
-check "n: claude --bg in the project" grep -q "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls"
+check "a: claude --bg in the project" grep -q "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls"
 check "  … and its tab" shows "ATTACHED feed1234"
 check "  … the winbar before the board knows it" shows "proj · feed1234 · attached"
 normal

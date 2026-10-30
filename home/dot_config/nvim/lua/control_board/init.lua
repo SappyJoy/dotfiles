@@ -20,7 +20,7 @@ local expanded = {} -- projects whose Waiting on you lines are all shown
 local rows = {} -- the board's buffer -> { [lnum] = row }
 local sections = {} -- the board's buffer -> { { lnum, name } } in order: the heads of its folds
 local closed = {} -- section name -> folded? what you did with zc / zo / Enter; else only Needs you is open
-local FOOTER = { n = ' ⏎ open · t tick · s jump · n new session · ? all keys ' }
+local FOOTER = { n = ' ⏎ open · t tick · s jump · a new session · ? all keys ' }
 local LINKS = {
   ControlBoardTitle = 'Title',
   ControlBoardSection = 'Comment',
@@ -442,7 +442,7 @@ local function map_keys(buf)
     return require('control_board.demo').play_review(row)
   end, "Play a review's recording")
   map('i', inbox_note, 'Inbox note')
-  map('n', function(row)
+  map('a', function(row)
     choose_project(row, require('control_board.session').start)
   end, 'New background session')
   map('?', M.cheatsheet, 'The keys of the board and sessions')

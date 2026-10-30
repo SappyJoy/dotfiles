@@ -207,7 +207,7 @@ opens the file). It refreshes by itself; the Week on opening and on `r`.
   in it), a review or the roadmap as a file; on a heading, it folds or unfolds the
   section. The board opens on Needs you, the other sections folded (`za` / `zR` too).
   A line at the bottom of the window lists the keys that work there
-- `s` jumps (flash) to any text on the board; `n` starts a new background session
+- `s` jumps (flash) to any text on the board; `a` adds a new background session (`n` stays search-next)
 - In a session's tab (the line at the bottom shows what works in the mode you are in):
   - `Ctrl+6` switches between the board and the last session, both ways
   - `Ctrl+Z` detaches (Claude's own key; the session goes on) and lands on the board;
