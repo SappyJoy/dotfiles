@@ -1,7 +1,7 @@
 -- Claude Code beside nvim in a tmux pane. claudecode.nvim (plugins/ai.lua) runs the
 -- connection; this module is its terminal provider: it opens Claude in a tmux pane
 -- or jumps to the one that's there.
--- Input: the account, a fish function (`claude` personal, `claude-team`).
+-- Input: the account, a fish function or command (`claude`).
 -- Output: panes tagged with tmux's pane option @claude=<account>, which tells the
 -- keys and the jump after a send which pane is whose.
 local M = {}

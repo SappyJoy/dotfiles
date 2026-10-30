@@ -1,6 +1,5 @@
 {{- /* chezmoi:modify-template */ -}}
-{{- /* Claude Code's settings.json, shared by both accounts (~/.claude-personal links
-       to it). Claude Code rewrites it (/model, /theme), so the machine owns the file;
+{{- /* Claude Code's settings.json. Claude Code rewrites it (/model, /theme), so the machine owns the file;
        this sets the keys every machine shares and leaves the rest alone: theme (the
        work PCs' terminal is light) and preferredNotifChannel (kitty on arch). */ -}}
 {{- $s := dict }}

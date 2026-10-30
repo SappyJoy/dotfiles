@@ -22,8 +22,7 @@ return {
     enabled = vim.fn.executable 'claude' == 1,
     event = 'VeryLazy',
     keys = {
-      { '<leader>at', claude 'claude', desc = 'Claude (personal) in a tmux pane' },
-      { '<leader>aC', claude 'claude-team', desc = 'Claude (team) in a tmux pane' },
+      { '<leader>at', claude 'claude', desc = 'Claude in a tmux pane' },
       { '<leader>as', '<cmd>ClaudeCodeSend<cr>', mode = 'x', desc = 'Send the selection to Claude' },
       { '<leader>as', '<cmd>ClaudeCodeAdd %<cr>', desc = 'Send this file to Claude' },
       {

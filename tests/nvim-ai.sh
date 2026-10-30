@@ -1,6 +1,6 @@
 #!/bin/sh
 # nvim's Claude Code link (plugins/ai.lua, lua/ai.lua) in a real UI (a scratch tmux).
-# Stubs of the fish functions `claude` and `claude-team` (the panes' fish gets a
+# A stub of the fish function `claude` (the panes' fish gets a
 # scratch XDG_CONFIG_HOME) record how the keys start Claude: account, port, folder. A
 # stand-in for Claude (Python, stdlib) connects to nvim the way Claude does: the lock
 # file, its token, a WebSocket. It gets the selection and the sends, and proposes
@@ -23,7 +23,7 @@ check() { # check NAME CONDITION...
 }
 
 mkdir -p "$tmp/fish/fish/functions" "$tmp/claude" "$tmp/proj"
-for f in claude claude-team; do
+for f in claude; do
     printf 'function %s\n    echo %s $CLAUDE_CODE_SSE_PORT $PWD >>%s/started\n    sleep 300\nend\n' \
         $f $f "$tmp" >"$tmp/fish/fish/functions/$f.fish"
 done
@@ -119,9 +119,9 @@ active() { tm display -p '#{pane_id}'; }
 tagged() { tm list-panes -F '#{pane_id} #{@claude}' | awk -v a="$1" '$2 == a { print $1 }'; }
 got() { grep -c "$1" "$tmp/claude.log" 2>/dev/null; }
 
-tm new-window -d "fish -c 'functions --details claude; functions --details claude-team' >$tmp/which"
+tm new-window -d "fish -c 'functions --details claude' >$tmp/which"
 sleep 0.5
-if [ "$(cat "$tmp/which")" != "$(printf '%s\n' "$tmp/fish/fish/functions/claude.fish" "$tmp/fish/fish/functions/claude-team.fish")" ]; then
+if [ "$(cat "$tmp/which")" != "$tmp/fish/fish/functions/claude.fish" ]; then
     echo "STOP: the panes' fish would start the real claude"
     exit 1
 fi
@@ -134,16 +134,11 @@ check "  names nvim's folder" grep -q "\"$PWD\"" "$lock"
 keys ' at'
 sleep 1
 check "<leader>at: Claude in a new pane, focused" [ "$(active)" = "$(tagged claude)" ]
-check "  the personal account, the port, nvim's folder" \
+check "  the port, nvim's folder" \
     [ "$(sed -n 1p "$tmp/started")" = "claude $port $PWD" ]
 tm select-pane -t "$nv"
 keys ' at'
 check "  again: jumps to it, no second pane" [ "$(active)" = "$(tagged claude)" -a "$(tm list-panes | wc -l)" -eq 2 ]
-tm select-pane -t "$nv"
-keys ' aC'
-sleep 1
-check "<leader>aC: the team account in its own pane" \
-    [ "$(active)" = "$(tagged claude-team)" -a "$(sed -n 2p "$tmp/started")" = "claude-team $port $PWD" ]
 
 python3 "$tmp/claude.py" "$tmp" &
 fake=$!
@@ -157,7 +152,7 @@ keys V j ' as'
 sleep 0.5
 check "<leader>as: the lines go as a mention (0-based 2-3)" \
     sh -c "grep at_mentioned '$tmp/claude.log' | grep notes.txt | grep '\"lineStart\":2' | grep -q '\"lineEnd\":3'"
-check "  and the cursor jumps to the last key's Claude" [ "$(active)" = "$(tagged claude-team)" ]
+check "  and the cursor jumps to the last key's Claude" [ "$(active)" = "$(tagged claude)" ]
 
 tm select-pane -t "$nv"
 echo 'line one' >"$tmp/diff-1"

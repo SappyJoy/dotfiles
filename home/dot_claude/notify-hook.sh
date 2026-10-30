@@ -12,7 +12,7 @@
 # it as critical; so does an idle side track that has written its TRACK.md. The urgency of the others follows notification_type: idle is low,
 # a permission or a question is normal.
 #
-# Runs in every live session, both accounts: silent on stdout and stderr, always exit 0.
+# Runs in every live session: silent on stdout and stderr, always exit 0.
 # Every command that talks to a daemon is on a timer, so a missing display or a stuck
 # tmux server can't hold a session up.
 exec >/dev/null 2>&1

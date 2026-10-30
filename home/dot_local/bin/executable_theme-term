@@ -14,7 +14,7 @@ STATE_FILE="$HOME/.config/nvim/.theme_state"
 TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 TMUX_THEME="$HOME/.config/tmux/theme.conf"  # untracked state, sourced by tmux.conf
 GIT_THEME="$HOME/.config/git/theme.gitconfig"  # delta's light/dark, included by .gitconfig
-CLAUDE_SETTINGS="$HOME/.claude/settings.json"  # both accounts' (the personal one links it)
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 
 echo "$MODE" > "$STATE_FILE"
 

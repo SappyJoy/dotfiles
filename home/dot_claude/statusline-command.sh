@@ -54,7 +54,7 @@ if [ -n "$usage" ]; then
 fi
 
 # Share the 5-hour and 7-day windows with polybar's claude module and nvim's control
-# board: one file per account (config dir), e.g. ~/.cache/claude-usage/claude-personal,
+# board: one file per config dir, named for the folder, e.g. ~/.cache/claude-usage/claude,
 # with the 5-hour window on line 1 and the 7-day one on line 2 (polybar reads line 1).
 # An idle session runs this again with its last numbers (e.g. when its prompt cache
 # expires), so a newer window replaces the one in the file, and within a window (a

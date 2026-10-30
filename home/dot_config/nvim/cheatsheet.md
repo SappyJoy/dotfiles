@@ -185,7 +185,7 @@ Claude runs in tmux, connected to this nvim: it sees the file and the selection,
 shows its edits here as diffs and reads the errors. A `claude` started by hand in
 this folder connects too.
 
-- `<leader>at` / `<leader>aC`: Claude (personal / team) in a pane to the right,
+- `<leader>at`: Claude in a pane to the right,
   connected; again: jumps to it. `Ctrl+\` back
 - `<leader>as`: send the selection (or this file; in oil or the tree, the file under
   the cursor) as `@file#L10-20`, then jump to Claude to ask
