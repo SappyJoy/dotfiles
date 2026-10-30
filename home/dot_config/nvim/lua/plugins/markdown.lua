@@ -1,6 +1,6 @@
 -- Markdown: rendered in place (render-markdown); images, LaTeX math and Mermaid drawn
 -- in the note (snacks.image, kitty only); pasting a screenshot (img-clip); export
--- through pandoc. Keys in <leader>m (prose; ui/prose.lua has the typewriter).
+-- through pandoc. Keys in <leader>m (prose; ui/prose.lua).
 
 -- A pasted image goes to the vault's attachment folder (Obsidian's app.json) inside
 -- a vault, else to assets/ next to the file; the link is relative to the note. In

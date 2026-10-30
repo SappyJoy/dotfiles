@@ -155,7 +155,6 @@ local function show(buf, lines, h)
     vim.wo[win][0].wrap = h.wrap or false
     vim.wo[win][0].spell = false
   end
-  vim.b[buf].typewriter = false
 end
 
 local function open(args, h)
