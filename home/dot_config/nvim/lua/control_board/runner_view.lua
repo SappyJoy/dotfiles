@@ -77,6 +77,10 @@ function M.open(runners, only)
   vim.api.nvim_open_win(buf, true, { relative = 'editor', width = 40, height = 3, row = 1, col = 1, style = 'minimal', border = 'rounded' })
   vim.wo.cursorline = false
   local function close()
+    local win = window_of(buf)
+    if win then
+      vim.api.nvim_win_close(win, true) -- deleting only the buffer would leave an empty float
+    end
     if vim.api.nvim_buf_is_valid(buf) then
       vim.api.nvim_buf_delete(buf, { force = true })
     end

@@ -255,7 +255,7 @@ keys Enter
 check "Enter on a runner: its detail in a window" shows "state    stalled"
 check "  … only that runner's" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'steps    3 of 4 ticked' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'steps    2 of 4'"
 keys q
-check "  … q closes it: the board again" shows "Runners (3)"
+check "  … q closes it: the board again, no empty window left" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Runners (3)' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q '╭'"
 keys ' aS'
 sleep 1
 check "<leader>aS: every runner's detail, asked for apart from the board" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'steps    2 of 4 ticked' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'state    waiting' && grep -q -- '--json' '$tmp/runner-calls'"
@@ -264,6 +264,7 @@ keys r
 sleep 1
 check "  … r asks again" shows "Write runner.py"
 keys q
+check "  … q closes it too" sh -c "! tmux -L nvim-board capture-pane -p -t 0 | grep -q '╭'"
 on 'src.txt'
 keys Enter
 check "Enter on a flagged file: the file" [ "$(probe "vim.fn.expand('%:t')")" = "src.txt" ]
