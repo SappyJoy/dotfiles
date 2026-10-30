@@ -87,6 +87,28 @@ function M.refresh(done)
   end
 end
 
+-- The milestone runners alone, from runner_status.py next to board.py (it reads transcripts
+-- and nothing else, so a key can ask for it): done(list), or done(nil, reason).
+function M.runners(done)
+  local script = M.script()
+  if not script then
+    return done(nil, "milestone-flow's board.py not found: run `make marketplace` in the toolkit")
+  end
+  local run = { 'python3', vim.fs.dirname(script) .. '/runner_status.py', '--json' }
+  local started, err = pcall(vim.system, run, { text = true, timeout = 10000 }, function(out)
+    vim.schedule(function()
+      local ok, list = pcall(vim.json.decode, out.stdout or '', { luanil = { object = true, array = true } })
+      if out.code ~= 0 or not ok then
+        return done(nil, vim.trim(out.stderr or '') ~= '' and out.stderr or 'runner_status.py gave no data')
+      end
+      done(list)
+    end)
+  end)
+  if not started then
+    done(nil, tostring(err))
+  end
+end
+
 local function stop_timer()
   if timer then
     timer:stop()

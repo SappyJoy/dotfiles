@@ -41,6 +41,11 @@ if sys.argv[1] == "--tail":
 else:
     print(open("$tmp/board.json").read())
 EOS
+cat >"$tmp/bin/runner_status.py" <<EOS
+import sys
+open("$tmp/runner-calls", "a").write(" ".join(sys.argv[1:]) + "\\n")
+print(open("$tmp/runners.json").read())
+EOS
 cat >"$tmp/bin/claude" <<EOS
 #!/bin/sh
 echo "\${CLAUDE_CONFIG_DIR:-unset} \$PWD \$*" >>"$tmp/claude-calls"
@@ -165,6 +170,16 @@ needs.append(waiting("Try the demo", 13))
 if len(sys.argv) > 3:  # another project, in another folder, with the same name
     other = "$tmp/other/proj"
     needs.append(dict(waiting("Other thing", 5), project_path=other, path=other + "/ROADMAP.md"))
+runner = lambda id, state, label, short, idle, steps: {
+    "id": id, "project": "proj", "project_path": p, "milestone": "M7", "label": label, "state": state,
+    "short": short, "idle": idle, "tokens": 2000,
+    "detail": ["proj · M7 Runner status", "state    " + state, "steps    " + steps + " ticked",
+               "now      " + short.split(" · ")[0], "recent", "  " + short.split(" · ")[0]]}
+runners = [
+    runner("r-work", "working", "M7 · 2/4 steps", "Edit board.py · 2k tokens", 120, "2 of 4"),
+    runner("r-wait", "waiting", "M8 · 1/3 steps", "Bash: sleep 240 · 5k tokens", 400, "1 of 3"),
+    runner("r-stall", "stalled", "M9 · 3/4 steps", "Bash: make check · 9k tokens", 2400, "3 of 4")]
+json.dump(runners, open("$tmp/runners.json", "w"))
 projects = [{"name": "proj", "path": p,
     "current": {"id": "M3", "gate": True, "title": "Third", "status": "review"},
     "done": 2, "total": 4, "reviews": [], "waiting": []}]
@@ -177,10 +192,10 @@ json.dump({
         {"key": "claude-personal", "label": "personal",
          "five_hour": {"pct": 34, "resets_at": now + 3 * 3600},
          "seven_day": {"pct": 61, "resets_at": now + 3 * 86400}}],
-    "needs": needs, "sessions": sessions,
+    "needs": needs, "sessions": sessions, "runners": runners,
     "projects": projects,
     "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "track": 1, "waiting": 2,
-        "working": 1, "sessions": 4}}, sys.stdout)
+        "working": 1, "sessions": 4, "runners": 3}}, sys.stdout)
 EOS
 }
 board "Fix parser" answer
@@ -234,6 +249,21 @@ check "  … a finished track under Needs you" shows "track scorer"
 check "  … the Week: tokens per project with their share" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Week ──' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'proj *2.4M.* 80%'"
 check "  … a spark for each day, and the costliest prompt" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▁▁▁▃▁▆█' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Costliest prompt: 900k in proj, \"fix the parser\"'"
 check "  … the 5-hour windows as bars, milestones finished, code growth" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '5h personal' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Milestones finished: proj 3' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'proj *13k *+3.4k −200' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'lib/parser +900 · new: lib/report' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'src.txt *412 lines'"
+check "  … Runners: a working, a waiting and a stalled one, with their state" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Runners (3)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M7 · 2/4 steps *Edit board.py · 2k tokens *working *2m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M8 · 1/3 steps.*waiting *6m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q '🛑 *proj *M9 · 3/4 steps.*stalled *40m'"
+on 'M9 · 3/4'
+keys Enter
+check "Enter on a runner: its detail in a window" shows "state    stalled"
+check "  … only that runner's" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'steps    3 of 4 ticked' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'steps    2 of 4'"
+keys q
+check "  … q closes it: the board again" shows "Runners (3)"
+keys ' aS'
+sleep 1
+check "<leader>aS: every runner's detail, asked for apart from the board" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'steps    2 of 4 ticked' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'state    waiting' && grep -q -- '--json' '$tmp/runner-calls'"
+sed -i 's/Edit board.py/Write runner.py/g' "$tmp/runners.json"
+keys r
+sleep 1
+check "  … r asks again" shows "Write runner.py"
+keys q
 on 'src.txt'
 keys Enter
 check "Enter on a flagged file: the file" [ "$(probe "vim.fn.expand('%:t')")" = "src.txt" ]

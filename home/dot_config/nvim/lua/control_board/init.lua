@@ -9,6 +9,7 @@
 -- continues one. demo.lua plays the recording of a review's demo (`p` on the board and in the picker).
 -- week.lua and week_view.lua add its Week section (tokens, plan windows, milestones, code growth).
 -- notify.lua tells you in nvim when a session waits (<leader>an opens the newest notice).
+-- runner_view.lua shows what each milestone runner is doing (<leader>aS, or Enter on a runner of the board).
 local data = require 'control_board.data'
 local render = require 'control_board.render'
 
@@ -135,6 +136,8 @@ function M.open_row(row)
     vim.notify('That session is gone; refresh with r', vim.log.levels.WARN)
   elseif row.kind == 'review' or row.kind == 'waiting' or row.kind == 'track' then
     edit(row.path, row.line)
+  elseif row.kind == 'runner' then
+    require('control_board.runner_view').open(data.last().runners, row.id)
   elseif row.kind == 'file' then
     edit(row.path)
   elseif row.kind == 'project' or row.kind == 'growth' then
@@ -490,6 +493,9 @@ if vim.fn.executable 'claude' == 1 then
   end, { desc = 'Search what was said in every past session' })
   vim.keymap.set('n', '<leader>ac', M.new_session, { desc = 'New Claude session here (background)' })
   local notify = require 'control_board.notify'
+  vim.keymap.set('n', '<leader>aS', function()
+    require('control_board.runner_view').open()
+  end, { desc = 'What each milestone runner is doing (no Claude call)' })
   vim.keymap.set('n', '<leader>an', notify.open_latest, { desc = 'Open what the last Claude notification was about' })
   -- after the first page is drawn (it asks for the data itself); a headless nvim has no UI
   vim.api.nvim_create_autocmd('UIEnter', {

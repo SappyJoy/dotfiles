@@ -13,6 +13,7 @@ local PROJECT, TITLE, TAG, AGE = 16, 24, 8, 4
 local PLAY = '▶' -- in its own column after the icon: a review with a recording, which `p` plays
 local ICON = { answer = '❓', review = '🚦', track = '🧭', waiting = '☐', working = '⏳', idle = '·' }
 local STATE = { answer = 'needs you', working = 'working', idle = 'idle' }
+local RUNNER = { working = { '⏳', 'ControlBoardWork' }, waiting = { '💤', 'ControlBoardDim' }, stalled = { '🛑', 'ControlBoardHot' } }
 local FOOTER = ' ⏎ open  t tick  c comment  p play ▶  i inbox note  s new session  Tab more  r refresh  q close'
 
 local function width_of(s)
@@ -179,6 +180,16 @@ function M.render(data, opts)
       local more = waiting[need.project_path] - 1
       local tag = more > 0 and '+ ' .. more .. ' more' or ''
       add_row(need, ICON.waiting, 'ControlBoardWait', need.project, need.title, need.detail, tag, since)
+    end
+  end
+
+  -- the milestone runners working now, from their transcripts (runner_status.py)
+  if data.runners and #data.runners > 0 then
+    section(lines, spans, 'Runners', #data.runners, w)
+    for _, r in ipairs(data.runners) do
+      local icon = RUNNER[r.state] or RUNNER.working
+      local row = vim.tbl_extend('force', r, { kind = 'runner' })
+      add_row(row, icon[1], icon[2], r.project, r.label, r.short, r.state, age(r.idle))
     end
   end
 

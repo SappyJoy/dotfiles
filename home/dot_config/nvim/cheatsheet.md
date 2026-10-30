@@ -215,6 +215,11 @@ opens the file). It refreshes by itself; the Week on opening and on `r`.
 - `t` ticks a Waiting on you line, `c` comments on a review, `i` adds an Inbox note
   to the project, `s` starts a background session there, `Tab` shows all of a
   project's lines, `r` refreshes, `q` closes
+- Runners: a milestone runner at work has a row under Runners (state, `M7 · 2/4 steps`,
+  its last action, tokens, minutes since it acted; `stalled` past 10 minutes working or
+  30 waiting). `Enter` on it, or `<leader>aS` anywhere, opens its detail in a window:
+  `r` refreshes, `q` closes. It reads the transcripts, so it costs no tokens and posts
+  nothing. In a shell, without nvim: `python3 ~/.local/share/claude-plugins/personal/plugins/milestone-flow/scripts/runner_status.py`
 - `<leader>aw`: the same rows in a picker, with previews; `<leader>ac` (and `cl` in a
   shell): a new background session here, attached
 - `/milestone-flow:tour [part]`, typed in a Claude started with `<leader>at` in the
