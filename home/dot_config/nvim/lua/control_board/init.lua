@@ -60,11 +60,10 @@ local function board_buffer()
   end
 end
 
--- the tab the board is in
-function M.board_tab()
+-- the window the board is in (any tab)
+function M.board_win()
   local buf = board_buffer()
-  local win = buf and vim.fn.win_findbuf(buf)[1]
-  return win and vim.api.nvim_win_get_tabpage(win)
+  return buf and vim.fn.win_findbuf(buf)[1]
 end
 
 -- a closed section: its heading and how much is hidden
@@ -79,15 +78,11 @@ end
 function M.cheatsheet()
   local path = vim.fn.stdpath 'config' .. '/cheatsheet.md'
   local win = Snacks.win { file = path, width = 0.6, height = 0.85, border = 'rounded', title = ' cheatsheet ', wo = { spell = false } }
-  for lnum, line in ipairs(vim.fn.readfile(path)) do
-    if line:match '^## Control board' then
-      vim.api.nvim_win_call(win.win, function()
-        vim.api.nvim_win_set_cursor(0, { lnum, 0 })
-        vim.cmd 'normal! zt'
-      end)
-      return
+  vim.api.nvim_win_call(win.win, function()
+    if vim.fn.search('^## Control board', 'w') > 0 then
+      vim.cmd 'normal! zt'
     end
-  end
+  end)
 end
 
 local function row_key(row)
@@ -101,6 +96,10 @@ local function draw(buf, board)
   end
   local cursor = vim.api.nvim_win_get_cursor(win)[1]
   local was = row_key(rows[buf] and rows[buf][cursor])
+  local head_was -- the heading under the cursor: it stays on its section when the lines above change
+  for _, old in ipairs(sections[buf] or {}) do
+    head_was = old[1] == cursor and old[2] or head_was
+  end
   local out = render.render(board, {
     width = vim.api.nvim_win_get_width(win) - 1,
     expanded = expanded,
@@ -131,9 +130,10 @@ local function draw(buf, board)
   end
   local first_draw = not sections[buf]
   vim.api.nvim_win_call(win, function() -- fold the sections again, as they were
-    vim.wo[win].foldmethod = 'marker' -- no markers: the old folds go (`normal! zE` would end which-key's popup)
-    vim.fn.foldclosed(1) -- folds are made when asked: ask now, with the markers gone
-    vim.wo[win].foldmethod = 'manual'
+    vim.wo[win][0].foldexpr = '0' -- no folds by expression: the old folds go (`normal! zE` would end which-key's popup)
+    vim.wo[win][0].foldmethod = 'expr'
+    vim.fn.foldclosed(1) -- folds are made when asked: ask now
+    vim.wo[win][0].foldmethod = 'manual'
     sections[buf] = {}
     for _, span in ipairs(out.spans) do
       if span[4] == 'ControlBoardSection' then
@@ -149,9 +149,11 @@ local function draw(buf, board)
       end
     end
   end)
-  if first_draw then -- the board opens on what needs you
-    for _, sec in ipairs(sections[buf]) do
+  for _, sec in ipairs(sections[buf]) do
+    if first_draw then -- the board opens on what needs you
       target = sec[2] == 'Needs you' and sec[1] + 1 or target
+    elseif not was and sec[2] == head_was then
+      target = sec[1]
     end
   end
   vim.api.nvim_win_set_cursor(win, { target, 0 })
@@ -159,7 +161,19 @@ end
 
 local function current_row()
   local buf = vim.api.nvim_get_current_buf()
-  return rows[buf] and rows[buf][vim.api.nvim_win_get_cursor(0)[1]]
+  local lnum = vim.api.nvim_win_get_cursor(0)[1]
+  if vim.fn.foldclosed(lnum) ~= -1 then -- a row hidden in a closed section is not under the cursor
+    return nil
+  end
+  return rows[buf] and rows[buf][lnum]
+end
+
+local function is_heading(buf, lnum)
+  for _, sec in ipairs(sections[buf] or {}) do
+    if sec[1] == lnum then
+      return true
+    end
+  end
 end
 
 -- ---- what the keys do ------------------------------------------------------------
@@ -409,13 +423,12 @@ local function map_keys(buf)
     end, { buffer = buf, nowait = true, desc = desc })
   end
   map('<CR>', function(row)
-    if row then
-      return M.open_row(row)
-    end
-    local lnum = vim.fn.line '.' -- a heading: fold or unfold its section
+    local lnum = vim.fn.line '.'
     if vim.fn.foldclosed(lnum) ~= -1 then
       vim.cmd 'foldopen'
-    elseif vim.fn.foldlevel(lnum) > 0 then
+    elseif row then
+      M.open_row(row)
+    elseif is_heading(buf, lnum) then
       vim.cmd 'foldclose'
     end
   end, 'Open; on a heading fold or unfold the section')
@@ -488,9 +501,9 @@ function M.open()
   vim.wo.relativenumber = false
   vim.wo.signcolumn = 'no'
   vim.wo.list = false
-  vim.wo.fillchars = 'eob: ,fold: '
-  vim.wo.foldmethod = 'manual' -- one fold for each section, made on every draw
-  vim.wo.foldtext = "v:lua.require'control_board'.foldtext()"
+  vim.wo[0][0].fillchars = 'eob: ,fold: ' -- window-local only: a file opened from the board keeps its own
+  vim.wo[0][0].foldmethod = 'manual' -- one fold for each section, made on every draw
+  vim.wo[0][0].foldtext = "v:lua.require'control_board'.foldtext()"
   vim.b[buf].footer = FOOTER
   map_keys(buf)
   turn_pages(buf)
@@ -501,6 +514,13 @@ function M.open()
     buffer = buf,
     once = true,
     callback = unwatch,
+  })
+  vim.api.nvim_create_autocmd('BufWipeout', { -- the next board opens on Needs you again
+    buffer = buf,
+    once = true,
+    callback = function()
+      rows[buf], sections[buf], closed = nil, nil, {}
+    end,
   })
   vim.api.nvim_create_autocmd('VimResized', { -- not buffer-local: the board may be in another tab
     callback = function()

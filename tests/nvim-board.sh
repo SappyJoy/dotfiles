@@ -254,6 +254,16 @@ keys Enter
 sleep 3
 check "  … and an opened section stays open through a refresh" shows "Write docs"
 keys Enter
+on 'M3 Third'
+keys zc
+keys Enter
+check "Enter on a section closed with zc (cursor on a hidden row): the section opens, no file" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M3 Third' && [ \"\$(tmux -L nvim-board capture-pane -p -t 0 | grep -c 'Look at the page')\" = 0 ]"
+keys Enter
+on 'M3 Third'
+keys Enter
+sleep 1
+check "a review opened from the board: its window has no fold text or fill characters of the board" [ "$(probe "tostring(vim.wo.foldtext:find('control_board') == nil and vim.wo.fillchars:find('fold: ', 1, true) == nil)")" = true ]
+keys ':tabclose' Enter
 keys s
 check "s on the board: flash waits for text (⚡ in the command line)" shows "⚡"
 keys 'Log in'

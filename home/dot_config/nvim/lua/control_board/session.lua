@@ -38,12 +38,11 @@ local function default_config()
   return vim.uv.fs_stat(personal) and personal or vim.fn.expand '~/.claude'
 end
 
-local function find_tab(key)
-  for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
-    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
-      if vim.b[vim.api.nvim_win_get_buf(win)].control_session == key then
-        return tab
-      end
+-- the window of the session with this key, in any tab
+local function find_win(key)
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.b[vim.api.nvim_win_get_buf(win)].control_session == key then
+      return win
     end
   end
 end
@@ -101,19 +100,20 @@ local last_key -- the session window we were in last: where Ctrl+6 on the board 
 -- the board's tab, in front
 local function show_board()
   local board = require 'control_board'
-  local tab = board.board_tab()
-  if not tab then
+  local win = board.board_win()
+  if not win then
     return board.open()
   end
-  vim.api.nvim_set_current_tabpage(tab)
+  vim.api.nvim_set_current_win(win)
 end
 
 -- Close a session window (the client exits, the session goes on) and land on the board
 local function leave(buf)
+  local here = vim.api.nvim_get_current_buf() == buf -- a session that ends behind your back leaves you where you are
   if vim.api.nvim_buf_is_valid(buf) then
     pcall(vim.api.nvim_buf_delete, buf, { force = true })
   end
-  if require('control_board').board_tab() then
+  if here and require('control_board').board_win() then
     show_board()
   end
 end
@@ -153,9 +153,9 @@ end
 -- Open the session in a tab: its own, if it has one. s needs short, config_dir, and
 -- project and name for the winbar until the board's data has the session.
 function M.attach(s)
-  local tab = find_tab(s.short)
-  if tab then
-    vim.api.nvim_set_current_tabpage(tab)
+  local win = find_win(s.short)
+  if win then
+    vim.api.nvim_set_current_win(win)
     return vim.cmd.startinsert()
   end
   vim.cmd.tabnew()
@@ -215,11 +215,14 @@ end
 
 -- Ctrl+6 on the board: the session window we were in last
 function M.back()
-  local tab = last_key and find_tab(last_key)
-  if not tab then
+  local win = last_key and find_win(last_key)
+  for _, w in ipairs(vim.api.nvim_list_wins()) do -- the last one is gone: any other
+    win = win or (vim.b[vim.api.nvim_win_get_buf(w)].control_session and w)
+  end
+  if not win then
     return vim.notify('No session window yet: Enter on a session opens one', vim.log.levels.INFO)
   end
-  vim.api.nvim_set_current_tabpage(tab)
+  vim.api.nvim_set_current_win(win)
   vim.cmd.startinsert()
 end
 
