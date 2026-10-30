@@ -253,6 +253,7 @@ check "  … Runners: a working, a waiting and a stalled one, with their state" 
 on 'M9 · 3/4'
 keys Enter
 check "Enter on a runner: its detail in a window" shows "state    stalled"
+check "  … with its keys on screen" shows "r refresh  q or Esc close"
 check "  … only that runner's" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'steps    3 of 4 ticked' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q 'steps    2 of 4'"
 keys q
 check "  … q closes it: the board again, no empty window left" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Runners (3)' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q '╭'"

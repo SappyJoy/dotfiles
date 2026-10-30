@@ -10,7 +10,7 @@ local M = {}
 local ns = vim.api.nvim_create_namespace 'control_board_runners'
 local HOT = { stalled = 'ControlBoardHot', waiting = 'ControlBoardDim', working = 'ControlBoardWork' }
 
-local function lines_of(runners, only)
+local function lines_of(runners, only, loading)
   local lines, marks = { ' Runners' .. (only and '' or ' (' .. #runners .. ')'), '' }, {}
   for _, r in ipairs(runners) do
     if not only or r.id == only then
@@ -26,10 +26,10 @@ local function lines_of(runners, only)
     end
   end
   if #lines == 2 then
-    table.insert(lines, ' No runner is working.')
+    table.insert(lines, loading and ' Reading the runners...' or ' No runner is working.')
     table.insert(lines, '')
   end
-  table.insert(lines, ' r refresh  q close')
+  table.insert(lines, ' r refresh  q or Esc close')
   table.insert(marks, { #lines, 'ControlBoardDim' })
   return lines, marks
 end
@@ -42,8 +42,8 @@ local function window_of(buf)
   end
 end
 
-local function draw(buf, runners, only)
-  local lines, marks = lines_of(runners, only)
+local function draw(buf, runners, only, loading)
+  local lines, marks = lines_of(runners, only, loading)
   vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].modifiable = false
@@ -87,9 +87,9 @@ function M.open(runners, only)
   end
   vim.keymap.set('n', 'q', close, { buffer = buf, nowait = true })
   vim.keymap.set('n', '<Esc>', close, { buffer = buf, nowait = true })
-  local function fill(list)
+  local function fill(list, loading)
     if vim.api.nvim_buf_is_valid(buf) then
-      draw(buf, list, only)
+      draw(buf, list, only, loading)
     end
   end
   vim.keymap.set('n', 'r', function()
@@ -104,7 +104,7 @@ function M.open(runners, only)
   if runners then
     return fill(runners)
   end
-  fill {}
+  fill({}, true)
   data.runners(function(list, err)
     if list then
       fill(list)
