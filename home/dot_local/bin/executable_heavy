@@ -35,7 +35,8 @@ get() { sed -n "s/^$2=//p" "$1" | head -1; }
 started() { sed 's/.*) //' "/proc/$1/stat" 2>/dev/null | awk '{print $20}'; }
 alive() { [ -n "$2" ] && [ "$(started "$1")" = "$2" ]; }
 
-cap_mb=$(mb "$cap")
+[[ $cap =~ ^[0-9]+[KMGTkmgt]?$ ]] && cap_mb=$(mb "$cap") && [ "$cap_mb" -gt 0 ] ||
+  { echo "heavy: -m wants a whole size like 512M or 8G, not '$cap'" >&2; exit 2; }
 total_mb=$(awk '/^MemTotal:/{print int($2/1024)}' /proc/meminfo)
 budget_mb=${HEAVY_RAM_BUDGET_MB:-$(( total_mb - ${HEAVY_RAM_RESERVE_MB:-6144} ))}
 if [ "$cap_mb" -gt "$budget_mb" ]; then
@@ -45,13 +46,13 @@ fi
 
 top=$(git rev-parse --show-toplevel 2>/dev/null || pwd); top=${top%%/.claude/worktrees/*}
 me="$(date +%s%N)-$$"
-mine="$lock/leases/$me"
+mine="$lock/leases/$me" tmp="$lock/tmp.$me"
 write_lease() { # state, then the command
   local state=$1; shift
   printf 'pid=%s\nstart=%s\nstate=%s\ngpu=%s\nram_mb=%s\nproject=%s\nsession=%s\nsince=%s\ncmd=%s\n' \
     $$ "$(started $$)" "$state" "$gpu" "$cap_mb" "${top##*/}" "${CLAUDE_CODE_SESSION_ID:0:8}" \
-    "$(date +%s)" "$(echo "$*" | tr '\n' ' ' | cut -c1-120)" >"$mine.tmp"
-  mv "$mine.tmp" "$mine"
+    "$(date +%s)" "$(c=$(echo "$*" | tr '\n' ' '); echo "${c:0:120}")" >"$tmp"
+  mv "$tmp" "$mine"
 }
 describe() { echo "$(get "$1" project) $(get "$1" session): $(get "$1" cmd)"; }
 
@@ -62,7 +63,8 @@ outsider() {
   for f in "$lock"/leases/*; do [ -f "$f" ] && held="$held$(get "$f" pid) "; done
   nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader,nounits 2>/dev/null |
   while IFS=', ' read -r pid mem; do
-    [ -n "$pid" ] && [ "${mem:-0}" -ge "${HEAVY_GPU_BUSY_MB:-300}" ] || continue
+    [[ $pid =~ ^[0-9]+$ && $mem =~ ^[0-9]+$ ]] || continue
+    [ "$mem" -ge "${HEAVY_GPU_BUSY_MB:-300}" ] || continue
     p=$pid
     while [ "${p:-0}" -gt 1 ]; do
       case $held in *" $p "*) continue 2 ;; esac
@@ -81,7 +83,8 @@ try_take() {
     [ -f "$f" ] || continue
     [ "$f" = "$mine" ] && continue
     alive "$(get "$f" pid)" "$(get "$f" start)" || { rm -f "$f"; continue; }
-    if [[ "$f" < "$mine" && $(get "$f" state) = waiting ]]; then
+    # an earlier waiter blocks me, unless it wants the GPU and I don't (it may be stuck on an outsider)
+    if [[ "$f" < "$mine" && $(get "$f" state) = waiting && ( $gpu = 1 || $(get "$f" gpu) != 1 ) ]]; then
       why="queued behind $(describe "$f")"; break
     fi
     [ "$(get "$f" state)" = held ] || continue
@@ -98,8 +101,13 @@ try_take() {
   write_lease held "$@"
 }
 
-if [ -z "${HEAVY_HELD:-}" ]; then
-  trap 'rm -f "$mine" "$mine.tmp"' EXIT
+if [ -n "${HEAVY_HELD:-}" ]; then # inside a job that holds the lock: only what it holds is free to use
+  if [ "$cap_mb" -gt "${HEAVY_HELD_MB:-0}" ] || { [ "$gpu" = 1 ] && [ "${HEAVY_HELD_GPU:-0}" != 1 ]; }; then
+    echo "heavy: this job holds ${HEAVY_HELD_MB:-0} MB$([ "${HEAVY_HELD_GPU:-0}" = 1 ] && echo ' and the GPU'); a nested heavy cannot take more" >&2
+    exit 2
+  fi
+else
+  trap 'rm -f "$mine" "$tmp"' EXIT
   trap 'exit 143' TERM; trap 'exit 130' INT HUP
   write_lease waiting "$@"
   t0=$(date +%s) last=""
@@ -108,11 +116,11 @@ if [ -z "${HEAVY_HELD:-}" ]; then
     last=$why; sleep "$poll"
   done
   [ -z "$last" ] || echo "heavy: got the lock after $(( $(date +%s) - t0 )) s" >&2
-  export HEAVY_HELD=1
+  export HEAVY_HELD=1 HEAVY_HELD_MB=$cap_mb HEAVY_HELD_GPU=$gpu
 fi
 
 report=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/heavy.XXXXXX")
-trap 'rm -f "$report" "$mine" "$mine.tmp"' EXIT
+trap 'rm -f "$report" "$mine" "$tmp"' EXIT
 
 # systemd-run turns "$$" in its arguments into "$": double every "$" so the job gets its words as typed.
 args=(); for a in "$@"; do args+=("${a//\$/\$\$}"); done
