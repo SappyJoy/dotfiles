@@ -109,7 +109,10 @@ end
 
 -- Close a session window (the client exits, the session goes on) and land on the board
 local function leave(buf)
-  local here = vim.api.nvim_get_current_buf() == buf -- a session that ends behind your back leaves you where you are
+  local here = false -- a session that ends behind your back leaves you where you are
+  for _, w in ipairs(vim.fn.win_findbuf(buf)) do
+    here = here or vim.tbl_contains(vim.api.nvim_tabpage_list_wins(0), w)
+  end
   if vim.api.nvim_buf_is_valid(buf) then
     pcall(vim.api.nvim_buf_delete, buf, { force = true })
   end
@@ -216,8 +219,9 @@ end
 -- Ctrl+6 on the board: the session window we were in last
 function M.back()
   local win = last_key and find_win(last_key)
-  for _, w in ipairs(vim.api.nvim_list_wins()) do -- the last one is gone: any other
-    win = win or (vim.b[vim.api.nvim_win_get_buf(w)].control_session and w)
+  for _, w in ipairs(vim.api.nvim_list_wins()) do -- the last one is gone: any other that is alive
+    local b = vim.api.nvim_win_get_buf(w)
+    win = win or (vim.b[b].control_session and not vim.b[b].control_ended and w) or nil
   end
   if not win then
     return vim.notify('No session window yet: Enter on a session opens one', vim.log.levels.INFO)
