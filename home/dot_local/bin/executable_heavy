@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# heavy [-m SIZE] [--] cmd args...   run a job in its own systemd user scope with a RAM cap.
+# A job past the cap is killed alone, early, instead of the machine thrashing until the
+# desktop and browser die with it. SIZE is a systemd size (20G, 512M); default $HEAVY_MAX or 20G.
+# The cap includes page cache the job holds but not swap: swap is switched off for the scope,
+# so the kernel kills at the cap instead of swapping.
+cap=${HEAVY_MAX:-20G}
+while getopts m:h opt; do
+  case $opt in
+    m) cap=$OPTARG ;;
+    *) sed -n '2,3p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+[ "${1:-}" = -- ] && shift
+[ $# -gt 0 ] || { echo "usage: heavy [-m SIZE] [--] cmd args..." >&2; exit 2; }
+
+report=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/heavy.XXXXXX")
+trap 'rm -f "$report"' EXIT
+
+# The inner shell is not exec'd, so it outlives a killed job and can read the scope's counters.
+systemd-run --user --scope --quiet --collect \
+  -p MemoryMax="$cap" -p MemorySwapMax=0 -p OOMPolicy=continue \
+  -- bash -c '
+    report=$1; shift
+    "$@"; rc=$?
+    cg=/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)
+    peak=$(cat "$cg/memory.peak" 2>/dev/null || echo 0)
+    kills=$(awk "/^oom_kill /{print \$2}" "$cg/memory.events" 2>/dev/null || echo 0)
+    echo "$peak ${kills:-0}" >"$report"
+    exit $rc' heavy "$report" "$@"
+rc=$?
+
+read -r peak kills <"$report" 2>/dev/null
+peak_mb=$(( ${peak:-0} / 1048576 ))
+if [ "${kills:-0}" -gt 0 ]; then
+  echo "heavy: killed for memory: cap $cap, peak ${peak_mb} MB, exit $rc" >&2
+elif [ "$rc" -ne 0 ] && [ "$peak_mb" -gt 0 ]; then
+  echo "heavy: exit $rc, peak ${peak_mb} MB of the $cap cap" >&2
+fi
+exit $rc
