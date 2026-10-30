@@ -484,7 +484,7 @@ check "n on the board stays search-next" [ "$(probe "vim.fn.maparg('n', 'n')")" 
 on 'M3 Third'
 keys a
 sleep 2
-check "a: claude --bg in the project" grep -q "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls"
+check "a: claude --bg in the project" grep -q "^unset $proj --bg" "$tmp/claude-calls"
 check "  … and its tab" shows "ATTACHED feed1234"
 check "  … the winbar before the board knows it" shows "proj · feed1234 · attached"
 normal
@@ -702,7 +702,7 @@ rm -f "$tmp/board-fails"
 start src.txt
 keys ' ac'
 sleep 2
-check "<leader>ac: a background session in this project" [ "$(grep -c "^$HOME/.claude-personal $proj --bg" "$tmp/claude-calls")" = 2 ]
+check "<leader>ac: a background session in this project" [ "$(grep -c "^unset $proj --bg" "$tmp/claude-calls")" = 2 ]
 check "  … attached" shows "ATTACHED feed1234"
 
 # ---- a board taller than its window -----------------------------------------------------

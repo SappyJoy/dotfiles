@@ -28,14 +28,13 @@ local function claude(config_dir, ...)
   return vim.list_extend(prefix, { 'claude', ... })
 end
 
--- the account new sessions start in: the one nvim runs under, else the personal one
+-- the account new sessions start in: the one nvim runs under, else ~/.claude
 local function default_config()
   local env = vim.env.CLAUDE_CONFIG_DIR
   if env and env ~= '' then
     return env
   end
-  local personal = vim.fn.expand '~/.claude-personal'
-  return vim.uv.fs_stat(personal) and personal or vim.fn.expand '~/.claude'
+  return vim.fn.expand '~/.claude'
 end
 
 -- the window of the session with this key, in any tab
