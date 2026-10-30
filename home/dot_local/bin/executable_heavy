@@ -1,22 +1,121 @@
 #!/usr/bin/env bash
-# heavy [-m SIZE] [--] cmd args...   run a job in its own systemd user scope with a RAM cap.
-# A job past the cap is killed alone, early, instead of the machine thrashing until the
-# desktop and browser die with it. SIZE is a systemd size (20G, 512M); default $HEAVY_MAX or 20G.
+# heavy [-m SIZE] [-g] [--] cmd args...   run a job under the machine lock, with a RAM cap.
+# The lock: -m SIZE (default $HEAVY_MAX or 20G) is the job's share of RAM and its cap; -g also
+# takes the GPU alone. heavy waits its turn, in order, and says who holds what; a holder that
+# died loses its lease. With -g it also waits while a process outside the lock uses the GPU
+# (nvidia-smi). A job past its cap is killed alone, early, instead of the machine thrashing.
 # The cap includes page cache the job holds but not swap: swap is switched off for the scope,
-# so the kernel kills at the cap instead of swapping.
-cap=${HEAVY_MAX:-20G}
-while getopts m:h opt; do
-  case $opt in
-    m) cap=$OPTARG ;;
-    *) sed -n '2,3p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+# so the kernel kills at the cap instead of swapping. Long waits: run heavy in the background.
+# Leases: $HEAVY_LOCK_DIR/leases (default $XDG_RUNTIME_DIR/heavy-lock), read by the control board.
+cap=${HEAVY_MAX:-20G} gpu=0
+while [ $# -gt 0 ]; do
+  case $1 in
+    -m) cap=${2:?-m needs a size}; shift 2 ;;
+    -g|--gpu) gpu=1; shift ;;
+    --) shift; break ;;
+    -h|--help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) echo "heavy: unknown option $1" >&2; exit 2 ;;
+    *) break ;;
   esac
 done
-shift $((OPTIND - 1))
-[ "${1:-}" = -- ] && shift
-[ $# -gt 0 ] || { echo "usage: heavy [-m SIZE] [--] cmd args..." >&2; exit 2; }
+[ $# -gt 0 ] || { echo "usage: heavy [-m SIZE] [-g] [--] cmd args..." >&2; exit 2; }
+
+lock=${HEAVY_LOCK_DIR:-${XDG_RUNTIME_DIR:-/tmp}/heavy-lock}
+poll=${HEAVY_POLL:-5}
+mkdir -p "$lock/leases"
+
+mb() { # a size like 20G, 512M, 100000K or plain bytes -> whole MB
+  local n=${1%[KMGTkmgt]}
+  case $1 in
+    *[Kk]) echo $(( n / 1024 )) ;; *[Mm]) echo "$n" ;; *[Gg]) echo $(( n * 1024 )) ;;
+    *[Tt]) echo $(( n * 1048576 )) ;; *) echo $(( n / 1048576 )) ;;
+  esac
+}
+get() { sed -n "s/^$2=//p" "$1" | head -1; }
+started() { sed 's/.*) //' "/proc/$1/stat" 2>/dev/null | awk '{print $20}'; }
+alive() { [ -n "$2" ] && [ "$(started "$1")" = "$2" ]; }
+
+cap_mb=$(mb "$cap")
+total_mb=$(awk '/^MemTotal:/{print int($2/1024)}' /proc/meminfo)
+budget_mb=${HEAVY_RAM_BUDGET_MB:-$(( total_mb - ${HEAVY_RAM_RESERVE_MB:-6144} ))}
+if [ "$cap_mb" -gt "$budget_mb" ]; then
+  echo "heavy: cap $cap is more than the lock's RAM budget (${budget_mb} MB); use a smaller -m" >&2
+  exit 2
+fi
+
+top=$(git rev-parse --show-toplevel 2>/dev/null || pwd); top=${top%%/.claude/worktrees/*}
+me="$(date +%s%N)-$$"
+mine="$lock/leases/$me"
+write_lease() { # state, then the command
+  local state=$1; shift
+  printf 'pid=%s\nstart=%s\nstate=%s\ngpu=%s\nram_mb=%s\nproject=%s\nsession=%s\nsince=%s\ncmd=%s\n' \
+    $$ "$(started $$)" "$state" "$gpu" "$cap_mb" "${top##*/}" "${CLAUDE_CODE_SESSION_ID:0:8}" \
+    "$(date +%s)" "$(echo "$*" | tr '\n' ' ' | cut -c1-120)" >"$mine.tmp"
+  mv "$mine.tmp" "$mine"
+}
+describe() { echo "$(get "$1" project) $(get "$1" session): $(get "$1" cmd)"; }
+
+# Is a process on the GPU that none of the live leases started? Prints it.
+outsider() {
+  command -v nvidia-smi >/dev/null || return 1
+  local pid mem p held=" " f
+  for f in "$lock"/leases/*; do [ -f "$f" ] && held="$held$(get "$f" pid) "; done
+  nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader,nounits 2>/dev/null |
+  while IFS=', ' read -r pid mem; do
+    [ -n "$pid" ] && [ "${mem:-0}" -ge "${HEAVY_GPU_BUSY_MB:-300}" ] || continue
+    p=$pid
+    while [ "${p:-0}" -gt 1 ]; do
+      case $held in *" $p "*) continue 2 ;; esac
+      p=$(sed 's/.*) //' "/proc/$p/stat" 2>/dev/null | awk '{print $2}')
+    done
+    echo "pid $pid, $mem MB"; return 0
+  done | head -1 | grep .
+}
+
+# One look at the queue, under the lock. Exit 0 and a changed lease when it is my turn;
+# else exit 1 and why, in one line.
+try_take() {
+  flock 9
+  local f ram=0 why=""
+  for f in "$lock"/leases/*; do
+    [ -f "$f" ] || continue
+    [ "$f" = "$mine" ] && continue
+    alive "$(get "$f" pid)" "$(get "$f" start)" || { rm -f "$f"; continue; }
+    if [[ "$f" < "$mine" && $(get "$f" state) = waiting ]]; then
+      why="queued behind $(describe "$f")"; break
+    fi
+    [ "$(get "$f" state)" = held ] || continue
+    ram=$(( ram + $(get "$f" ram_mb) ))
+    [ "$gpu" = 1 ] && [ "$(get "$f" gpu)" = 1 ] && { why="GPU held by $(describe "$f")"; break; }
+  done
+  if [ -z "$why" ] && [ $(( ram + cap_mb )) -gt "$budget_mb" ]; then
+    why="RAM share: ${ram} MB of ${budget_mb} MB is held, $cap needs more"
+  fi
+  if [ -z "$why" ] && [ "$gpu" = 1 ] && out=$(outsider); then
+    why="GPU in use outside the lock ($out)"
+  fi
+  [ -z "$why" ] || { echo "$why"; return 1; }
+  write_lease held "$@"
+}
+
+if [ -z "${HEAVY_HELD:-}" ]; then
+  trap 'rm -f "$mine" "$mine.tmp"' EXIT
+  trap 'exit 143' TERM; trap 'exit 130' INT HUP
+  write_lease waiting "$@"
+  t0=$(date +%s) last=""
+  until why=$(try_take "$@" 9>"$lock/.lock"); do
+    [ "$why" = "$last" ] || echo "heavy: waiting, $why" >&2
+    last=$why; sleep "$poll"
+  done
+  [ -z "$last" ] || echo "heavy: got the lock after $(( $(date +%s) - t0 )) s" >&2
+  export HEAVY_HELD=1
+fi
 
 report=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/heavy.XXXXXX")
-trap 'rm -f "$report"' EXIT
+trap 'rm -f "$report" "$mine" "$mine.tmp"' EXIT
+
+# systemd-run turns "$$" in its arguments into "$": double every "$" so the job gets its words as typed.
+args=(); for a in "$@"; do args+=("${a//\$/\$\$}"); done
 
 # The inner shell is not exec'd, so it outlives a killed job and can read the scope's counters.
 systemd-run --user --scope --quiet --collect \
@@ -28,7 +127,7 @@ systemd-run --user --scope --quiet --collect \
     peak=$(cat "$cg/memory.peak" 2>/dev/null || echo 0)
     kills=$(awk "/^oom_kill /{print \$2}" "$cg/memory.events" 2>/dev/null || echo 0)
     echo "$peak ${kills:-0}" >"$report"
-    exit $rc' heavy "$report" "$@"
+    exit $rc' heavy "$report" "${args[@]}"
 rc=$?
 
 read -r peak kills <"$report" 2>/dev/null
