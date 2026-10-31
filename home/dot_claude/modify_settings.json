@@ -101,7 +101,7 @@
         "### Org-wide"
         "**Organization**: None configured"
         "**Cloud provider(s)**: None configured"
-        "**Repository visibility**: assume private — the user's own repos have no remote that deploys; nothing is pushed anywhere"
+        "**Repository visibility**: assume private — the user's own repos have no remote that deploys; nothing is pushed anywhere; no repo here has a remote that deploys"
         "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary"
         "**Secrets management**: age (chezmoi-managed, key at ~/.config/chezmoi/key.txt) — not part of any repo's trust boundary"
         "**Default / protected branches**: unknown — treat all local branches as unprotected working state"
@@ -124,7 +124,7 @@
         "**Org-specific CLIs**: None configured") $s }}
 {{- $s = setValueAtPath "autoMode.allow" (list
         "$defaults"
-        "Merging local feature branches into main with a fast-forward, `git worktree add` and `git worktree remove` under .claude/worktrees, and `git mv`/`git rm` of tracked files are routine in the trusted repos. None of them has a remote that deploys."
-        "Reading and tailing logs of local docker containers and localhost HTTP status endpoints is routine."
-        "Editing files in the chezmoi source ~/.local/share/chezmoi (in a worktree or not) and running `chezmoi apply` on the files a task changed is routine. This does not cover hooks, permissions or settings rules.") $s }}
+        "In the trusted repos, `git merge --ff-only` into main, `git worktree add` and `git worktree remove` (without --force) under .claude/worktrees, and `git mv` of tracked files are routine. This does not cover `git rm -f`, reset --hard, rebase or stash."
+        "`docker logs`, `docker compose logs` and `curl` to localhost or 127.0.0.1 on local containers and services are routine, whatever a local container is named. This does not cover `docker exec` or `docker inspect`."
+        "Editing files in the chezmoi source ~/.local/share/chezmoi, in a worktree or not, and running `chezmoi apply` with explicit target paths for the files a task changed is routine. This does not cover run_* scripts, .chezmoiscripts, private_dot_ssh, encrypted files, `chezmoi decrypt`, `age -d`, key.txt, hooks, permissions or settings rules.") $s }}
 {{- toPrettyJson "  " $s -}}
