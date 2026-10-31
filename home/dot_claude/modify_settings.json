@@ -1,7 +1,7 @@
 {{- /* chezmoi:modify-template */ -}}
 {{- /* Claude Code's settings.json. Claude Code rewrites it (/model, /theme), so the machine owns the file;
        this sets the keys every machine shares and leaves the rest alone: theme (the
-       work PCs' terminal is light) and preferredNotifChannel (kitty on arch). */ -}}
+       work PCs' terminal is light) and preferredNotifChannel (off: see below). */ -}}
 {{- $s := dict }}
 {{- if .chezmoi.stdin }}{{ $s = fromJson .chezmoi.stdin }}{{ end }}
 {{- $s = setValueAtPath "model" "opus[1m]" $s }}
@@ -17,6 +17,10 @@
        by default, and the nvim session picker searches and resumes all of them. */ -}}
 {{- $s = setValueAtPath "cleanupPeriodDays" 36500 $s }}
 {{- $s = setValueAtPath "agentPushNotifEnabled" true $s }}
+{{- /* No terminal escape for "waiting for your input": under tmux Claude Code wraps kitty's
+       OSC 99 in a tmux DCS, which nvim's terminal prints as text in the prompt. The
+       desktop, tmux, board and phone notices come from notify-hook.sh and the push. */ -}}
+{{- $s = setValueAtPath "preferredNotifChannel" "notifications_disabled" $s }}
 {{- /* Compact at 300k, not at about 967k (Opus 1M's default): long autonomous runs
        grew sessions to 460k, and every reply re-reads the whole context. */ -}}
 {{- $s = setValueAtPath "autoCompactWindow" 300000 $s }}
