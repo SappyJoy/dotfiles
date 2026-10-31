@@ -88,7 +88,7 @@
 {{- $allow = concat $allow (list
         "Bash(docker logs:*)"
         "Bash(pgrep:*)"
-        "Bash(curl -s -m* localhost:*)"
+        "Bash(curl -s localhost:*)" "Bash(curl -s http://localhost:*)" "Bash(curl -s http://127.0.0.1:*)"
         "Bash(git add:*)"
         "Bash(git commit:*)"
         "Bash(git mv:*)"
