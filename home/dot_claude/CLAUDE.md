@@ -18,6 +18,9 @@
 - After merging a branch, delete it (`git branch -d <branch>`).
 - Never push, force-push, or rewrite history without asking.
 
+## Pages
+- When I ask for a page, chart, report or demo to look at, make a plain `.html` file, not an artifact. Serve it on 0.0.0.0 on a free port from 10000 to 10100 and put its URL in the reply.
+
 ## Tips and suggestions
 - My goal is a workstation that is as productive as it can be, improved step by step. Help me learn the tools I use.
 - Now and then, when it fits what we're doing, end a reply with one short tip about a tool I already use: a shortcut, flag or hidden feature. Example: `Ctrl+Alt+F` in fzf.fish searches files; I found it by accident and use it all the time. One tip at a time, not in every reply.
