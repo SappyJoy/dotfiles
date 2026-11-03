@@ -81,11 +81,13 @@
         "matcher" "permission_prompt|idle_prompt|elicitation_dialog|agent_needs_input"
         "hooks" (index $off 0).hooks)) $s }}
 {{- end }}
-{{- /* Auto mode (M44): narrow allow rules skip the classifier; the prose trusts the user's
-       own repos (it was one repo, arch-upgrade). Secrets, ssh as root, rm, pkill,
-       reset --hard and edits to settings and hooks get no rule and stay blocked.
-       Allow rules are added to the machine's own; autoMode is replaced whole.
-       Research: .agent/archive/research-2026-10-30/auto-mode.md in the toolkit. */ -}}
+{{- /* Auto mode (M44, M54): narrow allow rules skip the classifier. Secrets, ssh as root, rm,
+       pkill, reset --hard and edits to settings and hooks get no rule and stay blocked.
+       Allow rules are added to the machine's own. No autoMode prose: any custom allow or
+       environment text, even one sentence, made Anthropic's filter refuse the check (0 passes
+       in about 50 runs against 3 of 10 without it), and the git, curl and file verdicts are
+       the same with the defaults alone. The block is deleted where M44 set it.
+       Research: .agent/archive/research-2026-11-03-client.md in the toolkit. */ -}}
 {{- $allow := list }}
 {{- if and (hasKey $s "permissions") (hasKey $s.permissions "allow") }}{{ $allow = $s.permissions.allow }}{{ end }}
 {{- $allow = concat $allow (list
@@ -100,34 +102,5 @@
         "Bash(uv run dvc repro:*)"
         "Bash(uv run dvc commit:*)") | uniq }}
 {{- $s = setValueAtPath "permissions.allow" $allow $s }}
-{{- $s = setValueAtPath "autoMode.environment" (list
-        "### Org-wide"
-        "**Organization**: None configured"
-        "**Cloud provider(s)**: None configured"
-        "**Repository visibility**: assume private unless the remote host or visibility check shows public (repos under ~/src/opensource may be public) — the user's own repos have no remote that deploys"
-        "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary"
-        "**Secrets management**: age (chezmoi-managed, key at ~/.config/chezmoi/key.txt) — not part of any repo's trust boundary"
-        "**Default / protected branches**: unknown — treat all local branches as unprotected working state"
-        "**CI/CD deploy targets**: None configured"
-        "**Network posture**: None configured"
-        "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine (arch desktop) with open internet"
-        "**Source control**: the user's own local repos listed under Trusted repos; nothing in them is pushed without the user asking"
-        "**Trusted internal domains**: None configured"
-        "**Trusted cloud buckets**: None configured"
-        "**Key internal services**: None configured"
-        "**Internal package registry**: None configured"
-        "**Sensitive data locations & audiences**: any file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar. Note age-encrypted dotfiles secrets (private.fish, ~/.ssh/personal.conf, VPN configs), unmanaged credential files (~/.netrc, ~/.kaggle/kaggle.json, ~/clearml.conf), session transcripts (~/.claude/projects) and .secrets files: never pull their contents into a repo or a command"
-        "**Data retention / declassification**: None configured"
-        "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment; any ssh target as root"
-        "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic"
-        "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment; also treat system-level changes on this machine (GRUB, mkinitcpio, pacman package removal, sudo-gated config, VPN and firewall) as requiring explicit confirmation"
-        "### User-specific"
-        "**Primary use of Claude Code**: personal workstation configuration, dotfiles and hobby projects, plus some work code — not a deploy pipeline"
-        "**Trusted repos**: every git repo under ~/src (personal, work, paper, opensource), under ~/documents, ~/arch-upgrade-2026-09, and the chezmoi source ~/.local/share/chezmoi (its worktrees too). They are the user's own, with no remote that deploys; local branches, commits, merges and worktrees in them are working state. Other repos and other places under ~/ are not trusted by this"
-        "**Org-specific CLIs**: None configured") $s }}
-{{- $s = setValueAtPath "autoMode.allow" (list
-        "$defaults"
-        "In the trusted repos, `git merge --ff-only` into the default branch (main or master), `git worktree add` and `git worktree remove` (without --force) under .claude/worktrees, and `git mv` of tracked files are routine. This does not cover `git rm -f`, reset --hard, rebase or stash."
-        "`docker logs`, `docker compose logs` and read-only `curl` (GET or HEAD, no -X, -d, -T or --data-binary) to localhost or 127.0.0.1 on local containers and services are routine; local containers are never production, whatever they are named. This does not cover `docker exec` or `docker inspect`, nor ports forwarded from a remote host with ssh -L or a port-forward."
-        "Editing files in the chezmoi source ~/.local/share/chezmoi, in a worktree or not, and running `chezmoi apply` with explicit target paths for the files a task changed is routine. This does not cover run_* scripts, .chezmoiscripts, private_dot_ssh, encrypted files, `chezmoi decrypt`, `age -d`, key.txt, hooks, permissions or settings rules; nor anything that targets ~/.claude, ~/.config/systemd, crontabs, ~/.ssh, ~/.gnupg, shell rc files or chezmoi's own config, nor a template that calls output, include or decrypt.") $s }}
+{{- $s = deleteValueAtPath "autoMode" $s }}
 {{- toPrettyJson "  " $s -}}
