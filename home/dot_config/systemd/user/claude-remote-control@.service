@@ -1,0 +1,23 @@
+# Lets the phone start Claude sessions in one project while no terminal session is open
+# (M62). One instance per project, named by its escaped path; add one with `rc-add [dir]`.
+# OFF until "Require trusted devices" is on at claude.ai: anyone signed in to the account
+# could otherwise start sessions that run as you. Not enabled by chezmoi.
+# List:  systemctl --user list-units 'claude-remote-control@*'
+# Stop:  systemctl --user disable --now claude-remote-control@<escaped path>
+# Default permission mode (prompts show on the phone); each session gets its own worktree
+# of the project, which shows on the phone by its folder name. Idle it costs no tokens.
+[Unit]
+Description=Claude Code Remote Control server for /%I (sessions started from the phone)
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=/%I
+ExecStart=/bin/sh -c 'exec /usr/sbin/claude remote-control --name "$${PWD##*/}" --spawn worktree --permission-mode default'
+Environment=PATH=%h/.local/bin:%h/.local/share/mise/shims:%h/.cargo/bin:/usr/local/bin:/usr/bin
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target
