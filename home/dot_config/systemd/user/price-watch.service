@@ -1,0 +1,10 @@
+# One daily check of the products `price-watch add` keeps (shop-search plugin). With an
+# empty watch list it does nothing. It never opens a window: Yandex Market is read over
+# HTTP, and Ozon products are skipped unless their Chrome is already open.
+[Unit]
+Description=Check the prices of watched products
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/price-watch check
+Nice=10

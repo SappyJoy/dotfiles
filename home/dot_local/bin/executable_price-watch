@@ -1,0 +1,5 @@
+#!/bin/sh
+# price-watch add|list|rm|check: the price watch of the toolkit's shop-search plugin
+# (plugins/shop-search/scripts/price_watch.py in the personal marketplace clone).
+# PRICE_WATCH_SCRIPT points elsewhere, for tests.
+exec python3 "${PRICE_WATCH_SCRIPT:-$HOME/.local/share/claude-plugins/personal/plugins/shop-search/scripts/price_watch.py}" "$@"

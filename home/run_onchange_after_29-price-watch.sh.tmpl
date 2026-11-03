@@ -1,0 +1,8 @@
+#!/bin/sh
+# Start the daily price-watch timer (systemd user units, any machine that has systemd).
+# chezmoi runs this again whenever the units change:
+# {{ include "dot_config/systemd/user/price-watch.service" | sha256sum }} {{ include "dot_config/systemd/user/price-watch.timer" | sha256sum }}
+set -eu
+command -v systemctl >/dev/null 2>&1 || exit 0
+systemctl --user daemon-reload || exit 0
+systemctl --user enable --now price-watch.timer || echo "price-watch: timer not enabled (no user systemd session?)" >&2
