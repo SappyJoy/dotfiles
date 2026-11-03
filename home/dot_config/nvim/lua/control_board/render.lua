@@ -235,9 +235,12 @@ function M.render(data, opts)
   section(lines, spans, 'Sessions', #sessions, w)
   for _, s in ipairs(sessions) do
     local detail = s.activity == 'answer' and s.detail or STATE[s.activity]
+    if s.long then -- a main session that has run for days: its age, and a fresh start when it compacted a lot
+      detail = detail .. ' · ' .. s.long.note
+    end
     local icon = ICON[s.activity]
     local group = s.activity == 'answer' and 'ControlBoardAsk' or s.activity == 'working' and 'ControlBoardWork' or 'ControlBoardDim'
-    local row = vim.tbl_extend('force', s, { kind = 'session', session = s.id })
+    local row = vim.tbl_extend('force', s, { kind = 'session', session = s.id, hint = s.long and s.long.hint })
     add_row(row, icon, group, s.project or '', s.name, detail, s.tmux and 'tmux' or '', age(now - s.since))
   end
 
