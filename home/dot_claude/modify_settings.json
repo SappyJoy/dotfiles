@@ -30,7 +30,9 @@
 {{- /* A claude started by hand connects to the nvim (claudecode.nvim) that has its
        folder open, when there's exactly one; otherwise /ide. */ -}}
 {{- $s = setValueAtPath "env.CLAUDE_CODE_AUTO_CONNECT_IDE" "1" $s }}
-{{- $s = setValueAtPath "env.CLAUDE_CODE_AUTO_MODE_SERVER" "0" $s }}
+{{- /* Auto mode's check stays server-side (M50): when a session is refused, start it as
+       `CLAUDE_CODE_AUTO_MODE_SERVER=0 claude` for the local check. No value here. */ -}}
+{{- $s = deleteValueAtPath "env.CLAUDE_CODE_AUTO_MODE_SERVER" $s }}
 {{- /* Plugins: the same set on every machine (docs/plugins.md in the claude toolkit).
        On everywhere: milestone-flow, mason-lsp, shop-search, playwright. The rest are off here and
        on per project (frontend-design in apartment, plugin-dev in the toolkit) or for
