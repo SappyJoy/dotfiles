@@ -7,13 +7,14 @@
 # of the repo below. Idle it costs no tokens.
 [Unit]
 Description=Claude Code Remote Control server (sessions started from the phone)
-After=network-online.target
-Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=5
 
 [Service]
 Type=simple
 WorkingDirectory=%h/src/personal/claude/toolkit
 ExecStart=/usr/sbin/claude remote-control --name phone --spawn worktree --permission-mode default
+Environment=PATH=%h/.local/bin:%h/.local/share/mise/shims:%h/.cargo/bin:/usr/local/bin:/usr/bin
 Restart=always
 RestartSec=30
 
