@@ -23,13 +23,15 @@ local function review_key(row)
 end
 
 local function snapshot(board)
-  local now = { sessions = {}, reviews = {} }
+  local now = { sessions = {}, reviews = {}, refused = {} }
   for _, s in ipairs(board.sessions or {}) do
     now.sessions[s.id] = s.activity
   end
   for _, row in ipairs(board.needs or {}) do
     if row.kind == 'review' and not row.put_off then
       now.reviews[review_key(row)] = true
+    elseif row.kind == 'refused' then
+      now.refused[row.id] = row.refused
     end
   end
   return now
@@ -77,7 +79,32 @@ function M.changes(prev, board)
       })
     end
   end
+  -- auto mode refused calls of a session or runner: once when it first shows, again
+  -- when it stops on them
+  for _, row in ipairs(board.needs or {}) do
+    local was = prev.refused[row.id]
+    if row.kind == 'refused' and (was == nil or (row.stopped and was < 10)) then
+      table.insert(found, {
+        project = row.project,
+        text = row.title .. (row.stopped and ' stopped: ' or ': ') .. row.detail .. '\n' .. (row.hint or ''),
+        level = vim.log.levels.ERROR,
+        row = row,
+        desktop = true,
+      })
+    end
+  end
   return found
+end
+
+-- dunst and tmux too: no Claude hook fires for a refusal, so nothing else tells them
+local function tell_outside(change)
+  local text = change.project .. ': ' .. change.text:gsub('%s+', ' ')
+  if vim.fn.executable 'notify-send' == 1 then
+    vim.system({ 'notify-send', '-u', 'critical', 'Auto mode refused a call', text }, { detach = true })
+  end
+  if vim.env.TMUX and vim.fn.executable 'tmux' == 1 then
+    vim.system({ 'tmux', 'display-message', text }, { detach = true })
+  end
 end
 
 local function announce(change)
@@ -90,6 +117,9 @@ local function announce(change)
     table.remove(unread, 1)
   end
   vim.notify(change.text .. '\n<leader>an opens it', change.level, { title = change.project, timeout = TOAST_MS })
+  if change.desktop then
+    tell_outside(change)
+  end
 end
 
 local function on_data(board)

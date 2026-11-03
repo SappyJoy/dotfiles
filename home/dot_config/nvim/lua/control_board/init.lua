@@ -205,7 +205,7 @@ end
 
 -- Enter: what the row is, opened. Also what the picker does.
 function M.open_row(row)
-  if row.kind == 'answer' or row.kind == 'session' then
+  if row.kind == 'answer' or row.kind == 'session' or (row.kind == 'refused' and row.session) then
     local session = session_of(row)
     if session then
       return require('control_board.session').open(session)
@@ -213,6 +213,8 @@ function M.open_row(row)
     vim.notify('That session is gone; refresh with r', vim.log.levels.WARN)
   elseif row.kind == 'review' or row.kind == 'waiting' or row.kind == 'track' then
     edit(row.path, row.line)
+  elseif row.kind == 'refused' and not row.session then
+    require('control_board.runner_view').open(data.last().runners, row.id)
   elseif row.kind == 'runner' then
     require('control_board.runner_view').open(data.last().runners, row.id)
   elseif row.kind == 'file' then

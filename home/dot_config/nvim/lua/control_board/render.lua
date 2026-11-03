@@ -12,7 +12,7 @@ local WINDOW = { five_hour = 5 * 3600, seven_day = 7 * 86400 }
 local BAR = 18
 local PROJECT, TITLE, TAG, AGE = 16, 24, 8, 4
 local PLAY = '▶' -- in its own column after the icon: a review with a recording, which `p` plays
-local ICON = { answer = '❓', review = '🚦', track = '🧭', waiting = '☐', working = '⏳', idle = '·' }
+local ICON = { refused = '🛑', answer = '❓', review = '🚦', track = '🧭', waiting = '☐', working = '⏳', idle = '·' }
 local STATE = { answer = 'needs you', working = 'working', idle = 'idle' }
 local RUNNER = { working = { '⏳', 'ControlBoardWork' }, waiting = { '💤', 'ControlBoardDim' }, stalled = { '🛑', 'ControlBoardHot' } }
 
@@ -140,6 +140,11 @@ function M.render(data, opts)
     b.add(fit(tag, TAG) .. ' ', 'ControlBoardDim')
     b.add(string.rep(' ', AGE - width_of(since)) .. since, 'ControlBoardDim')
     rows[add(b.text)] = row
+    if row.hint then -- a second line that stands for the same row
+      local n = add('      ' .. row.hint)
+      rows[n] = row
+      table.insert(spans, { n, 0, #lines[n], 'ControlBoardDim' })
+    end
   end
 
   local head = builder(1, spans)
@@ -159,7 +164,7 @@ function M.render(data, opts)
   end
 
   local counts = data.counts
-  section(lines, spans, 'Needs you', counts.answer + counts.review + (counts.track or 0) + counts.waiting, w)
+  section(lines, spans, 'Needs you', counts.answer + counts.review + (counts.track or 0) + counts.waiting + (counts.refused or 0), w)
   if #data.needs == 0 then
     local n = add '   nothing waits for you'
     table.insert(spans, { n, 0, #lines[n], 'ControlBoardDim' })
@@ -172,7 +177,7 @@ function M.render(data, opts)
   for _, need in ipairs(data.needs) do
     local since = need.since and age(now - need.since) or ''
     if need.kind ~= 'waiting' then
-      add_row(need, ICON[need.kind], 'ControlBoardAsk', need.project, need.title, need.detail, '', since)
+      add_row(need, ICON[need.kind], need.kind == 'refused' and 'ControlBoardHot' or 'ControlBoardAsk', need.project, need.title, need.detail, '', since)
     elseif opts.expanded and opts.expanded[need.project_path] then
       add_row(need, ICON.waiting, 'ControlBoardWait', need.project, need.title, need.detail, '', since)
     elseif not shown[need.project_path] then
