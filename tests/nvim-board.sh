@@ -66,6 +66,11 @@ echo "PLAYING \$2"
 sleep 1.5
 echo "THE LAST FRAME"
 EOS
+cat >"$tmp/bin/land.py" <<EOS
+import os, sys
+open("$tmp/land-calls", "a").write(os.getcwd() + " " + " ".join(sys.argv[1:]) + "\\n")
+print("M5 (feat/m5) landed on main; worktree and branch removed")
+EOS
 chmod +x "$tmp/bin/claude" "$tmp/bin/tmux" "$tmp/bin/asciinema"
 export PATH="$tmp/bin:$PATH" MILESTONE_FLOW_BOARD=$tmp/bin/board.py
 
@@ -139,7 +144,7 @@ EOS
 # canned data: what the collector would print. board SESSION_NAME STATE
 board() {
     python3 - "$@" >"$tmp/board.json" <<EOS
-import json, sys, time
+import json, os, sys, time
 now = time.time()
 p = "$proj"
 name, state = sys.argv[1], sys.argv[2]
@@ -165,6 +170,12 @@ needs.append({"kind": "review", "project": "proj", "title": "M3 Third", "detail"
     "since": now - 7200, "project_path": p, "path": p + "/REVIEW.md", "line": 1})
 needs.append({"kind": "track", "project": "proj", "title": "track scorer", "detail": "report ready",
     "since": now - 3600, "project_path": p, "path": p + "/TRACK.md"})
+ready = os.path.exists("$tmp/with-ready")  # branches handed off, for the L checks only
+if ready:
+    needs.append({"kind": "ready", "project": "proj", "title": "M5 ready to land", "detail": "docs(roadmap): M5 done",
+        "waits_for": None, "project_path": p, "path": p + "/.claude/worktrees/m5", "branch": "feat/m5"})
+    needs.append({"kind": "ready", "project": "proj", "title": "M6 ready to land", "detail": "waits for M3",
+        "waits_for": "M3", "project_path": p, "path": p + "/.claude/worktrees/ahead-M6", "branch": "feat/m6"})
 needs.append(waiting("Log in to npm: \`npm login\` — M4 needs it", 12))
 needs.append(waiting("Try the demo", 13))
 if len(sys.argv) > 3:  # another project, in another folder, with the same name
@@ -194,7 +205,7 @@ json.dump({
          "seven_day": {"pct": 61, "resets_at": now + 3 * 86400}}],
     "needs": needs, "sessions": sessions, "runners": runners,
     "projects": projects,
-    "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "track": 1, "waiting": 2,
+    "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "track": 1, "ready": 2 if ready else 0, "waiting": 2,
         "working": 1, "sessions": 4, "runners": 3}}, sys.stdout)
 EOS
 }
@@ -310,6 +321,26 @@ check "Enter on a track: its TRACK.md" shows "The scorer findings"
 keys ':bd' Enter
 keys b
 keys zR
+touch "$tmp/with-ready"
+board "Fix parser" answer
+keys r
+sleep 2
+check "a branch handed off: a 📦 row under Needs you, counted" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '📦 *proj *M5 ready to land' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (7)'"
+on 'M6 ready'
+keys L
+check "  … L on one that waits for its gate: says so, lands nothing" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'waits for M3 on main' && [ ! -e '$tmp/land-calls' ]"
+on 'M5 ready'
+keys L
+sleep 1
+check "  … L lands it: land.py in the project with the worktree" grep -qx "$proj $proj/.claude/worktrees/m5" "$tmp/land-calls"
+check "  … and what it says shows" shows "worktree and branch removed"
+on 'Log in to npm'
+keys L
+check "  … L on another row: nothing to land" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Nothing to land here' && [ \$(wc -l <'$tmp/land-calls') = 1 ]"
+rm "$tmp/with-ready"
+board "Fix parser" answer
+keys r
+sleep 2
 keys q
 check "q: back to the first page" shows "Find file"
 

@@ -222,6 +222,9 @@ opens the file). It refreshes by itself; the Week on opening and on `r`.
   `Ctrl+C` stops, `Ctrl+\ Ctrl+N` then `q` closes). A row that has one shows a `▶`
   after its icon, here and in the picker (`p`, `Alt+p` while typing); on any other
   row `p` says there is nothing to play. In a shell: `asciinema play FILE.cast`
+- `L` on a `📦` row lands a milestone a background session finished and handed off:
+  main gets its branch, its worktree and branch go. A conflict changes nothing and says
+  which files; a row that says `waits for M3` lands once M3's review is accepted
 - `t` ticks a Waiting on you line, `c` comments on a review, `i` adds an Inbox note
   to the project, `Tab` shows all of a project's lines, `r` refreshes, `q` closes
 - Runners: a milestone runner at work has a row under Runners (state, `M7 · 2/4 steps`,

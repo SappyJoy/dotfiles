@@ -12,7 +12,7 @@ local WINDOW = { five_hour = 5 * 3600, seven_day = 7 * 86400 }
 local BAR = 18
 local PROJECT, TITLE, TAG, AGE = 16, 24, 8, 4
 local PLAY = '▶' -- in its own column after the icon: a review with a recording, which `p` plays
-local ICON = { refused = '🛑', answer = '❓', review = '🚦', track = '🧭', waiting = '☐', working = '⏳', idle = '·' }
+local ICON = { refused = '🛑', answer = '❓', review = '🚦', track = '🧭', ready = '📦', waiting = '☐', working = '⏳', idle = '·' }
 local STATE = { answer = 'needs you', working = 'working', idle = 'idle' }
 local RUNNER = { working = { '⏳', 'ControlBoardWork' }, waiting = { '💤', 'ControlBoardDim' }, stalled = { '🛑', 'ControlBoardHot' } }
 
@@ -164,7 +164,7 @@ function M.render(data, opts)
   end
 
   local counts = data.counts
-  section(lines, spans, 'Needs you', counts.answer + counts.review + (counts.track or 0) + counts.waiting + (counts.refused or 0), w)
+  section(lines, spans, 'Needs you', counts.answer + counts.review + (counts.track or 0) + (counts.ready or 0) + counts.waiting + (counts.refused or 0), w)
   if #data.needs == 0 then
     local n = add '   nothing waits for you'
     table.insert(spans, { n, 0, #lines[n], 'ControlBoardDim' })

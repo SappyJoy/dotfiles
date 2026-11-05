@@ -211,7 +211,7 @@ function M.open_row(row)
       return require('control_board.session').open(session)
     end
     vim.notify('That session is gone; refresh with r', vim.log.levels.WARN)
-  elseif row.kind == 'review' or row.kind == 'waiting' or row.kind == 'track' then
+  elseif row.kind == 'review' or row.kind == 'waiting' or row.kind == 'track' or row.kind == 'ready' then
     edit(row.path, row.line)
   elseif row.kind == 'refused' and not row.session then
     require('control_board.runner_view').open(data.last().runners, row.id)
@@ -418,6 +418,28 @@ local function refresh_week(buf)
   end)
 end
 
+-- L: land a branch a background session handed off (milestone-flow's land.py, next to
+-- board.py), in its project's checkout: rebase, fast-forward main, worktree and branch
+-- gone. What it says (landed, or the files in conflict) comes back as a notification.
+local function land(row)
+  if not row or row.kind ~= 'ready' then
+    return vim.notify('Nothing to land here: L lands a 📦 row', vim.log.levels.WARN)
+  end
+  if row.waits_for then
+    return vim.notify(('%s waits for %s on main: accept its review first'):format(row.title, row.waits_for), vim.log.levels.WARN)
+  end
+  local script = data.script() and vim.fs.joinpath(vim.fs.dirname(data.script()), 'land.py')
+  if not script or not vim.uv.fs_stat(script) then
+    return vim.notify("milestone-flow's land.py not found: run `make marketplace` in the toolkit", vim.log.levels.WARN)
+  end
+  vim.notify(('Landing %s (%s)…'):format(row.title, row.branch or ''))
+  vim.system({ 'python3', script, row.path }, { cwd = row.project_path, text = true }, vim.schedule_wrap(function(out)
+    local said = vim.trim((out.stdout or '') .. '\n' .. (out.stderr or ''))
+    vim.notify(said ~= '' and said or 'land.py said nothing', out.code == 0 and vim.log.levels.INFO or vim.log.levels.WARN)
+    data.refresh()
+  end))
+end
+
 local function map_keys(buf)
   local function map(lhs, fn, desc)
     vim.keymap.set('n', lhs, function()
@@ -444,6 +466,7 @@ local function map_keys(buf)
     return require('control_board.demo').play_review(row)
   end, "Play a review's recording")
   map('i', inbox_note, 'Inbox note')
+  map('L', land, 'Land a branch a background session handed off')
   map('a', function(row)
     choose_project(row, require('control_board.session').start)
   end, 'New background session')
