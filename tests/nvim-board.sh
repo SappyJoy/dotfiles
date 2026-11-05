@@ -585,7 +585,7 @@ check "  … a preview of the conversation" shows "the zebra heuristic is slow"
 check "  … rendered: a heading for each prompt and reply, no # marks" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '● Claude' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q '# ● Claude'"
 keys Enter
 sleep 2
-check "  … Enter resumes it from its folder, under its account" grep -qx "$HOME/.claude-personal $proj --bg --resume aaaa1111" "$tmp/claude-calls"
+check "  … Enter resumes it from its folder, under its account" grep -qx "$HOME/.claude $proj --bg --resume aaaa1111" "$tmp/claude-calls"
 check "  … and opens it in a tab" shows "ATTACHED feed1234"
 normal
 keys q
