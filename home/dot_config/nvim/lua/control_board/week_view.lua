@@ -32,6 +32,26 @@ local function weekday(day)
   return os.date('%a', os.time { year = y, month = m, day = d, hour = 12 }):sub(1, 2)
 end
 
+-- 4500 -> 1h15m, 300 -> 5m, 40 -> 40s
+local function span(seconds)
+  if seconds >= 3600 then
+    return ('%dh%02dm'):format(math.floor(seconds / 3600), math.floor(seconds % 3600 / 60))
+  elseif seconds >= 60 then
+    return ('%dm'):format(math.floor(seconds / 60))
+  end
+  return ('%ds'):format(seconds)
+end
+
+-- waits.py's kinds, in the user's words
+local WAIT_KIND = {
+  permission = 'permission ask',
+  question = 'question',
+  refusal = 'auto mode denial',
+  guard = 'guard refusal',
+  review = 'review',
+  idle = 'idle',
+}
+
 local function bar(share)
   local full = math.floor(share * SHARE + 0.5)
   return string.rep('█', full) .. string.rep('░', SHARE - full)
@@ -113,6 +133,28 @@ function M.build(week, err, w, kit)
       b.add(any and ' ' or '· ', 'ControlBoardDim')
     end
     add(b.text)
+  end
+
+  -- where sessions waited for the user (waits.py): the top three kinds by time
+  local waits = week.waits
+  if waits then
+    local head2 = kit.builder(#lines + 1, spans)
+    head2.add(' ' .. kit.fit('Waiting for you', NAME + 3), 'ControlBoardProject')
+    if waits.count == 0 then
+      head2.add('recorded from now on, by the milestone-flow hook', 'ControlBoardDim')
+    else
+      head2.add(('%d waits, %s'):format(waits.count, span(waits.seconds)), 'ControlBoardDim')
+    end
+    add(head2.text)
+    for _, k in ipairs(waits.kinds or {}) do
+      local b = kit.builder(#lines + 1, spans)
+      b.add('   ' .. kit.fit(WAIT_KIND[k.kind] or k.kind, NAME), 'ControlBoardProject')
+      b.add(' ' .. kit.fit(span(k.seconds), 7))
+      local share = waits.seconds > 0 and k.seconds / waits.seconds or 0
+      b.add(bar(share), 'ControlBoardFill')
+      b.add((' %dx'):format(k.count), 'ControlBoardDim')
+      add(b.text)
+    end
   end
 
   -- milestones finished

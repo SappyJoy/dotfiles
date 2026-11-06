@@ -137,6 +137,9 @@ print(json.dumps({
     "windows": [{"account": "personal", "kind": "5h", "pct": 92, "resets_at": now - 3600},
                 {"account": "personal", "kind": "5h", "pct": 30, "resets_at": now + 3600}],
     "milestones": [{"project": "proj", "count": 3}],
+    "waits": {"count": 14, "seconds": 9300, "since": now - 86400, "kinds": [
+        {"kind": "idle", "count": 9, "seconds": 5400}, {"kind": "permission", "count": 4, "seconds": 2700},
+        {"kind": "refusal", "count": 1, "seconds": 1200}]},
     "growth": [{"name": "proj", "path": "$proj", "loc": 12500, "added": 3400, "removed": 200,
         "grew": [{"part": "lib/parser", "delta": 900}], "new": ["lib/report"],
         "big": [{"path": "src.txt", "lines": 412}]}]}))
@@ -291,6 +294,7 @@ check "  … and no other row has one" sh -c "[ \$(tmux -L nvim-board capture-pa
 check "  … a finished track under Needs you" shows "track scorer"
 check "  … the Week: tokens per project with their share" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Week ──' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'proj *2.4M.* 80%'"
 check "  … a spark for each day, and the costliest prompt" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▁▁▁▃▁▆█' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Costliest prompt: 900k in proj, \"fix the parser\"'"
+check "  … where sessions waited for you: the top kinds with their time and count" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Waiting for you *14 waits, 2h35m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'idle *1h30m .* 9x' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'permission ask *45m .* 4x' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'auto mode denial *20m .* 1x'"
 check "  … the 5-hour windows as bars, milestones finished, code growth" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '5h personal' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Milestones finished: proj 3' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'proj *13k *+3.4k −200' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'lib/parser +900 · new: lib/report' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'src.txt *412 lines'"
 check "  … Runners: a working, a waiting and a stalled one, with their state" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Runners (3)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M7 · 2/4 steps *Edit board.py · 2k tokens *working *2m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M8 · 1/3 steps.*waiting *6m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q '🛑 *proj *M9 · 3/4 steps.*stalled *40m'"
 on 'M9 · 3/4'
