@@ -141,7 +141,7 @@ function M.render(data, opts)
     b.add(string.rep(' ', AGE - width_of(since)) .. since, 'ControlBoardDim')
     rows[add(b.text)] = row
     if row.hint then -- a second line that stands for the same row
-      local n = add('      ' .. row.hint)
+      local n = add('      ' .. row.hint .. (row.kind == 'refused' and row.session and ' · R does it' or ''))
       rows[n] = row
       table.insert(spans, { n, 0, #lines[n], 'ControlBoardDim' })
     end

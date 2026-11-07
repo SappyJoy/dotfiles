@@ -17,15 +17,19 @@ local KEYS = { page_up = '\27[5~', page_down = '\27[6~', bottom = '\27[1;5F' }
 
 local unwatch
 
+-- claude for the account whose config folder it is; the default folder (~/.claude)
+-- is the account without CLAUDE_CONFIG_DIR. `set` is a list of NAME=value for it too.
+local function command(config_dir, set, ...)
+  local prefix = config_dir == vim.fn.expand '~/.claude' and { 'env', '-u', 'CLAUDE_CONFIG_DIR' } or { 'env', 'CLAUDE_CONFIG_DIR=' .. config_dir }
+  return vim.list_extend(vim.list_extend(prefix, set), { 'claude', ... })
+end
+
 vim.keymap.set('n', '<Plug>(ControlBoardLeaderA)', function()
   require('which-key').show { keys = '<leader>a', mode = 'n' }
 end, { desc = 'The <leader>a popup' })
 
--- claude for the account whose config folder it is; the default folder (~/.claude)
--- is the account without CLAUDE_CONFIG_DIR
 local function claude(config_dir, ...)
-  local prefix = config_dir == vim.fn.expand '~/.claude' and { 'env', '-u', 'CLAUDE_CONFIG_DIR' } or { 'env', 'CLAUDE_CONFIG_DIR=' .. config_dir }
-  return vim.list_extend(prefix, { 'claude', ... })
+  return command(config_dir, {}, ...)
 end
 
 -- the account new sessions start in: the one nvim runs under, else ~/.claude
@@ -250,8 +254,8 @@ function M.open(s)
 end
 
 -- Run `claude --bg …` in a folder, then open the session it printed
-local function background(config, root, args, label)
-  vim.system(claude(config, '--bg', unpack(args)), { cwd = root, text = true }, function(out)
+local function background(config, root, args, label, set)
+  vim.system(command(config, set or {}, '--bg', unpack(args)), { cwd = root, text = true }, function(out)
     vim.schedule(function()
       local short = (out.stdout or ''):match 'backgrounded · (%w+)'
       if not short then
@@ -282,6 +286,25 @@ function M.resume(entry)
   end
   vim.notify('Continuing ' .. entry.title .. '…')
   background(entry.config_dir, entry.cwd, { '--resume', entry.id }, entry.title)
+end
+
+-- R on a 🛑 row: the session auto mode refused, resumed with the local check
+-- (CLAUDE_CODE_AUTO_MODE_SERVER=0) in its own folder and account, same conversation.
+-- A background session is stopped first (its conversation is kept); one started by hand
+-- runs in a terminal that only its owner can end, so the command to type is copied.
+function M.restart_unrefused(s)
+  local typed = ('cd %s && CLAUDE_CODE_AUTO_MODE_SERVER=0 claude --resume %s'):format(vim.fn.shellescape(s.cwd or ''), s.id)
+  if s.kind ~= 'background' then
+    vim.fn.setreg('"', typed)
+    pcall(vim.fn.setreg, '+', typed)
+    return vim.notify(s.name .. ' runs in a terminal of its own: end it there, then paste the command (copied)', vim.log.levels.WARN)
+  end
+  vim.notify('Restarting ' .. s.name .. ' with the check off…')
+  vim.system(claude(s.config_dir, 'stop', s.short), { text = true }, function()
+    vim.schedule(function()
+      background(s.config_dir, s.cwd, { '--resume', s.id }, s.name, { 'CLAUDE_CODE_AUTO_MODE_SERVER=0' })
+    end)
+  end)
 end
 
 return M

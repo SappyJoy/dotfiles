@@ -23,7 +23,7 @@ check() { # check NAME CONDITION...
     if "$@"; then echo "ok   $name"; else echo "FAIL $name ($*)"; fails=$((fails + 1)); fi
 }
 
-unset CLAUDE_CONFIG_DIR # a session of Claude would leak its own account in
+unset CLAUDE_CONFIG_DIR CLAUDE_CODE_AUTO_MODE_SERVER # a session of Claude would leak its own account, or its check, in
 export HOME=$tmp/home XDG_CONFIG_HOME=$tmp/home/.config XDG_DATA_HOME=$tmp/home/.local/share \
     XDG_STATE_HOME=$tmp/home/.local/state XDG_CACHE_HOME=$tmp/home/.cache SHELL=/bin/sh
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME/nvim" "$tmp/bin" "$HOME/.claude-personal"
@@ -49,6 +49,7 @@ EOS
 cat >"$tmp/bin/claude" <<EOS
 #!/bin/sh
 echo "\${CLAUDE_CONFIG_DIR:-unset} \$PWD \$*" >>"$tmp/claude-calls"
+echo "\${CLAUDE_CODE_AUTO_MODE_SERVER:-unset} \$*" >>"$tmp/claude-env"
 case \$1 in
     --bg) echo "backgrounded · feed1234" ;;
     attach) echo \$\$ >"$tmp/attach.pid.\$2"; echo "ATTACHED \$2"; trap 'exit 0' TSTP; while IFS= read -r l; do echo "\$l"; done ;;
@@ -181,6 +182,15 @@ if ready:
         "waits_for": "M3", "project_path": p, "path": p + "/.claude/worktrees/ahead-M6", "branch": "feat/m6"})
 needs.append(waiting("Log in to npm: \`npm login\` — M4 needs it", 12))
 needs.append(waiting("Try the demo", 13))
+if os.path.exists("$tmp/with-refused"):  # auto mode refused a session, one by hand, and a runner (R)
+    hint = "CLAUDE_CODE_AUTO_MODE_SERVER=0 claude"
+    refused = lambda id, title, text: {"kind": "refused", "project": "proj", "title": title,
+        "detail": "auto mode refused 3 calls, stopped", "hint": text, "refused": 3, "stopped": True,
+        "since": now - 300, "project_path": p, "id": id}
+    needs[:0] = [
+        dict(refused("def67890-0000", "Write docs", "restart it as " + hint), session="def67890-0000"),
+        dict(refused("hand-1", "by-hand", "restart it as " + hint), session="hand-1"),
+        refused("r-stall", "M9 runner", "restart the session that started it as " + hint)]
 if len(sys.argv) > 3:  # another project, in another folder, with the same name
     other = "$tmp/other/proj"
     needs.append(dict(waiting("Other thing", 5), project_path=other, path=other + "/ROADMAP.md"))
@@ -342,6 +352,42 @@ on 'Log in to npm'
 keys L
 check "  … L on another row: nothing to land" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Nothing to land here' && [ \$(wc -l <'$tmp/land-calls') = 1 ]"
 rm "$tmp/with-ready"
+touch "$tmp/with-refused"
+board "Fix parser" answer
+keys r
+sleep 2
+check "refused sessions and a runner: 🛑 rows, counted" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '🛑 *proj *Write docs' && tmux -L nvim-board capture-pane -p -t 0 | grep -q '🛑 *proj *M9 runner'"
+check "  … a session's row says R does it" shows "restart it as CLAUDE_CODE_AUTO_MODE_SERVER=0 claude · R does it"
+check "  … a runner's row says to restart its parent session, and not R" [ "$(probe "vim.fn.search([[restart the session that started it as CLAUDE_CODE_AUTO_MODE_SERVER=0 claude$]], 'nw') > 0")" = true ]
+: >"$tmp/claude-calls"
+: >"$tmp/claude-env"
+on 'Log in to npm'
+keys R
+check "R on another row: nothing to restart, nothing run" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Nothing to restart here' && [ ! -s '$tmp/claude-calls' ]"
+on 'M9 runner'
+keys R
+sleep 1
+check "R on a runner's row: starts nothing" [ ! -s "$tmp/claude-calls" ]
+on 'by-hand'
+keys R
+sleep 1
+check "R on a session started by hand: says it runs in a terminal of its own" shows "runs in a terminal of its own"
+check "  … and copies the command to type, in its folder" [ "$(probe "vim.fn.getreg('\"')")" = "cd '$proj' && CLAUDE_CODE_AUTO_MODE_SERVER=0 claude --resume hand-1" ]
+check "  … and starts nothing" [ ! -s "$tmp/claude-calls" ]
+on 'Write docs'
+keys R
+sleep 3
+check "R on a background session's row: it is stopped, under its account" grep -qx "$HOME/.claude-personal $proj stop def67890" "$tmp/claude-calls"
+check "  … then resumed in its folder and account, in the same conversation" grep -qx "$HOME/.claude-personal $proj --bg --resume def67890-0000" "$tmp/claude-calls"
+check "  … stopped first" [ "$(grep -n ' stop def67890' "$tmp/claude-calls" | cut -d: -f1)" -lt "$(grep -n -- '--resume' "$tmp/claude-calls" | cut -d: -f1)" ]
+check "  … with the local check on, for the resumed session only" sh -c "[ \"\$(grep -c '^0 ' '$tmp/claude-env')\" = 1 ] && grep -qx '0 --bg --resume def67890-0000' '$tmp/claude-env'"
+check "  … and opened in a tab" shows "ATTACHED feed1234"
+normal
+keys q
+keys '?'
+check "?: the help lists R" shows "R on a 🛑 row"
+keys q
+rm "$tmp/with-refused"
 board "Fix parser" answer
 keys r
 sleep 2

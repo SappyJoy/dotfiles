@@ -224,6 +224,19 @@ function M.open_row(row)
   end
 end
 
+-- R: restart the session of a 🛑 row with the local check on; a runner's row has no
+-- session of its own, so it says how to restart the one that started it
+local function restart(row)
+  if not (row and row.kind == 'refused') then
+    return vim.notify('Nothing to restart here: R restarts a 🛑 row', vim.log.levels.WARN)
+  end
+  local session = row.session and session_of(row)
+  if session then
+    return require('control_board.session').restart_unrefused(session)
+  end
+  vim.notify(row.session and 'That session is gone; refresh with r' or row.hint, vim.log.levels.WARN)
+end
+
 local function buffer_of(path)
   local full = vim.fs.normalize(path)
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -467,6 +480,7 @@ local function map_keys(buf)
   end, "Play a review's recording")
   map('i', inbox_note, 'Inbox note')
   map('L', land, 'Land a branch a background session handed off')
+  map('R', restart, 'Restart a session auto mode refused, with the check off')
   map('a', function(row)
     choose_project(row, require('control_board.session').start)
   end, 'New background session')

@@ -225,6 +225,10 @@ opens the file). It refreshes by itself; the Week on opening and on `r`.
 - `L` on a `📦` row lands a milestone a background session finished and handed off:
   main gets its branch, its worktree and branch go. A conflict changes nothing and says
   which files; a row that says `waits for M3` lands once M3's review is accepted
+- `R` on a `🛑` row (auto mode refused a call) restarts that session in its own folder
+  and account with `CLAUDE_CODE_AUTO_MODE_SERVER=0`, in the same conversation: a background
+  session is stopped and resumed in a tab; one started by hand gets the command to type copied;
+  a runner's row says to restart the session that started it
 - `t` ticks a Waiting on you line, `c` comments on a review, `i` adds an Inbox note
   to the project, `Tab` shows all of a project's lines, `r` refreshes, `q` closes
 - Runners: a milestone runner at work has a row under Runners (state, `M7 · 2/4 steps`,
