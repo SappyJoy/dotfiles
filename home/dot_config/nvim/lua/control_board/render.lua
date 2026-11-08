@@ -194,7 +194,13 @@ function M.render(data, opts)
     for _, r in ipairs(data.runners) do
       local icon = RUNNER[r.state] or RUNNER.working
       local row = vim.tbl_extend('force', r, { kind = 'runner' })
-      add_row(row, icon[1], icon[2], r.project, r.label, r.short, r.state, age(r.idle))
+      -- its share of its ceiling (ceiling.py) leads, so a narrow board never cuts it; hot from 80%
+      local cap = r.ceiling_pct and ('cap %d%%'):format(r.ceiling_pct)
+      add_row(row, icon[1], icon[2], r.project, r.label, cap and cap .. ' · ' .. r.short or r.short, r.state, age(r.idle))
+      local from = cap and r.ceiling_pct >= 80 and lines[#lines]:find(cap, 1, true)
+      if from then
+        table.insert(spans, { #lines, from - 1, from - 1 + #cap, 'ControlBoardHot' })
+      end
     end
   end
 

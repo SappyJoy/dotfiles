@@ -194,14 +194,14 @@ if os.path.exists("$tmp/with-refused"):  # auto mode refused a session, one by h
 if len(sys.argv) > 3:  # another project, in another folder, with the same name
     other = "$tmp/other/proj"
     needs.append(dict(waiting("Other thing", 5), project_path=other, path=other + "/ROADMAP.md"))
-runner = lambda id, state, label, short, idle, steps: {
+runner = lambda id, state, label, short, idle, steps, cap=None: {
     "id": id, "project": "proj", "project_path": p, "milestone": "M7", "label": label, "state": state,
-    "short": short, "idle": idle, "tokens": 2000,
+    "short": short, "idle": idle, "tokens": 2000, "ceiling_pct": cap,
     "detail": ["proj · M7 Runner status", "state    " + state, "steps    " + steps + " ticked",
                "now      " + short.split(" · ")[0], "recent", "  " + short.split(" · ")[0]]}
 runners = [
-    runner("r-work", "working", "M7 · 2/4 steps", "Edit board.py · 2k tokens", 120, "2 of 4"),
-    runner("r-wait", "waiting", "M8 · 1/3 steps", "Bash: sleep 240 · 5k tokens", 400, "1 of 3"),
+    runner("r-work", "working", "M7 · 2/4 steps", "Edit board.py · 2k tokens", 120, "2 of 4", 38),
+    runner("r-wait", "waiting", "M8 · 1/3 steps", "Bash: sleep 240 · 5k tokens", 400, "1 of 3", 92),
     runner("r-stall", "stalled", "M9 · 3/4 steps", "Bash: make check · 9k tokens", 2400, "3 of 4")]
 json.dump(runners, open("$tmp/runners.json", "w"))
 projects = [{"name": "proj", "path": p,
@@ -306,7 +306,12 @@ check "  … the Week: tokens per project with their share" sh -c "tmux -L nvim-
 check "  … a spark for each day, and the costliest prompt" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '▁▁▁▃▁▆█' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Costliest prompt: 900k in proj, \"fix the parser\"'"
 check "  … where sessions waited for you: the top kinds with their time and count" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Waiting for you *14 waits, 2h35m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'idle *1h30m .* 9x' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'permission ask *45m .* 4x' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'auto mode denial *20m .* 1x'"
 check "  … the 5-hour windows as bars, milestones finished, code growth" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '5h personal' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Milestones finished: proj 3' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'proj *13k *+3.4k −200' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'lib/parser +900 · new: lib/report' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'src.txt *412 lines'"
-check "  … Runners: a working, a waiting and a stalled one, with their state" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Runners (3)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M7 · 2/4 steps *Edit board.py · 2k tokens *working *2m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M8 · 1/3 steps.*waiting *6m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q '🛑 *proj *M9 · 3/4 steps.*stalled *40m'"
+check "  … Runners: a working, a waiting and a stalled one, with their state" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Runners (3)' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M7 · 2/4 steps *cap 38% · Edit board.py · 2k tokens *working *2m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M8 · 1/3 steps.*waiting *6m' && tmux -L nvim-board capture-pane -p -t 0 | grep -q '🛑 *proj *M9 · 3/4 steps.*stalled *40m'"
+# hot CAP: the board's text CAP is highlighted ControlBoardHot
+hot() { probe "(function() local b = vim.api.nvim_get_current_buf() local l = vim.fn.search([[$1]], 'nw') - 1 for _, m in ipairs(vim.api.nvim_buf_get_extmarks(b, -1, { l, 0 }, { l, -1 }, { details = true })) do if m[4].hl_group == 'ControlBoardHot' and vim.api.nvim_buf_get_lines(b, l, l + 1, false)[1]:sub(m[3] + 1, m[4].end_col) == [[$1]] then return true end end return false end)()"; }
+check "  … each runner's share of its ceiling leads its row, none for a run without one" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M8 · 1/3 steps *cap 92% · Bash: sleep 240' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'M9 · 3/4 steps *Bash: make check'"
+check "  … hot from 80%" [ "$(hot 'cap 92%')" = true ]
+check "  … not below" [ "$(hot 'cap 38%')" = false ]
 on 'M9 · 3/4'
 keys Enter
 check "Enter on a runner: its detail in a window" shows "state    stalled"
