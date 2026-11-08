@@ -224,7 +224,7 @@ opens the file). It refreshes by itself; the Week on opening and on `r`.
   row `p` says there is nothing to play. In a shell: `asciinema play FILE.cast`
 - `L` on a `📦` row lands a milestone a background session finished and handed off:
   main gets its branch, its worktree and branch go. A conflict changes nothing and says
-  which files; a row that says `waits for M3` lands once M3's review is accepted
+  which files
 - `R` on a `🛑` row (auto mode refused a call) restarts that session in its own folder
   and account with `CLAUDE_CODE_AUTO_MODE_SERVER=0`, in the same conversation: a background
   session is stopped and resumed in a tab; one started by hand gets the command to type copied;

@@ -177,9 +177,7 @@ needs.append({"kind": "track", "project": "proj", "title": "track scorer", "deta
 ready = os.path.exists("$tmp/with-ready")  # branches handed off, for the L checks only
 if ready:
     needs.append({"kind": "ready", "project": "proj", "title": "M5 ready to land", "detail": "docs(roadmap): M5 done",
-        "waits_for": None, "project_path": p, "path": p + "/.claude/worktrees/m5", "branch": "feat/m5"})
-    needs.append({"kind": "ready", "project": "proj", "title": "M6 ready to land", "detail": "waits for M3",
-        "waits_for": "M3", "project_path": p, "path": p + "/.claude/worktrees/ahead-M6", "branch": "feat/m6"})
+        "project_path": p, "path": p + "/.claude/worktrees/m5", "branch": "feat/m5"})
 needs.append(waiting("Log in to npm: \`npm login\` — M4 needs it", 12))
 needs.append(waiting("Try the demo", 13))
 if os.path.exists("$tmp/with-refused"):  # auto mode refused a session, one by hand, and a runner (R)
@@ -218,7 +216,7 @@ json.dump({
          "seven_day": {"pct": 61, "resets_at": now + 3 * 86400}}],
     "needs": needs, "sessions": sessions, "runners": runners,
     "projects": projects,
-    "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "track": 1, "ready": 2 if ready else 0, "waiting": 2,
+    "counts": {"answer": 1 if state == "answer" else 0, "review": 1, "track": 1, "ready": 1 if ready else 0, "waiting": 2,
         "working": 1, "sessions": 4, "runners": 3}}, sys.stdout)
 EOS
 }
@@ -344,10 +342,7 @@ touch "$tmp/with-ready"
 board "Fix parser" answer
 keys r
 sleep 2
-check "a branch handed off: a 📦 row under Needs you, counted" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '📦 *proj *M5 ready to land' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (7)'"
-on 'M6 ready'
-keys L
-check "  … L on one that waits for its gate: says so, lands nothing" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q 'waits for M3 on main' && [ ! -e '$tmp/land-calls' ]"
+check "a branch handed off: a 📦 row under Needs you, counted" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '📦 *proj *M5 ready to land' && tmux -L nvim-board capture-pane -p -t 0 | grep -q 'Needs you (6)'"
 on 'M5 ready'
 keys L
 sleep 1

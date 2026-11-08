@@ -438,9 +438,6 @@ local function land(row)
   if not row or row.kind ~= 'ready' then
     return vim.notify('Nothing to land here: L lands a 📦 row', vim.log.levels.WARN)
   end
-  if row.waits_for then
-    return vim.notify(('%s waits for %s on main: accept its review first'):format(row.title, row.waits_for), vim.log.levels.WARN)
-  end
   local script = data.script() and vim.fs.joinpath(vim.fs.dirname(data.script()), 'land.py')
   if not script or not vim.uv.fs_stat(script) then
     return vim.notify("milestone-flow's land.py not found: run `make marketplace` in the toolkit", vim.log.levels.WARN)
