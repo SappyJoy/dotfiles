@@ -47,6 +47,7 @@ docker	dev	29.8.1	docker --version	docs.docker.com/engine/install
 lazydocker	dev	0.25.2	lazydocker --version	mise aqua:jesseduffield/lazydocker
 gh	dev	2.101.0	gh --version	mise aqua:cli/cli
 just	dev	1.58.0	just --version	mise aqua:casey/just
+direnv	dev	2.38.2	direnv version	mise aqua:direnv/direnv
 aider	dev	0.86.2	aider --version	mise pipx:aider-chat[uvx_args=--python 3.12]
 dir2md	dev	0.3.1	-	mise pipx:dir2md[uvx_args=--python 3.12]
 dvc	dev	3.67.1	dvc --version	mise pipx:dvc[extras=all]
