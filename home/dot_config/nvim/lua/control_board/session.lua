@@ -253,9 +253,13 @@ function M.open(s)
   end
 end
 
+-- No background session waits on a permission prompt: a call that needs one is denied and
+-- the session goes on (the session says what it needs, and the board lists it under Needs you)
+local DENY_INSTEAD_OF_PROMPTING = '{"permissions":{"denyInsteadOfPrompting":true}}'
+
 -- Run `claude --bg …` in a folder, then open the session it printed
 local function background(config, root, args, label, set)
-  vim.system(command(config, set or {}, '--bg', unpack(args)), { cwd = root, text = true }, function(out)
+  vim.system(command(config, set or {}, '--bg', '--settings', DENY_INSTEAD_OF_PROMPTING, unpack(args)), { cwd = root, text = true }, function(out)
     vim.schedule(function()
       local short = (out.stdout or ''):match 'backgrounded · (%w+)'
       if not short then

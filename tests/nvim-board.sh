@@ -23,6 +23,7 @@ check() { # check NAME CONDITION...
     if "$@"; then echo "ok   $name"; else echo "FAIL $name ($*)"; fails=$((fails + 1)); fi
 }
 
+deny='--settings {"permissions":{"denyInsteadOfPrompting":true}}' # every background launch, M92
 unset CLAUDE_CONFIG_DIR CLAUDE_CODE_AUTO_MODE_SERVER # a session of Claude would leak its own account, or its check, in
 export HOME=$tmp/home XDG_CONFIG_HOME=$tmp/home/.config XDG_DATA_HOME=$tmp/home/.local/share \
     XDG_STATE_HOME=$tmp/home/.local/state XDG_CACHE_HOME=$tmp/home/.cache SHELL=/bin/sh
@@ -378,9 +379,10 @@ on 'Write docs'
 keys R
 sleep 3
 check "R on a background session's row: it is stopped, under its account" grep -qx "$HOME/.claude-personal $proj stop def67890" "$tmp/claude-calls"
-check "  … then resumed in its folder and account, in the same conversation" grep -qx "$HOME/.claude-personal $proj --bg --resume def67890-0000" "$tmp/claude-calls"
+check "  … then resumed in its folder and account, in the same conversation" grep -Fqx "$HOME/.claude-personal $proj --bg $deny --resume def67890-0000" "$tmp/claude-calls"
 check "  … stopped first" [ "$(grep -n ' stop def67890' "$tmp/claude-calls" | cut -d: -f1)" -lt "$(grep -n -- '--resume' "$tmp/claude-calls" | cut -d: -f1)" ]
-check "  … with the local check on, for the resumed session only" sh -c "[ \"\$(grep -c '^0 ' '$tmp/claude-env')\" = 1 ] && grep -qx '0 --bg --resume def67890-0000' '$tmp/claude-env'"
+check "  … with the local check on, for the resumed session only" [ "$(grep -c '^0 ' "$tmp/claude-env")" = 1 ]
+check "  … the one with the resume" grep -Fqx "0 --bg $deny --resume def67890-0000" "$tmp/claude-env"
 check "  … and opened in a tab" shows "ATTACHED feed1234"
 normal
 keys q
@@ -565,7 +567,7 @@ check "n on the board stays search-next" [ "$(probe "vim.fn.maparg('n', 'n')")" 
 on 'M3 Third'
 keys a
 sleep 2
-check "a: claude --bg in the project" grep -q "^unset $proj --bg" "$tmp/claude-calls"
+check "a: claude --bg in the project, denying instead of prompting" grep -Fqx "unset $proj --bg $deny" "$tmp/claude-calls"
 check "  … and its tab" shows "ATTACHED feed1234"
 check "  … the winbar before the board knows it" shows "proj · feed1234 · attached"
 normal
@@ -635,7 +637,7 @@ check "  … a preview of the conversation" shows "the zebra heuristic is slow"
 check "  … rendered: a heading for each prompt and reply, no # marks" sh -c "tmux -L nvim-board capture-pane -p -t 0 | grep -q '● Claude' && ! tmux -L nvim-board capture-pane -p -t 0 | grep -q '# ● Claude'"
 keys Enter
 sleep 2
-check "  … Enter resumes it from its folder, under its account" grep -qx "unset $proj --bg --resume aaaa1111" "$tmp/claude-calls"
+check "  … Enter resumes it from its folder, under its account" grep -Fqx "unset $proj --bg $deny --resume aaaa1111" "$tmp/claude-calls"
 check "  … and opens it in a tab" shows "ATTACHED feed1234"
 normal
 keys q
@@ -783,7 +785,7 @@ rm -f "$tmp/board-fails"
 start src.txt
 keys ' ac'
 sleep 2
-check "<leader>ac: a background session in this project" [ "$(grep -c "^unset $proj --bg" "$tmp/claude-calls")" = 2 ]
+check "<leader>ac: a background session in this project" [ "$(grep -Fxc "unset $proj --bg $deny" "$tmp/claude-calls")" = 1 ]
 check "  … attached" shows "ATTACHED feed1234"
 
 # ---- a board taller than its window -----------------------------------------------------
@@ -841,8 +843,9 @@ check "  … q leaves nvim" sh -c "! tmux -L nvim-board has-session -t 0 2>/dev/
 # ---- the fish functions ------------------------------------------------------------------
 : >"$tmp/claude-calls"
 (cd "$proj" && fish -c "source '$here/../home/dot_config/private_fish/functions/cl.fish'; cl" </dev/null >/dev/null)
-check "cl: starts a session here, then attaches it" sh -c "[ \"\$(sed 's/^[^ ]* [^ ]* //' '$tmp/claude-calls')\" = '--bg
-attach feed1234' ]"
+check "cl: starts a session here, denying instead of prompting, then attaches it" [ "$(sed 's/^[^ ]* [^ ]* //' "$tmp/claude-calls")" = "--bg $deny
+attach feed1234" ]
+check "  … only the --bg launches carry it, not attach or stop" [ "$(grep -c 'denyInsteadOfPrompting' "$tmp/claude-calls")" = 1 ]
 check "cb: nvim with the board" grep -q 'nvim -c ControlBoard' "$here/../home/dot_config/private_fish/functions/cb.fish"
 
 echo
