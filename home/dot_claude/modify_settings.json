@@ -30,6 +30,11 @@
 {{- /* A claude started by hand connects to the nvim (claudecode.nvim) that has its
        folder open, when there's exactly one; otherwise /ide. */ -}}
 {{- $s = setValueAtPath "env.CLAUDE_CODE_AUTO_CONNECT_IDE" "1" $s }}
+{{- /* No one-line progress status written for a background agent (M91, 2.1.319): in the
+       TUI Claude Code forks the agent's context for one every 30 s of work, about 30k
+       cached tokens each (the probe in the claude toolkit's bench/progress-summaries).
+       The board reads runners from their transcripts and loses nothing. */ -}}
+{{- $s = setValueAtPath "env.CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES" "1" $s }}
 {{- /* Auto mode's check stays server-side (M50): when a session is refused, start it as
        `CLAUDE_CODE_AUTO_MODE_SERVER=0 claude` for the local check. No value here. */ -}}
 {{- $s = deleteValueAtPath "env.CLAUDE_CODE_AUTO_MODE_SERVER" $s }}

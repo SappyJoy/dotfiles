@@ -71,10 +71,10 @@ out=$(modify dot_claude/modify_settings.json '{"theme": "light", "statusLine": {
 check "claude settings: the machine's theme stays" has '"theme": "light"'
 check "claude settings: shared keys win" hasnt '"old"'
 out=$(modify dot_claude/modify_settings.json '{"env": {"OWN": "1"}}')
-check "claude settings: auto-connect to nvim, the machine's env kept" python3 -c '
+check "claude settings: auto-connect to nvim, no agent progress summaries, the machine's env kept" python3 -c '
 import json, sys
 env = json.loads(sys.argv[1])["env"]
-sys.exit(env != {"OWN": "1", "CLAUDE_CODE_AUTO_CONNECT_IDE": "1"})' "$out"
+sys.exit(env != {"OWN": "1", "CLAUDE_CODE_AUTO_CONNECT_IDE": "1", "CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES": "1"})' "$out"
 # Desktops: the busy hook (polybar's spinning glyph) on its events; nowhere else
 out=$(modify dot_claude/modify_settings.json '{}')
 check "claude settings: busy hook on and off on a desktop" python3 -c '
