@@ -39,7 +39,7 @@
        `CLAUDE_CODE_AUTO_MODE_SERVER=0 claude` for the local check. No value here. */ -}}
 {{- $s = deleteValueAtPath "env.CLAUDE_CODE_AUTO_MODE_SERVER" $s }}
 {{- /* Plugins: the same set on every machine (docs/plugins.md in the claude toolkit).
-       On everywhere: milestone-flow, mason-lsp, shop-search, playwright. The rest are off here and
+       On everywhere: milestone-flow, mason-lsp, shop-search, fleet, playwright. The rest are off here and
        on per project (frontend-design in apartment, plugin-dev in the toolkit) or for
        one session (`claude-with <plugin>`). Claude Code fetches a plugin that's on here
        but missing. Only these keys: a plugin added on one machine keeps its entry. */ -}}
@@ -47,6 +47,7 @@
       "milestone-flow@personal" true
       "mason-lsp@personal" true
       "shop-search@personal" true
+      "fleet@personal" true
       "playwright@claude-plugins-official" true
       "frontend-design@claude-plugins-official" false
       "plugin-dev@claude-plugins-official" false
