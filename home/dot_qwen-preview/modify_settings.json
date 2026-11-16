@@ -1,0 +1,23 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* qwen-preview's settings.json. The machine owns the file (the API key lives in
+       providers, and /model writes here); this sets the keys every machine shares:
+       ayu-light, the statusline, the model and effort, and the personal marketplace
+       (the toolkit repo, placed by tools/sync-toolkit.sh). Providers stay untouched. */ -}}
+{{- $s := dict }}
+{{- if .chezmoi.stdin }}{{ $s = fromJson .chezmoi.stdin }}{{ end }}
+{{- $s = setValueAtPath "theme" "ayu-light" $s }}
+{{- $s = setValueAtPath "customThemes" (fromJson `{"ayu-light":{"type":"custom","name":"Ayu Light","text":{"primary":"#5C6166","secondary":"#8A9199","link":"#399EE6","accent":"#FA8D3E"},"background":{"primary":"#FAFAFA","diff":{"added":"#E7F4E4","removed":"#FBE9E9"}},"border":{"default":"#E7E8E9","focused":"#399EE6"},"ui":{"comment":"#ABB0B6","symbol":"#F2AE49","gradient":["#399EE6","#A37ACC","#FA8D3E"]},"status":{"error":"#F07171","success":"#86B300","warning":"#F2AE49"},"Background":"#FAFAFA","Foreground":"#5C6166","LightBlue":"#55B4D4","AccentBlue":"#399EE6","AccentPurple":"#A37ACC","AccentCyan":"#4CBF99","AccentGreen":"#86B300","AccentYellow":"#F2AE49","AccentRed":"#F07171","DiffAdded":"#E7F4E4","DiffRemoved":"#FBE9E9","Comment":"#ABB0B6","Gray":"#8A9199","DarkGray":"#ABB0B6","GradientColors":["#399EE6","#A37ACC","#FA8D3E"]}}`) $s }}
+{{- $s = setValueAtPath "statusLine" (dict
+      "type" "command"
+      "command" "bash ~/.qwen-preview/statusline-command.sh") $s }}
+{{- $s = setValueAtPath "model" (dict
+      "name" "token-plan/qwen4-max"
+      "preferences" (dict "token-plan/qwen4-max" (dict
+        "contextWindow" 1000000
+        "reasoning" (dict "effort" "high")))) $s }}
+{{- $s = setValueAtPath "enabledPlugins.milestone-flow@personal" true $s }}
+{{- /* The toolkit repo is the marketplace; sync-toolkit.sh places it at this path. */ -}}
+{{- $s = setValueAtPath "extraKnownMarketplaces.personal.source" (dict
+      "source" "directory"
+      "path" (joinPath .chezmoi.homeDir "src/personal/qwen-preview/toolkit")) $s }}
+{{- toPrettyJson "  " $s -}}
