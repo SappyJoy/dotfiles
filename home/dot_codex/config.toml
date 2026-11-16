@@ -1,0 +1,47 @@
+model = "gpt-6-sol"
+model_reasoning_effort = "high"
+[tui]
+screen_reader_detection_done = true
+
+[tui.model_availability_nux]
+"gpt-6.1-sol" = 4
+
+[projects."/home/sap/src/work/rain/DevHelpers"]
+trust_level = "trusted"
+
+[projects."/home/sap/src/work/rain/ActionDetector"]
+trust_level = "trusted"
+
+[projects."/home/sap/src/personal/codex/toolkit"]
+trust_level = "trusted"
+
+[projects."/home/sap/src/work/shiming/video-facts-timeline"]
+trust_level = "trusted"
+
+[projects."/home/sap"]
+trust_level = "trusted"
+
+[marketplaces.personal-codex]
+source_type = "local"
+source = "/home/sap/src/personal/codex/toolkit"
+
+[plugins."milestone-flow@personal-codex"]
+enabled = true
+
+[plugins."fleet@personal-codex"]
+enabled = true
+
+[plugins."shop-search@personal-codex"]
+enabled = true
+
+[plugins."harmonyos@personal-codex"]
+enabled = true
+
+[plugins."coding-principles@personal-codex"]
+enabled = true
+
+[plugins."mason-lsp@personal-codex"]
+enabled = true
+
+[notice]
+hide_rate_limit_model_nudge = true
