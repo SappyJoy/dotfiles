@@ -54,4 +54,15 @@
     url = "git@github.com:SappyJoy/claude-toolkit.git"
     refreshPeriod = "1h"
     pull.args = ["--ff-only"]
+
+{{- /* Qwen Code 0.x's `personal` marketplace source: the qwen toolkit's main, same
+       arrangement. run_once_after_32-qwen-marketplace.sh registers this clone as the
+       source and installs milestone-flow; where you work on the toolkit, `make install`
+       registers your working repo instead, and the refresh script follows whichever
+       source is registered. */}}
+[".local/share/qwen-extensions/personal"]
+    type = "git-repo"
+    url = "git@github.com:SappyJoy/qwen-toolkit.git"
+    refreshPeriod = "1h"
+    pull.args = ["--ff-only"]
 {{- end }}
