@@ -12,7 +12,7 @@ trust_level = "trusted"
 [projects."/home/sap/src/work/rain/ActionDetector"]
 trust_level = "trusted"
 
-[projects."/home/sap/src/personal/codex/toolkit"]
+[projects."/home/sap/src/personal/harness/codex/toolkit"]
 trust_level = "trusted"
 
 [projects."/home/sap/src/work/shiming/video-facts-timeline"]
@@ -23,7 +23,7 @@ trust_level = "trusted"
 
 [marketplaces.personal-codex]
 source_type = "local"
-source = "/home/sap/src/personal/codex/toolkit"
+source = "/home/sap/src/personal/harness/codex/toolkit"
 
 [plugins."milestone-flow@personal-codex"]
 enabled = true
