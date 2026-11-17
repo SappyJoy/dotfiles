@@ -1,0 +1,15 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Qwen Code 0.x's settings.json. The machine owns the file (the API key lives in
+       env, the model choice in modelProviders, /model and /effort write here); this sets
+       the look every machine shares: ayu-light and the statusline. Everything else —
+       providers, model, effort, security — stays untouched. */ -}}
+{{- $s := dict }}
+{{- if .chezmoi.stdin }}{{ $s = fromJson .chezmoi.stdin }}{{ end }}
+{{- $s = setValueAtPath "ui.theme" "ayu-light" $s }}
+{{- $s = setValueAtPath "ui.customThemes" (fromJson `{"ayu-light":{"type":"light","name":"Ayu Light","Background":"#FAFAFA","Foreground":"#5C6166","LightBlue":"#55B4D4","AccentBlue":"#399EE6","AccentPurple":"#A37ACC","AccentCyan":"#4CBF99","AccentGreen":"#86B300","AccentYellow":"#F2AE49","AccentRed":"#F07171","DiffAdded":"#E7F4E4","DiffRemoved":"#FBE9E9","Comment":"#ABB0B6","Gray":"#8A9199","GradientColors":["#399EE6","#A37ACC","#FA8D3E"]}}`) $s }}
+{{- $s = setValueAtPath "ui.statusLine" (dict
+      "type" "command"
+      "command" "bash ~/.qwen/statusline-command.sh"
+      "respectUserColors" true
+      "hideContextIndicator" true) $s }}
+{{- toPrettyJson "  " $s -}}
