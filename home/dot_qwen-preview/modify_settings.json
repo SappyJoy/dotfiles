@@ -19,5 +19,5 @@
 {{- /* The toolkit repo is the marketplace; sync-toolkit.sh places it at this path. */ -}}
 {{- $s = setValueAtPath "extraKnownMarketplaces.personal.source" (dict
       "source" "directory"
-      "path" (joinPath .chezmoi.homeDir "src/personal/qwen-preview/toolkit")) $s }}
+      "path" (joinPath .chezmoi.homeDir "src/personal/harness/qwen-preview/toolkit")) $s }}
 {{- toPrettyJson "  " $s -}}
